@@ -1138,7 +1138,7 @@ window.APP_CONFIG={
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
@@ -1149,7 +1149,7 @@ if(!CFG.firebase||!CFG.firebase.apiKey||/PASTE/.test(CFG.firebase.apiKey)){
   msg("Setup adhura hai: index.html mein Firebase config paste karo.");gbtn.disabled=true;
   throw new Error("Firebase config missing");
 }
-const app=initializeApp(CFG.firebase),auth=getAuth(app),db=getFirestore(app);
+const app=initializeApp(CFG.firebase),auth=getAuth(app),db=initializeFirestore(app,{experimentalForceLongPolling:true});
 const ADMINS=(CFG.admins||[]).map(e=>String(e).toLowerCase());
 let started=false,busy=false,BANK_JSON="",BANK_META=null,ME="",IS_ADMIN=false;
 
