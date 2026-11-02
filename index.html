@@ -1176,7 +1176,7 @@ if(!CFG.firebase||!CFG.firebase.apiKey||/PASTE/.test(CFG.firebase.apiKey)){
 }
 const app=initializeApp(CFG.firebase),auth=getAuth(app),db=initializeFirestore(app,{experimentalForceLongPolling:true});
 const ADMINS=(CFG.admins||[]).map(e=>String(e).toLowerCase());
-let started=false,busy=false,BANK_JSON="",BANK_META=null,ME="",IS_ADMIN=false;
+let started=false,busy=false,BANK_JSON="",BANK_META=null,ME="",IS_ADMIN=false,IS_OWNER=false;
 
 /* ---------------- login ---------------- */
 try{await setPersistence(auth,browserSessionPersistence)}catch(e){}
@@ -1218,9 +1218,10 @@ async function loadBank(){
 async function check(user){
   busy=true;gbtn.hidden=true;gout.hidden=true;msg("Access check ho raha hai...");
   const email=(user.email||"").toLowerCase();
-  IS_ADMIN=ADMINS.includes(email);ME=email;
+  IS_OWNER=ADMINS.includes(email);IS_ADMIN=IS_OWNER;ME=email;
   try{
     if(!user.emailVerified)return deny(email,"Is Google account ki email verified nahi hai.");
+    if(!IS_OWNER){try{const m=await getDoc(doc(db,"managers",email));if(m.exists())IS_ADMIN=true}catch(e){}}
     if(!IS_ADMIN){
       const a=await getDoc(doc(db,"allowed",email));
       if(!a.exists())return deny(email,"Is email ko access nahi diya gaya. Admin se rabta karo.");
@@ -1245,7 +1246,7 @@ async function check(user){
 
 function userbar(){
   const u=el("div");u.id="userbar";
-  u.appendChild(el("span","em",ME+(IS_ADMIN?" (admin)":"")));
+  u.appendChild(el("span","em",ME+(IS_OWNER?" (owner)":IS_ADMIN?" (manager)":"")));
   const r=el("span");r.style.cssText="display:flex;gap:8px";
   const lb=el("button","btn","Library");lb.type="button";lb.onclick=openLibrary;r.appendChild(lb);
   if(IS_ADMIN){const a=el("button","btn","Admin panel");a.type="button";a.onclick=()=>openAdmin();r.appendChild(a)}
@@ -1301,16 +1302,18 @@ function buildAdmin(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
   const names={users:"Users",bank:"Questions",library:"Library",settings:"Settings"};
+  if(IS_OWNER)names.managers="Managers";
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
   buildUsers(tabs.users.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
+  if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
 function showTab(k){
   for(const n in tabs){tabs[n].body.hidden=n!==k;tabs[n].btn.classList.toggle("on",n===k)}
-  if(k==="users")tabs.users.load();if(k==="settings")tabs.settings.load();if(k==="bank")tabs.bank.load();
+  if(tabs[k]&&tabs[k].load)tabs[k].load();
 }
 function dstr(ms){return new Date(ms).toLocaleDateString()}
 function ustat(d){
@@ -1670,6 +1673,43 @@ function buildLibAdmin(host){
     add.disabled=false;
   };
   tabs.library.load=load;
+}
+
+/* ================= MANAGERS (owner only) ================= */
+function buildManagers(host){
+  const note=el("div","label","Manager ko Users, Questions, Library aur Settings ka poora control milta hai. Managers ki list sirf owner badal sakta hai.");
+  const ta=el("textarea");ta.rows=3;ta.placeholder="Manager ki Gmail (ek line mein ek, ya comma se alag)";
+  const add=el("button","btn primary","Add manager");add.type="button";
+  const st=el("div","label st"),list=el("div");
+  host.append(note,ta,add,st,list);
+  let M=[];
+  function render(){
+    list.textContent="";st.textContent=M.length+" manager(s)";
+    M.forEach(m=>{
+      const r=el("div","urow"),w=el("div","who");w.appendChild(el("span","",m));
+      const dl=el("button","btn danger","Remove");dl.type="button";let arm=false;
+      dl.onclick=async()=>{
+        if(!arm){arm=true;dl.textContent="Confirm?";setTimeout(()=>{arm=false;dl.textContent="Remove"},3000);return}
+        try{await deleteDoc(doc(db,"managers",m));await load()}catch(e){st.textContent="Error: "+(e.code||e.message)}
+      };
+      r.append(w,dl);list.appendChild(r);
+    });
+  }
+  async function load(){
+    try{const s=await getDocs(collection(db,"managers"));M=s.docs.map(d=>d.id).sort();render()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)}
+  }
+  add.onclick=async()=>{
+    const em=[...new Set((ta.value.toLowerCase().match(/[^\s,;]+/g)||[]).filter(x=>/^[^\s\/@]+@[^\s\/@]+\.[^\s\/@]+$/.test(x)))];
+    if(!em.length){st.textContent="Koi sahi email nahi mili.";return}
+    add.disabled=true;st.textContent="Saving...";
+    try{
+      const b=writeBatch(db);em.forEach(e=>b.set(doc(db,"managers",e),{email:e,addedAt:serverTimestamp()}));await b.commit();
+      ta.value="";await load();st.textContent=em.length+" manager(s) add ho gaye.";
+    }catch(e){st.textContent="Error: "+(e.code||e.message)}
+    add.disabled=false;
+  };
+  tabs.managers.load=load;
 }
 </script>
 </body></html>
