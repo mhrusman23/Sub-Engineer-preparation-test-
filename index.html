@@ -290,6 +290,53 @@ label.btn{display:inline-flex;align-items:center}
 .pdfwrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px}
 .pg{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .pg canvas{display:block}
+
+.profile{display:flex;gap:14px;align-items:center;padding:14px 16px;margin:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.profile .avatar{flex:none;width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+.profile .pfinfo{min-width:0}
+.profile .pfname{font-weight:700;font-size:18px;overflow-wrap:anywhere}
+.profile .pfmail{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.profile .pfmeta{font-size:12px;color:var(--muted);margin-top:2px}
+.resumebox{margin:0 12px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ycards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px}
+@media(min-width:760px){.ycards{grid-template-columns:repeat(4,1fr)}}
+.ycards[hidden]{display:none}
+.ycard{display:flex;flex-direction:column;gap:4px;text-align:left;padding:18px 14px;min-height:130px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
+.ycard:disabled{opacity:.5;cursor:default}
+.ycard .yt{font-size:22px;font-weight:800}
+.ycard .yd{font-size:12px;color:var(--muted)}
+.ycard .ym{margin-top:auto;font-family:var(--mono);font-size:13px;color:var(--accent);padding-top:8px}
+#yearView[hidden],#homeExtra[hidden]{display:none}
+.yhead{display:flex;gap:10px;align-items:center;margin:12px}
+.ytitle{font-size:22px;font-weight:800}
+#yearView .hnote{margin:0 12px 8px}
+.ytools{display:flex;gap:6px;margin:0 12px 10px}
+#yList{margin:0 12px}
+.ybar{position:sticky;bottom:0;z-index:6;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--panel);border-top:1px solid var(--line)}
+input.pk{width:22px;height:22px;flex:none}
+.hnote{font-size:13px;color:var(--muted);margin:0 0 10px}
+.hcard{border:1px solid var(--line);border-radius:8px;margin-bottom:10px;background:var(--panel);overflow:hidden}
+.hhead{display:flex;gap:10px;align-items:center;padding:12px;flex-wrap:wrap}
+.hname{flex:1;min-width:140px;font-weight:700;overflow-wrap:anywhere}
+.hname small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.hhead .mt,.hrow .mt{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.hchs{border-top:1px solid var(--line)}
+.hchs[hidden]{display:none}
+.hrow{display:flex;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.hchs .hrow:first-child{border-top:0}
+.hrow .hname{font-weight:600;font-size:14px}
+.hhead .btn,.hrow .btn{min-height:38px;padding:6px 14px;font-size:14px}
+.contacts{margin:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.contacts:empty{display:none}
+.gct{font-weight:700;margin-bottom:4px}
+.gcr{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:6px 0;font-size:14px}
+.gcn{font-weight:600}
+.gca{color:var(--accent);font-weight:600;text-decoration:none}
+#gate #gcontacts{margin-top:14px;padding-top:10px;border-top:1px solid #C9D3DA}
+#gate #gcontacts:empty{display:none;border:0;margin:0;padding:0}
+#gate .gca{color:#1F3A5F}
+#gate #gtrial{margin-top:8px}
+.vimg{display:block;max-width:100%;height:auto;margin:0 auto;touch-action:pinch-zoom pan-x pan-y}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -303,17 +350,32 @@ window.APP_CONFIG={
     appId:"1:400459277813:web:64c90b1229b7f3193cacbc"
   },
   /* admin Gmail addresses (lowercase). Same list must be in firestore.rules */
-  admins:["maherusman1947@gmail.com"]
+  admins:["maherusman1947@gmail.com"],
+  contacts:[
+    {role:"Admin",name:"Usman Amjad",phone:"03494482609"},
+    {role:"Manager",name:"Umar Sajjid",phone:"03400658893"}
+  ]
 };
 /* =========================================================== */
 </script>
-<div id="gate"><div class="gbox"><h2>Login</h2><p>PPSC Civil Mock Test</p><div class="gerr" id="ge"></div><button type="button" id="gbtn">Sign in with Google</button><button type="button" id="gout" class="gsec" hidden>Use another account</button></div></div>
+<div id="gate"><div class="gbox"><h2>Login</h2><p>PPSC Civil Mock Test</p><div class="gerr" id="ge"></div><button type="button" id="gbtn">Sign in with Google</button><button type="button" id="gout" class="gsec" hidden>Use another account</button><button type="button" id="gtrial" hidden>Start 12-hour free trial</button><div id="gcontacts"></div></div></div>
 <template id="app-tpl">
 <div class="bgpic" aria-hidden="true"></div>
 <div class="wrap">
 
   <!-- START -->
   <section id="start" class="sheet">
+    <div class="profile" id="profile"><div class="avatar" id="pfAv">U</div><div class="pfinfo"><div class="pfname" id="pfName"></div><div class="pfmail" id="pfMail"></div><div class="pfmeta" id="pfMeta"></div></div></div>
+    <div class="resumebox" id="resumeBox"><button class="btn primary" id="btnResume" type="button" hidden="">Resume saved attempt</button><span id="resumeInfo" class="label"></span></div>
+    <div id="homeCards" class="ycards"></div>
+    <div id="yearView" hidden>
+      <div class="yhead"><button class="btn" id="yBack" type="button">← Back</button><div class="ytitle" id="yTitle"></div></div>
+      <p class="hnote" id="yNote"></p>
+      <div class="ytools"><button class="chip" id="yAll" type="button">Select all</button><button class="chip" id="yNone" type="button">Clear</button></div>
+      <div id="yList"></div>
+      <div class="ybar"><span id="ySel">Kuch select nahi</span><button class="btn primary" id="btnStart" type="button" disabled>Start selected</button></div>
+    </div>
+    <div id="homeExtra">
     <div class="card srch" id="gsrch" style="margin:12px">
       <div class="row">
         <input id="gsIn" type="search" placeholder="Search any MCQ in all papers and subjects..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
@@ -322,23 +384,17 @@ window.APP_CONFIG={
       <div class="label cnt" id="gsCnt"></div>
       <ul class="res" id="gsRes" hidden=""></ul>
     </div>
+        <div class="startrow">
+      <label><input type="checkbox" id="optShuf" checked> Re-shuffle options every test</label>
+      <label><input type="checkbox" id="optAuto" checked> Auto-next (1.2 s right, 4 s wrong)</label>
+      <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
+    </div>
+    <div class="contacts" id="contactBox"></div>
     <div class="sheet-head">
       <div class="label">PPSC Past Papers · Civil 1st, 2nd &amp; 3rd Year · 18 papers + 16 subjects</div>
       <h1>PPSC + Civil Diploma<br>All-in-One Mock Test</h1>
       <p>4645 MCQs: 1440 from 18 solved PPSC Sub Engineer Civil past papers (2018 to 2025) and 3205 from 16 subjects of Civil 1st, 2nd and 3rd year. PPSC answers follow the ticked options in the Ali Technical Academy booklet. Tick the papers and subjects you want, then start. There is no time limit. A correct answer moves on after 1.2 seconds, a wrong one after 4 seconds. Use <b>Edit MCQs</b> to change, add or delete questions. Question order is shuffled each time.</p>
       <div class="filecredit">File By Engr Usman Amjad (03494482609) &amp; Engr Umar Sajjid (03400658893)</div>
-    </div>
-    <div class="subjpick">
-      <div class="subjhead"><div class="label">Choose papers and subjects</div>
-        <div class="subjbtns"><button class="chip" id="subAll" type="button">Select all</button><button class="chip" id="subNone" type="button">Clear</button></div></div>
-      <div id="subList"></div>
-    </div>
-    <div class="tb">
-      <div><div class="label">Questions</div><div class="v" id="sQ">0</div></div>
-      <div><div class="label">Time limit</div><div class="v" id="sT">None</div></div>
-      <div><div class="label">Correct</div><div class="v">+1</div></div>
-      <div><div class="label">Wrong</div><div class="v">−0.25</div></div>
-      <div class="wide"><div class="label">Selected</div><div class="v" id="sSel">None</div></div>
     </div>
     <div class="rules">
       <div class="label">Rules</div>
@@ -351,14 +407,7 @@ window.APP_CONFIG={
         <li>Keys: A to D or 1 to 4 to answer, left and right arrows to move.</li>
       </ul>
     </div>
-    <div class="startrow">
-      <button class="btn primary" id="btnStart" type="button">Start new test</button>
-      <button class="btn" id="btnResume" type="button" hidden="">Resume saved attempt</button>
-      <label><input type="checkbox" id="optShuf" checked> Re-shuffle options every test</label>
-      <label><input type="checkbox" id="optAuto" checked> Auto-next (1.2 s right, 4 s wrong)</label>
-      <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
-      <span id="resumeInfo" class="label"></span>
-    </div>
+        </div>
   </section>
 
   <!-- EDITOR -->
@@ -405,7 +454,7 @@ window.APP_CONFIG={
         <div class="stat bad"><div class="label">Wrong</div><div class="n" id="stBad">0</div></div>
         <div class="stat"><div class="label">Attempted</div><div class="n" id="stAtt">0/0</div></div>
       </div>
-      <div class="barbtns"><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button></div>
+      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button></div>
     </div>
 
     <div id="pausedBox" class="card paused" hidden>
@@ -465,7 +514,7 @@ window.APP_CONFIG={
       <div class="tb" id="rTb"></div>
       <div class="scroll" style="padding:0 20px 8px"><table class="tbl" id="rTbl"></table></div>
       <div style="padding:8px 20px 20px"><h3 style="margin-bottom:10px">Wrong attempts log</h3><ul class="log" id="rLog" style="max-height:none"></ul></div>
-      <div class="startrow"><button class="btn primary" id="retake" type="button">Take it again</button></div>
+      <div class="startrow"><button class="btn primary" id="retake" type="button">Back to home</button></div>
     </div>
     <h2 style="font-size:28px;margin-top:28px">Review</h2>
     <div class="chips" id="chips"></div>
@@ -523,47 +572,85 @@ window.APP_CONFIG={
   function subCount(i){var n=0;Q.forEach(function(q){if(S[q.sec].sub===i)n++});return n}
   function recalcT(){SUB.forEach(function(s,i){s.time=Math.max(60,Math.round(subCount(i)*s.spq))})}
   function mins(s){return Math.round(s/60)}
-  function pickedSubs(){var r=[];document.querySelectorAll("#subList input").forEach(function(c){if(c.checked)r.push(+c.value)});return r}
+  function pickedSubs(){var r=[];document.querySelectorAll("#yList input.pk").forEach(function(c){if(c.checked)r.push(+c.value)});return r}
+  var PAPERS_N=0;SUB.forEach(function(s,i){if(/^PPSC/i.test(s.code))PAPERS_N=i+1});
+  function yearOf(i){
+    if(i<PAPERS_N)return "pp";
+    var m=/-\s*(\d)\d\d/.exec(SUB[i].code||""),d=m?m[1]:"2";
+    return d==="1"?"y1":d==="3"?"y3":"y2";
+  }
+  var YEARS=[
+    {k:"y1",t:"1st Year",d:"Diploma Civil \u00b7 1st Year subjects"},
+    {k:"y2",t:"2nd Year",d:"Diploma Civil \u00b7 2nd Year subjects"},
+    {k:"y3",t:"3rd Year",d:"Diploma Civil \u00b7 3rd Year subjects"},
+    {k:"pp",t:"Past Papers",d:"PPSC Sub Engineer Civil \u00b7 solved papers"}
+  ];
+  var curYear=null;
+  function idsOf(k){var r=[];SUB.forEach(function(s,i){if(yearOf(i)===k&&subCount(i))r.push(i)});return r}
   function refreshPick(){
-    var p=pickedSubs(),n=0,t=0;
-    p.forEach(function(i){n+=subCount(i);t+=SUB[i].time});
-    $("#sQ").textContent=n;
-    $("#sT").textContent="None";
-    $("#sSel").textContent=p.length?p.map(function(i){return SUB[i].short}).join(" · "):"None";
+    var p=pickedSubs(),n=0;p.forEach(function(i){n+=subCount(i)});
+    $("#ySel").textContent=p.length?(p.length+" selected \u00b7 "+n+" Q"):"Kuch select nahi";
     $("#btnStart").disabled=!p.length||!n;
   }
-  function buildPick(keep){
-    var host=$("#subList");host.textContent="";
-    var GROUPS={0:"PPSC Sub Engineer Civil · Past Papers"};GROUPS[18]="Civil Diploma · 1st, 2nd & 3rd Year Subjects";
-    SUB.forEach(function(s,i){
-      if(GROUPS[i]){var gh=el("div","label",GROUPS[i]);gh.style.cssText="margin:16px 0 6px";host.appendChild(gh)}
-      var lb=el("label","subj"),cb=document.createElement("input");cb.type="checkbox";cb.value=String(i);
-      cb.checked=keep?keep.indexOf(i)>=0:true;
-      cb.addEventListener("change",refreshPick);
-      var nm=el("span","nm",s.name);nm.appendChild(el("small","",s.code+(s.ch>1?" · "+s.ch+" chapters":"")));
-      lb.appendChild(cb);lb.appendChild(nm);lb.appendChild(el("span","mt",subCount(i)+" Q"));
-      host.appendChild(lb);
-      if(s.ch>1){
-        var chs=[];S.forEach(function(c,ci){if(c.sub===i)chs.push(ci)});
-        if(chs.length>1){
-          var tg=el("button","chip","Open a chapter separately \u25be");tg.type="button";
-          var pn=el("div","chpanel");pn.hidden=true;
-          chs.forEach(function(ci){
-            var cnt=0;Q.forEach(function(q){if(q.sec===ci)cnt++});
-            var r=el("div","chrow");
-            r.appendChild(el("span","chn",S[ci].code.split(" \u00b7 ").pop()+" \u00b7 "+S[ci].name));
-            r.appendChild(el("span","mt",cnt+" Q"));
-            var b=el("button","btn primary","Start");b.type="button";b.disabled=!cnt;
-            b.addEventListener("click",function(){start(ci)});
-            r.appendChild(b);pn.appendChild(r);
-          });
-          tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Open a chapter separately \u25be":"Hide chapters \u25b4"});
-          var wr=el("div","chwrap");wr.appendChild(tg);wr.appendChild(pn);host.appendChild(wr);
-        }
+  function buildYear(k,keep){
+    var y=YEARS.filter(function(x){return x.k===k})[0],ids=idsOf(k),pp=(k==="pp");
+    $("#yTitle").textContent=y.t;
+    $("#yNote").textContent=pp?"Har past paper alag se, ya tick laga kar kai papers ek sath.":"Har subject alag se (chapter-wise bhi), ya tick laga kar kai subjects ek sath.";
+    var list=$("#yList");list.textContent="";
+    var secN=[];Q.forEach(function(q){secN[q.sec]=(secN[q.sec]||0)+1});
+    var tq=0;ids.forEach(function(i){tq+=subCount(i)});
+    if(ids.length>1){
+      var ac=el("div","hcard"),ah=el("div","hhead"),an=el("div","hname","Sab ek sath ("+y.t+")");
+      an.appendChild(el("small","",ids.length+(pp?" papers":" subjects")+" \u00b7 akhta test"));
+      ah.appendChild(an);ah.appendChild(el("span","mt",tq+" Q"));
+      var ab=el("button","btn primary","Start all");ab.type="button";ab.addEventListener("click",function(){start(ids.slice())});
+      ah.appendChild(ab);ac.appendChild(ah);list.appendChild(ac);
+    }
+    ids.forEach(function(i){
+      var s=SUB[i],n=subCount(i),card=el("div","hcard"),hd=el("div","hhead");
+      var cb=document.createElement("input");cb.type="checkbox";cb.className="pk";cb.value=String(i);cb.setAttribute("aria-label","Select "+s.name);
+      cb.checked=keep?keep.indexOf(i)>=0:false;cb.addEventListener("change",refreshPick);
+      hd.appendChild(cb);
+      var chs=[];S.forEach(function(c,ci){if(c.sub===i&&secN[ci])chs.push(ci)});
+      var nm=el("div","hname",s.name);
+      nm.appendChild(el("small","",s.code+(pp?"":" \u00b7 "+chs.length+(chs.length===1?" chapter":" chapters"))));
+      hd.appendChild(nm);hd.appendChild(el("span","mt",n+" Q"));
+      var pn=null,multi=(!pp&&chs.length>1);
+      if(multi){
+        var tg=el("button","btn","Chapters \u25be");tg.type="button";hd.appendChild(tg);
+        pn=el("div","hchs");pn.hidden=true;
+        chs.forEach(function(ci){
+          var r=el("div","hrow"),cn=el("div","hname",S[ci].name);
+          cn.appendChild(el("small","",S[ci].code.split(" \u00b7 ").pop()));
+          r.appendChild(cn);r.appendChild(el("span","mt",secN[ci]+" Q"));
+          var b=el("button","btn primary","Start");b.type="button";b.addEventListener("click",function(){start(ci)});
+          r.appendChild(b);pn.appendChild(r);
+        });
+        tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Chapters \u25be":"Hide \u25b4"});
       }
+      var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.addEventListener("click",function(){start([i])});hd.appendChild(go);
+      card.appendChild(hd);if(pn)card.appendChild(pn);list.appendChild(card);
     });
     refreshPick();
   }
+  function buildPick(keep){
+    var hc=$("#homeCards");hc.textContent="";
+    YEARS.forEach(function(y){
+      var ids=idsOf(y.k),q=0;ids.forEach(function(i){q+=subCount(i)});
+      var b=el("button","ycard");b.type="button";
+      b.appendChild(el("span","yt",y.t));b.appendChild(el("span","yd",y.d));
+      b.appendChild(el("span","ym",ids.length+(y.k==="pp"?" papers":" subjects")+" \u00b7 "+q+" Q"));
+      b.disabled=!ids.length;b.addEventListener("click",function(){openYear(y.k)});
+      hc.appendChild(b);
+    });
+    if(curYear)buildYear(curYear,keep||null);
+  }
+  function openYear(k){
+    curYear=k;buildYear(k,null);
+    $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
+    try{if(!(history.state&&history.state.y===1))history.pushState({y:1},"")}catch(e){}
+  }
+  function closeYear(){curYear=null;$("#yearView").hidden=true;$("#homeCards").hidden=false;$("#homeExtra").hidden=false;window.scrollTo(0,0)}
   function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
   function readSave(){try{var s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.v===1&&(s.bv||0)===bv&&s.n===Q.length&&s.order&&s.order.length>0&&s.order.length<=Q.length&&s.tot>0)return s}catch(e){}return null}
   function resume(){
@@ -593,14 +680,17 @@ window.APP_CONFIG={
   function counts(){var ok=0,bad=0,att=0;for(var k in ans){att++;if(ans[k].ok)ok++;bad+=(ans[k].w?ans[k].w.length:0)}return {ok:ok,bad:bad,att:att}}
   function net(){var c=counts();return c.ok-NEG*c.bad}
 
-  function show(id){["start","editor","test","result"].forEach(function(x){$("#"+x).hidden=(x!==id)});window.scrollTo(0,0)}
+  function show(id){
+    ["start","editor","test","result"].forEach(function(x){$("#"+x).hidden=(x!==id)});window.scrollTo(0,0);
+    if(id==="test"){try{if(!(history.state&&history.state.t===1))history.pushState({t:1},"")}catch(e){}}
+  }
 
   function start(ch){
     if(typeof ch==="number"){
       sel=[S[ch].sub];order=[];Q.forEach(function(q,i){if(q.sec===ch)order.push(i)});
       if(!order.length)return;TOTAL=Math.max(60,Math.round(order.length*SUB[S[ch].sub].spq));
     }else{
-    sel=pickedSubs();if(!sel.length)return;TOTAL=0;sel.forEach(function(i){TOTAL+=SUB[i].time});order=[];Q.forEach(function(q,i){if(sel.indexOf(S[q.sec].sub)>=0)order.push(i)});
+    sel=Array.isArray(ch)?ch.slice():pickedSubs();if(!sel.length)return;TOTAL=0;sel.forEach(function(i){TOTAL+=SUB[i].time});order=[];Q.forEach(function(q,i){if(sel.indexOf(S[q.sec].sub)>=0)order.push(i)});
     }
     {for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t}}
     applyPerm($("#optShuf").checked?makePerm():{});
@@ -1130,9 +1220,32 @@ window.APP_CONFIG={
 
   recalcT();
   buildPick();
-  $("#subAll").addEventListener("click",function(){document.querySelectorAll("#subList input").forEach(function(c){c.checked=true});refreshPick()});
-  $("#subNone").addEventListener("click",function(){document.querySelectorAll("#subList input").forEach(function(c){c.checked=false});refreshPick()});
+  $("#yAll").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=true});refreshPick()});
+  $("#yNone").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=false});refreshPick()});
+  $("#yBack").addEventListener("click",function(){if(history.state&&history.state.y===1)history.back();else closeYear()});
   $("#btnStart").addEventListener("click",start);
+  function goHome(){
+    cancelAuto();
+    if(started&&!finished&&!paused)doPause();
+    save();showResume();buildPick(pickedSubs());show("start");
+  }
+  $("#btnBack").addEventListener("click",function(){if(history.state&&history.state.t===1)history.back();else goHome()});
+  window.addEventListener("popstate",function(){
+    if(!$("#test").hidden)goHome();
+    else if(!$("#result").hidden){showResume();buildPick(sel.length?sel:null);show("start")}
+    else if(curYear&&!$("#start").hidden)closeYear();
+  });
+  (function(){
+    var p=window.__PROFILE;
+    if(p){
+      $("#pfAv").textContent=String(p.name||"?").charAt(0).toUpperCase();
+      $("#pfName").textContent=p.name||"";$("#pfMail").textContent=p.email||"";
+      var t=p.role||"";
+      if(p.expires)t+=" · "+(p.trial?"Free trial ends ":"Access till ")+new Date(p.expires).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+      $("#pfMeta").textContent=t;
+    }else $("#profile").hidden=true;
+    if(window.renderContacts)window.renderContacts($("#contactBox"));
+  })();
   $("#retake").addEventListener("click",function(){showResume();buildPick(sel.length?sel:null);show("start")});
   $("#btnResume").addEventListener("click",resume);
   showResume();
@@ -1168,7 +1281,7 @@ import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collec
 const CFG=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
-const ge=$("ge"),gbtn=$("gbtn"),gout=$("gout");
+const ge=$("ge"),gbtn=$("gbtn"),gout=$("gout"),gtrial=$("gtrial"),gcon=$("gcontacts");
 function msg(t){ge.textContent=t||""}
 if(!CFG.firebase||!CFG.firebase.apiKey||/PASTE/.test(CFG.firebase.apiKey)){
   msg("Setup adhura hai: index.html mein Firebase config paste karo.");gbtn.disabled=true;
@@ -1177,13 +1290,26 @@ if(!CFG.firebase||!CFG.firebase.apiKey||/PASTE/.test(CFG.firebase.apiKey)){
 const app=initializeApp(CFG.firebase),auth=getAuth(app),db=initializeFirestore(app,{experimentalForceLongPolling:true});
 const ADMINS=(CFG.admins||[]).map(e=>String(e).toLowerCase());
 let started=false,busy=false,BANK_JSON="",BANK_META=null,ME="",IS_ADMIN=false,IS_OWNER=false;
+function renderContacts(host){
+  host.textContent="";
+  const list=(CFG.contacts||[]);if(!list.length)return;
+  host.appendChild(el("div","gct","Rabta karo:"));
+  list.forEach(c=>{
+    const r=el("div","gcr");r.appendChild(el("span","gcn",c.role+": "+c.name));
+    const p=String(c.phone||"").replace(/\D/g,""),intl=p.replace(/^0/,"92");
+    const a=el("a","gca",c.phone);a.href="tel:+"+intl;
+    const w=el("a","gca","WhatsApp");w.href="https://wa.me/"+intl;w.target="_blank";w.rel="noopener";
+    r.append(a,w);host.appendChild(r);
+  });
+}
+window.renderContacts=renderContacts;
 
 /* ---------------- login ---------------- */
 try{await setPersistence(auth,browserSessionPersistence)}catch(e){}
 onAuthStateChanged(auth,user=>{
   if(started||busy)return;
   if(user)check(user);
-  else{gbtn.hidden=false;gbtn.disabled=false;gout.hidden=true;msg("")}
+  else{gbtn.hidden=false;gbtn.disabled=false;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
 });
 gbtn.onclick=async()=>{
   msg("");gbtn.disabled=true;
@@ -1199,8 +1325,44 @@ gbtn.onclick=async()=>{
 };
 gout.onclick=()=>{signOut(auth).then(()=>location.reload())};
 function deny(email,text){
-  busy=false;gbtn.hidden=true;gout.hidden=false;
-  msg(text+(email?"  ("+email+")":""));
+  busy=false;gbtn.hidden=true;gout.hidden=false;gtrial.hidden=true;
+  msg(text+(email?"  ("+email+")":""));renderContacts(gcon);
+}
+/* ---- free trial (12 hours, once per Google account, once per network/IP) ---- */
+async function getIp(){
+  const tries=[["https://api.ipify.org?format=json",async r=>(await r.json()).ip],["https://api64.ipify.org?format=json",async r=>(await r.json()).ip],["https://www.cloudflare.com/cdn-cgi/trace",async r=>{const m=(await r.text()).match(/^ip=(.+)$/m);return m?m[1].trim():""}]];
+  for(const t of tries){
+    try{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),5000);const r=await fetch(t[0],{signal:ac.signal,cache:"no-store"});clearTimeout(tm);const ip=await t[1](r);if(ip&&/^[0-9a-fA-F:.]{3,45}$/.test(ip))return ip}catch(e){}
+  }
+  return "";
+}
+async function sha256hex(x){
+  try{const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(x));return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("")}
+  catch(e){return x.replace(/[^0-9a-zA-Z]/g,"_")}
+}
+function offerTrial(user,email){
+  busy=false;gbtn.hidden=true;gout.hidden=false;gtrial.hidden=false;gtrial.disabled=false;
+  msg("Aap ka account abhi allowed nahi hai ("+email+"). Aap 12 ghante ka free trial le sakte ho (is network par sirf ek dafa).");
+  renderContacts(gcon);
+  gtrial.onclick=()=>claimTrial(user,email);
+}
+async function claimTrial(user,email){
+  gtrial.disabled=true;msg("Network check ho raha hai...");
+  const ip=await getIp();
+  if(!ip){gtrial.disabled=false;msg("Network (IP) check nahi ho saka. Internet ya VPN check karo, ya admin se rabta karo.");return}
+  const ipk=await sha256hex("ip:"+ip),exp=Timestamp.fromMillis(Date.now()+12*3600*1000);
+  async function attempt(withIp){
+    const b=writeBatch(db),data={email,enabled:true,trial:true,expires:exp,createdAt:serverTimestamp()};
+    if(withIp){data.ipk=ipk;b.set(doc(db,"trialips",ipk),{email,at:serverTimestamp()})}
+    b.set(doc(db,"allowed",email),data);
+    await b.commit();
+  }
+  try{await attempt(true)}
+  catch(e1){
+    try{await attempt(false)}
+    catch(e2){gtrial.disabled=false;gtrial.hidden=true;msg("Free trial nahi mil saka: is network par pehle liya ja chuka hai ya trial band hai. Phone ki date/time bhi check karo.");renderContacts(gcon);return}
+  }
+  gtrial.hidden=true;busy=false;check(user);
 }
 
 async function loadBank(){
@@ -1219,15 +1381,17 @@ async function check(user){
   busy=true;gbtn.hidden=true;gout.hidden=true;msg("Access check ho raha hai...");
   const email=(user.email||"").toLowerCase();
   IS_OWNER=ADMINS.includes(email);IS_ADMIN=IS_OWNER;ME=email;
+  let EXP=null,TRIAL=false;
   try{
     if(!user.emailVerified)return deny(email,"Is Google account ki email verified nahi hai.");
     if(!IS_OWNER){try{const m=await getDoc(doc(db,"managers",email));if(m.exists())IS_ADMIN=true}catch(e){}}
     if(!IS_ADMIN){
       const a=await getDoc(doc(db,"allowed",email));
-      if(!a.exists())return deny(email,"Is email ko access nahi diya gaya. Admin se rabta karo.");
+      if(!a.exists())return offerTrial(user,email);
       const d=a.data();
       if(d.enabled!==true)return deny(email,"Aap ka access band hai.");
-      if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,"Aap ka access expire ho gaya hai.");
+      if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?"Aap ka 12 ghante ka free trial khatam ho gaya.":"Aap ka access expire ho gaya hai.");
+      EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
     }
     let cfg={enabled:true,message:""};
     try{const c=await getDoc(doc(db,"meta","config"));if(c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
@@ -1238,6 +1402,7 @@ async function check(user){
       started=true;$("gate").remove();userbar();openAdmin("bank");return;
     }
     BANK_JSON=b.json;BANK_META=b.meta;
+    window.__PROFILE={name:user.displayName||email.split("@")[0],email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL};
     startApp(JSON.parse(b.json));
   }catch(e){
     deny(email,"Error: "+(e.code||e.message));
@@ -1246,7 +1411,7 @@ async function check(user){
 
 function userbar(){
   const u=el("div");u.id="userbar";
-  u.appendChild(el("span","em",ME+(IS_OWNER?" (owner)":IS_ADMIN?" (manager)":"")));
+  u.appendChild(el("span","em",ME+(IS_OWNER?" (admin)":IS_ADMIN?" (manager)":"")));
   const r=el("span");r.style.cssText="display:flex;gap:8px";
   const lb=el("button","btn","Library");lb.type="button";lb.onclick=openLibrary;r.appendChild(lb);
   if(IS_ADMIN){const a=el("button","btn","Admin panel");a.type="button";a.onclick=()=>openAdmin();r.appendChild(a)}
@@ -1317,18 +1482,27 @@ function showTab(k){
 }
 function dstr(ms){return new Date(ms).toLocaleDateString()}
 function ustat(d){
-  if(d.enabled!==true)return {t:"Disabled",bad:true};
-  if(d.expires){const ms=d.expires.toMillis();return ms<Date.now()?{t:"Expired "+dstr(ms),bad:true}:{t:"Active until "+dstr(ms)}}
-  return {t:"Active"};
+  const tr=d.trial?"Free trial · ":"";
+  if(d.enabled!==true)return {t:tr+"Disabled",bad:true};
+  if(d.expires){
+    const ms=d.expires.toMillis();
+    if(ms<Date.now())return {t:tr+"Expired "+dstr(ms),bad:true};
+    const left=ms-Date.now(),dd=Math.floor(left/86400000),hh=Math.floor((left%86400000)/3600000),mm=Math.floor((left%3600000)/60000);
+    return {t:tr+"Active · "+(dd>0?dd+" din "+hh+" ghante":hh+" ghante "+mm+" min")+" baqi (till "+dstr(ms)+")"};
+  }
+  return {t:tr+"Active · koi expiry nahi"};
 }
 function buildUsers(host){
   const ta=el("textarea");ta.rows=4;ta.placeholder="Gmail addresses (ek line mein ek, ya comma se alag)";
+  const dys=el("input");dys.type="text";dys.inputMode="numeric";dys.placeholder="Kitne din ke liye? (jaise 30)";dys.setAttribute("aria-label","Days");
+  const chips=el("div");chips.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px";
+  [7,15,30,90,180,365].forEach(n=>{const c=el("button","chip",n+" din");c.type="button";c.onclick=()=>{dys.value=String(n);dt.value=""};chips.appendChild(c)});
   const dt=el("input");dt.type="date";dt.setAttribute("aria-label","Valid until");
   const add=el("button","btn primary","Add / update users");add.type="button";
   const st=el("div","label st");
   const sr=el("input");sr.type="search";sr.placeholder="Search email...";
   const list=el("div");
-  host.append(ta,el("div","label","Valid until (optional, khali = hamesha)"),dt,add,st,sr,list);
+  host.append(ta,el("div","label","Kitne din ka access? (khali = hamesha)"),dys,chips,el("div","label","Ya aakhri date chuno (optional)"),dt,add,st,sr,list);
   let USERS=[];
   function render(){
     const q=sr.value.trim().toLowerCase();list.textContent="";
@@ -1356,12 +1530,13 @@ function buildUsers(host){
   add.onclick=async()=>{
     const em=[...new Set((ta.value.toLowerCase().match(/[^\s,;]+/g)||[]).filter(x=>/^[^\s\/@]+@[^\s\/@]+\.[^\s\/@]+$/.test(x)))];
     if(!em.length){st.textContent="Koi sahi email nahi mili.";return}
-    const exp=dt.value?Timestamp.fromDate(new Date(dt.value+"T23:59:59")):null;
+    const dd=parseInt(dys.value,10);
+    const exp=dd>0?Timestamp.fromMillis(Date.now()+dd*86400000):(dt.value?Timestamp.fromDate(new Date(dt.value+"T23:59:59")):null);
     add.disabled=true;st.textContent="Saving...";
     try{
       for(let i=0;i<em.length;i+=400){
         const b=writeBatch(db);
-        em.slice(i,i+400).forEach(e=>b.set(doc(db,"allowed",e),{email:e,enabled:true,expires:exp,updatedAt:serverTimestamp()},{merge:true}));
+        em.slice(i,i+400).forEach(e=>b.set(doc(db,"allowed",e),{email:e,enabled:true,trial:false,expires:exp,updatedAt:serverTimestamp()},{merge:true}));
         await b.commit();
       }
       ta.value="";await load();st.textContent=em.length+" user(s) save ho gaye.";
@@ -1412,16 +1587,20 @@ function buildSettings(host){
   const lb=el("label","",null);lb.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";
   lb.append(cb,el("span","","App sab users ke liye ON hai"));
   const tx=el("input");tx.type="text";tx.placeholder="OFF hone par users ko dikhne wala message";
+  const cb2=el("input");cb2.type="checkbox";cb2.id="cfgTrial";
+  const lb2=el("label","",null);lb2.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb2.append(cb2,el("span","","Naye users ke liye 12 ghante ka free trial ON"));
+  const cb3=el("input");cb3.type="checkbox";cb3.id="cfgTrialIp";
+  const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Trial: ek network (IP) par sirf ek dafa"));
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,sv,st);
+  host.append(lb,tx,lb2,lb3,sv,st);
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||""}
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),updatedAt:serverTimestamp()});st.textContent="Saved."}
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,updatedAt:serverTimestamp()});st.textContent="Saved."}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
     sv.disabled=false;
   };
@@ -1434,6 +1613,26 @@ function textChunks(s,CH){
   CH=CH||200000;const out=[];
   for(let i=0;i<s.length;){let e=Math.min(i+CH,s.length);if(e<s.length){const c=s.charCodeAt(e-1);if(c>=0xD800&&c<=0xDBFF)e--}out.push(s.slice(i,e));i=e}
   return out;
+}
+function binChunks(u){
+  const out=[],SL=450000;
+  for(let i=0;i<u.length;i+=SL){
+    const sl=u.subarray(i,Math.min(u.length,i+SL));let s="";
+    for(let j=0;j<sl.length;j+=9000)s+=String.fromCharCode.apply(null,sl.subarray(j,Math.min(sl.length,j+9000)));
+    out.push(btoa(s));
+  }
+  return out;
+}
+async function imageBytes(f){
+  const url=URL.createObjectURL(f);
+  try{
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("Yeh photo khul nahi rahi: "+f.name));i.src=url});
+    const M=1600,sc=Math.min(1,M/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*sc)),h=Math.max(1,Math.round(img.naturalHeight*sc));
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+    const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
+    if(!blob)throw new Error("Photo process nahi ho saki.");
+    return new Uint8Array(await blob.arrayBuffer());
+  }finally{URL.revokeObjectURL(url)}
 }
 async function pdfChunks(f){
   const u=new Uint8Array(await f.arrayBuffer()),out=[],SL=450000;
@@ -1461,7 +1660,7 @@ async function fetchItems(all){
   return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0));
 }
 function fmtSize(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round((n||0)/1024))+" KB"}
-const TYPE_TAG={html:"HTML",pdf:"PDF",link:"LINK"};
+const TYPE_TAG={html:"HTML",pdf:"PDF",image:"PHOTO",link:"LINK"};
 
 function openLibrary(){
   if(!libEl)buildLibrary();
@@ -1551,6 +1750,12 @@ function showLink(it){
   const b=el("button","btn primary","Link kholo");b.type="button";b.onclick=()=>window.open(u,"_blank","noopener,noreferrer");c.appendChild(b);
   vw.body.appendChild(c);
 }
+function showImage(bytes,mime){
+  const url=URL.createObjectURL(new Blob([bytes],{type:mime||"image/jpeg"}));
+  const img=document.createElement("img");img.src=url;img.alt="";img.className="vimg";img.draggable=false;
+  vw.body.textContent="";vw.body.style.overflow="auto";vw.body.appendChild(img);
+  vw.cleanup=()=>URL.revokeObjectURL(url);
+}
 function showHtml(it,html){
   const f=document.createElement("iframe");
   f.setAttribute("sandbox","allow-scripts allow-forms allow-modals allow-popups"+(it.trusted?" allow-same-origin":""));
@@ -1585,6 +1790,7 @@ async function openItem(it){
     if(it.type==="link"){showLink(it);return}
     const parts=await loadParts(it.id,it.parts||0);if(tok!==vtoken)return;
     if(it.type==="html")showHtml(it,parts.join(""));
+    else if(it.type==="image")showImage(decodePdf(parts,it.size||0),it.mime);
     else await showPdf(decodePdf(parts,it.size||0),tok);
   }catch(e){if(tok===vtoken)vstatus("Error: "+(e.code||e.message))}
 }
@@ -1592,7 +1798,7 @@ async function openItem(it){
 /* ================= LIBRARY (admin manager) ================= */
 function buildLibAdmin(host){
   const type=el("select");
-  [["html","HTML page (file)"],["pdf","PDF (file)"],["link","Link (YouTube / Drive / video / website)"]].forEach(o=>{const x=el("option","",o[1]);x.value=o[0];type.appendChild(x)});
+  [["html","HTML page (file)"],["pdf","PDF (file)"],["image","Photo (jpg / png, ek ya zyada)"],["link","Link (YouTube / Drive / video / website)"]].forEach(o=>{const x=el("option","",o[1]);x.value=o[0];type.appendChild(x)});
   const title=el("input");title.type="text";title.placeholder="Title";
   const cat=el("input");cat.type="text";cat.placeholder="Category / folder (jaise Surveying)";cat.setAttribute("list","catlist");
   const dl=el("datalist");dl.id="catlist";
@@ -1607,7 +1813,7 @@ function buildLibAdmin(host){
   let items=[];
   function sync(){
     const t=type.value;file.hidden=t==="link";url.hidden=t!=="link";trLab.hidden=t!=="html";
-    file.accept=t==="pdf"?".pdf,application/pdf":".html,.htm,text/html";
+    file.accept=t==="pdf"?".pdf,application/pdf":t==="image"?"image/*":".html,.htm,text/html";file.multiple=t==="image";
   }
   type.onchange=sync;sync();
   function render(){
@@ -1645,28 +1851,40 @@ function buildLibAdmin(host){
   }
   add.onclick=async()=>{
     const t=title.value.trim(),c=cat.value.trim()||"General",ty=type.value;
-    if(!t){st.textContent="Title likho.";return}
-    const id="i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const files=file.files?Array.from(file.files):[];
+    if(ty==="image"){if(!files.length){st.textContent="Pehle photo chuno.";return}}
+    else if(!t){st.textContent="Title likho.";return}
+    const nid=()=>"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    async function put(id,meta,chunks){
+      meta.parts=chunks.length;
+      for(let i=0;i<chunks.length;i+=4){
+        const b=writeBatch(db);
+        chunks.slice(i,i+4).forEach((d,j)=>b.set(doc(db,"libdata",id,"parts",String(i+j)),{i:i+j,data:d}));
+        await b.commit();st.textContent="Uploading "+Math.min(i+4,chunks.length)+"/"+chunks.length+"...";
+      }
+      await setDoc(doc(db,"lib",id),meta);
+    }
     add.disabled=true;st.textContent="Saving...";
     try{
-      const meta={title:t,category:c,type:ty,visible:true,order:Date.now(),createdAt:serverTimestamp()};
+      const base={category:c,visible:true,createdAt:serverTimestamp()};
       if(ty==="link"){
         const u=url.value.trim();
         if(!/^https?:\/\/\S+$/i.test(u))throw new Error("Link https:// se shuru hona chahiye.");
-        meta.url=u;
-      }else{
-        const f=file.files&&file.files[0];if(!f)throw new Error("Pehle file chuno.");
-        if(ty==="pdf"&&f.size>8*1048576)throw new Error("PDF 8 MB se bari hai. Isay Google Drive par daal kar Link se add karo.");
-        if(ty==="html"&&f.size>5*1048576)throw new Error("HTML file 5 MB se bari hai.");
-        const chunks=ty==="pdf"?await pdfChunks(f):textChunks(await f.text());
-        meta.parts=chunks.length;meta.size=f.size;if(ty==="html")meta.trusted=!!tr.checked;
-        for(let i=0;i<chunks.length;i+=4){
-          const b=writeBatch(db);
-          chunks.slice(i,i+4).forEach((d,j)=>b.set(doc(db,"libdata",id,"parts",String(i+j)),{i:i+j,data:d}));
-          await b.commit();st.textContent="Uploading "+Math.min(i+4,chunks.length)+"/"+chunks.length+"...";
+        await setDoc(doc(db,"lib",nid()),Object.assign({title:t,type:"link",url:u,order:Date.now()},base));
+      }else if(ty==="image"){
+        let n=0;
+        for(const f of files){
+          n++;st.textContent="Photo "+n+"/"+files.length+"...";
+          const u8=await imageBytes(f),nm=files.length===1&&t?t:(t?t+" "+n:f.name.replace(/\.[^.]+$/,""));
+          await put(nid(),Object.assign({title:nm,type:"image",mime:"image/jpeg",size:u8.length,order:Date.now()+n},base),binChunks(u8));
         }
+      }else{
+        const f=files[0];if(!f)throw new Error("Pehle file chuno.");
+        if(ty==="pdf"&&f.size>25*1048576)throw new Error("PDF 25 MB se bari hai. Isay Google Drive par daal kar Link se add karo.");
+        if(ty==="html"&&f.size>15*1048576)throw new Error("HTML file 15 MB se bari hai.");
+        const chunks=ty==="pdf"?await pdfChunks(f):textChunks(await f.text());
+        await put(nid(),Object.assign({title:t,type:ty,size:f.size,order:Date.now()},ty==="html"?{trusted:!!tr.checked}:{},base),chunks);
       }
-      await setDoc(doc(db,"lib",id),meta);
       title.value="";url.value="";file.value="";tr.checked=false;
       await load();st.textContent="Add ho gaya.";
     }catch(e){st.textContent="Error: "+(e.message||e.code)}
