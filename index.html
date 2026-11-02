@@ -1,6 +1,7 @@
 <!doctype html>
 <html><head><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>PPSC Past Papers + Civil 1st, 2nd &amp; 3rd Year · All-in-One Mock Test</title>
+<title>Engrgroup23 · Sub Engineer past paper &amp; book solved</title>
+<meta name="description" content="Engrgroup23 - Sub Engineer past paper &amp; book solved. PPSC past papers aur Civil 1st, 2nd, 3rd year MCQs mock test.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -337,6 +338,46 @@ input.pk{width:22px;height:22px;flex:none}
 #gate .gca{color:#1F3A5F}
 #gate #gtrial{margin-top:8px}
 .vimg{display:block;max-width:100%;height:auto;margin:0 auto;touch-action:pinch-zoom pan-x pan-y}
+
+/* ---- login page (Engrgroup23) ---- */
+#gate .gbrand{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-size:38px;font-weight:700;letter-spacing:.02em;line-height:1;color:#1F4FD8;text-align:center}
+#gate .gdesc{text-align:center;margin:6px 0 16px;color:#566874;font-size:14px;font-weight:600}
+#gate .gor{display:flex;align-items:center;gap:10px;margin:12px 0;color:#8a99a4;font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+#gate .gor::before,#gate .gor::after{content:"";flex:1;height:1px;background:#C9D3DA}
+#gate .gtabs{display:flex;gap:8px;margin-bottom:10px}
+#gate .gtabs button{margin:0;flex:1;font-size:14px}
+#gate .gtabs button.on{background:#13222D;color:#fff;border-color:#13222D}
+#gate .gform{border:1px solid #C9D3DA;border-radius:8px;padding:12px;margin-bottom:8px;background:#F7F9FB}
+#gate .gform button{margin-top:6px}
+#gate .glink{background:transparent;color:#1F4FD8;border:0;width:auto;padding:6px 0;font:600 13px sans-serif;margin-top:4px}
+#gate .ghint{font-size:12px;color:#566874;margin:0 0 8px}
+#gate #gverbox button{margin-top:8px}
+#gate #gverbox[hidden],#gate #gmethods[hidden],#gate .gform[hidden],#gate #gotpbox[hidden]{display:none}
+/* ---- home: add more options (admin / manager) ---- */
+.ycard.add{border-style:dashed;border-width:2px;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel));align-items:center;justify-content:center;text-align:center}
+.ycard.add .yt{font-size:30px;color:var(--accent)}
+.hadmst{margin:0 12px}
+.hadmst:empty{display:none}
+.yadm{margin:0 12px 12px;padding:12px;border:2px dashed var(--accent);border-radius:8px;background:color-mix(in srgb,var(--accent) 5%,var(--panel))}
+.yadm[hidden]{display:none}
+.yadm .yrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.yadm .yrow .btn{min-height:38px;padding:6px 12px;font-size:14px}
+.yadm select{flex:1;min-width:180px;font:inherit;font-size:15px;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+.yadm .st{margin-top:8px;min-height:18px}
+.hadm{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.hadm .btn{min-height:34px;padding:4px 12px;font-size:13px}
+.qedit{min-height:34px;padding:4px 12px;font-size:13px}
+.rv .qedit,.gsd .qedit{margin-top:8px}
+/* ---- quick MCQ / answer editor ---- */
+#qe textarea,#qe input[type=text]{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+#qe .qeo{display:flex;gap:8px;align-items:center;margin-top:8px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+#qe .qeo.ok{border-color:var(--ok);background:var(--ok-bg)}
+#qe .qeo input[type=radio]{width:22px;height:22px;flex:none;accent-color:var(--ok)}
+#qe .qeo input[type=text]{margin:0}
+#qe .qeo b{flex:none;width:18px}
+#qe .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#qe .st{min-height:18px;margin-top:10px}
+#qe .st.err{color:var(--bad)}#qe .st.good{color:var(--ok)}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -349,7 +390,8 @@ window.APP_CONFIG={
     messagingSenderId:"400459277813",
     appId:"1:400459277813:web:64c90b1229b7f3193cacbc"
   },
-  /* admin Gmail addresses (lowercase). Same list must be in firestore.rules */
+  /* OWNER login IDs: Gmail (lowercase) ya phone (+92 format, jaise "+923001234567").
+     Same list must be in firestore.rules (isOwner) */
   admins:["maherusman1947@gmail.com"],
   contacts:[
     {role:"Admin",name:"Usman Amjad",phone:"03494482609"},
@@ -358,7 +400,37 @@ window.APP_CONFIG={
 };
 /* =========================================================== */
 </script>
-<div id="gate"><div class="gbox"><h2>Login</h2><p>PPSC Civil Mock Test</p><div class="gerr" id="ge"></div><button type="button" id="gbtn">Sign in with Google</button><button type="button" id="gout" class="gsec" hidden>Use another account</button><button type="button" id="gtrial" hidden>Start 12-hour free trial</button><div id="gcontacts"></div></div></div>
+<div id="gate"><div class="gbox">
+<div class="gbrand">Engrgroup23</div>
+<p class="gdesc">Sub Engineer past paper &amp; book solved.</p>
+<div class="gerr" id="ge"></div>
+<div id="gmethods">
+  <button type="button" id="gbtn">Sign in with Google</button>
+  <div class="gor">ya</div>
+  <div class="gtabs"><button type="button" class="gsec" id="gtEmail">Gmail / Email</button><button type="button" class="gsec" id="gtPhone">Phone number</button></div>
+  <div class="gform" id="gemail" hidden>
+    <input id="gem" type="email" placeholder="Gmail address" autocomplete="email" autocapitalize="off" spellcheck="false">
+    <input id="gpw" type="password" placeholder="Password (kam az kam 6)" autocomplete="current-password">
+    <button type="button" id="gin">Login</button>
+    <button type="button" class="gsec" id="gup">Naya account banao</button>
+    <button type="button" class="glink" id="gfp">Password bhool gaye?</button>
+  </div>
+  <div class="gform" id="gphone" hidden>
+    <p class="ghint">Apna mobile number likho, SMS par 6-digit code aayega.</p>
+    <input id="gph" type="tel" placeholder="03xx xxxxxxx" autocomplete="tel" inputmode="tel">
+    <button type="button" id="gsend">OTP code bhejo</button>
+    <div id="gotpbox" hidden>
+      <input id="gotp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" maxlength="6" style="margin-top:10px">
+      <button type="button" id="gverify">Verify &amp; login</button>
+    </div>
+    <div id="grc"></div>
+  </div>
+</div>
+<div id="gverbox" hidden><button type="button" id="gvok">Maine verify kar liya</button><button type="button" class="gsec" id="gvres">Verification email dobara bhejo</button></div>
+<button type="button" id="gout" class="gsec" hidden>Use another account</button>
+<button type="button" id="gtrial" hidden>Start 12-hour free trial</button>
+<div id="gcontacts"></div>
+</div></div>
 <template id="app-tpl">
 <div class="bgpic" aria-hidden="true"></div>
 <div class="wrap">
@@ -368,9 +440,11 @@ window.APP_CONFIG={
     <div class="profile" id="profile"><div class="avatar" id="pfAv">U</div><div class="pfinfo"><div class="pfname" id="pfName"></div><div class="pfmail" id="pfMail"></div><div class="pfmeta" id="pfMeta"></div></div></div>
     <div class="resumebox" id="resumeBox"><button class="btn primary" id="btnResume" type="button" hidden="">Resume saved attempt</button><span id="resumeInfo" class="label"></span></div>
     <div id="homeCards" class="ycards"></div>
+    <div class="label hadmst" id="hAdmSt"></div>
     <div id="yearView" hidden>
       <div class="yhead"><button class="btn" id="yBack" type="button">← Back</button><div class="ytitle" id="yTitle"></div></div>
       <p class="hnote" id="yNote"></p>
+      <div class="yadm" id="yAdm" hidden></div>
       <div class="ytools"><button class="chip" id="yAll" type="button">Select all</button><button class="chip" id="yNone" type="button">Clear</button></div>
       <div id="yList"></div>
       <div class="ybar"><span id="ySel">Kuch select nahi</span><button class="btn primary" id="btnStart" type="button" disabled>Start selected</button></div>
@@ -475,7 +549,7 @@ window.APP_CONFIG={
           <ul class="res" id="srchRes" hidden=""></ul>
         </div>
         <div class="card q">
-          <div class="qmeta"><span class="label" id="qno"></span><span class="label" id="qmeta"></span></div>
+          <div class="qmeta"><span class="label" id="qno"></span><span class="label" id="qmeta"></span><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
@@ -575,41 +649,53 @@ window.APP_CONFIG={
   function pickedSubs(){var r=[];document.querySelectorAll("#yList input.pk").forEach(function(c){if(c.checked)r.push(+c.value)});return r}
   var PAPERS_N=0;SUB.forEach(function(s,i){if(/^PPSC/i.test(s.code))PAPERS_N=i+1});
   function yearOf(i){
+    var ct=SUB[i]&&SUB[i].cat;
+    if(ct&&typeof ct==="string"&&YEARS.some(function(y){return y.k===ct}))return ct;
     if(i<PAPERS_N)return "pp";
     var m=/-\s*(\d)\d\d/.exec(SUB[i].code||""),d=m?m[1]:"2";
     return d==="1"?"y1":d==="3"?"y3":"y2";
   }
+  var DEF_KEYS=["y1","y2","y3","pp"];
   var YEARS=[
     {k:"y1",t:"1st Year",d:"Diploma Civil \u00b7 1st Year subjects"},
     {k:"y2",t:"2nd Year",d:"Diploma Civil \u00b7 2nd Year subjects"},
     {k:"y3",t:"3rd Year",d:"Diploma Civil \u00b7 3rd Year subjects"},
     {k:"pp",t:"Past Papers",d:"PPSC Sub Engineer Civil \u00b7 solved papers"}
   ];
+  /* home options published by admin/manager (bank.CARDS) replace the default 4 */
+  if(typeof CARDS!=="undefined"&&Array.isArray(CARDS)&&CARDS.length){
+    YEARS=CARDS.filter(function(c){return c&&typeof c.k==="string"&&typeof c.t==="string"}).map(function(c){return {k:c.k,t:c.t,d:c.d||""}});
+  }
+  var ADM=!!window.__publishBank;
   var curYear=null;
-  function idsOf(k){var r=[];SUB.forEach(function(s,i){if(yearOf(i)===k&&subCount(i))r.push(i)});return r}
+  function cardOf(k){return YEARS.filter(function(x){return x.k===k})[0]||null}
+  function idsOf(k,all){var r=[];SUB.forEach(function(s,i){if(yearOf(i)===k&&(all||subCount(i)))r.push(i)});return r}
   function refreshPick(){
     var p=pickedSubs(),n=0;p.forEach(function(i){n+=subCount(i)});
     $("#ySel").textContent=p.length?(p.length+" selected \u00b7 "+n+" Q"):"Kuch select nahi";
     $("#btnStart").disabled=!p.length||!n;
   }
   function buildYear(k,keep){
-    var y=YEARS.filter(function(x){return x.k===k})[0],ids=idsOf(k),pp=(k==="pp");
+    var y=cardOf(k);if(!y){closeYear();return}
+    var ids=idsOf(k,ADM),pp=(k==="pp");
     $("#yTitle").textContent=y.t;
-    $("#yNote").textContent=pp?"Har past paper alag se, ya tick laga kar kai papers ek sath.":"Har subject alag se (chapter-wise bhi), ya tick laga kar kai subjects ek sath.";
+    buildYearAdmin(k);
+    $("#yNote").textContent=(y.d?y.d+". ":"")+(pp?"Har past paper alag se, ya tick laga kar kai papers ek sath.":"Har subject alag se (chapter-wise bhi), ya tick laga kar kai subjects ek sath.");
     var list=$("#yList");list.textContent="";
     var secN=[];Q.forEach(function(q){secN[q.sec]=(secN[q.sec]||0)+1});
     var tq=0;ids.forEach(function(i){tq+=subCount(i)});
-    if(ids.length>1){
+    if(!ids.length)list.appendChild(el("p","hnote",ADM?"Is option mein abhi kuch nahi. Upar se Subject / Paper add karo.":"Is option mein abhi kuch nahi."));
+    if(ids.filter(function(i){return subCount(i)}).length>1){
       var ac=el("div","hcard"),ah=el("div","hhead"),an=el("div","hname","Sab ek sath ("+y.t+")");
       an.appendChild(el("small","",ids.length+(pp?" papers":" subjects")+" \u00b7 akhta test"));
       ah.appendChild(an);ah.appendChild(el("span","mt",tq+" Q"));
-      var ab=el("button","btn primary","Start all");ab.type="button";ab.addEventListener("click",function(){start(ids.slice())});
+      var ab=el("button","btn primary","Start all");ab.type="button";ab.addEventListener("click",function(){start(ids.filter(function(i){return subCount(i)}))});
       ah.appendChild(ab);ac.appendChild(ah);list.appendChild(ac);
     }
     ids.forEach(function(i){
       var s=SUB[i],n=subCount(i),card=el("div","hcard"),hd=el("div","hhead");
       var cb=document.createElement("input");cb.type="checkbox";cb.className="pk";cb.value=String(i);cb.setAttribute("aria-label","Select "+s.name);
-      cb.checked=keep?keep.indexOf(i)>=0:false;cb.addEventListener("change",refreshPick);
+      cb.checked=keep?keep.indexOf(i)>=0:false;cb.disabled=!n;cb.addEventListener("change",refreshPick);
       hd.appendChild(cb);
       var chs=[];S.forEach(function(c,ci){if(c.sub===i&&secN[ci])chs.push(ci)});
       var nm=el("div","hname",s.name);
@@ -628,8 +714,17 @@ window.APP_CONFIG={
         });
         tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Chapters \u25be":"Hide \u25b4"});
       }
-      var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.addEventListener("click",function(){start([i])});hd.appendChild(go);
-      card.appendChild(hd);if(pn)card.appendChild(pn);list.appendChild(card);
+      var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n;go.addEventListener("click",function(){start([i])});hd.appendChild(go);
+      card.appendChild(hd);if(pn)card.appendChild(pn);
+      if(ADM){
+        var ha=el("div","hadm");
+        var bc=el("button","btn","+ Chapter");bc.type="button";bc.addEventListener("click",function(){addChapter(i)});
+        var br=el("button","btn","\u270e Naam badlo");br.type="button";br.addEventListener("click",function(){renameSub(i)});
+        ha.appendChild(bc);ha.appendChild(br);
+        if(!n)ha.appendChild(el("span","label","0 MCQs \u00b7 Edit MCQs se is mein questions add karo"));
+        card.appendChild(ha);
+      }
+      list.appendChild(card);
     });
     refreshPick();
   }
@@ -640,11 +735,168 @@ window.APP_CONFIG={
       var b=el("button","ycard");b.type="button";
       b.appendChild(el("span","yt",y.t));b.appendChild(el("span","yd",y.d));
       b.appendChild(el("span","ym",ids.length+(y.k==="pp"?" papers":" subjects")+" \u00b7 "+q+" Q"));
-      b.disabled=!ids.length;b.addEventListener("click",function(){openYear(y.k)});
+      b.disabled=!ids.length&&!ADM;b.addEventListener("click",function(){openYear(y.k)});
       hc.appendChild(b);
     });
+    if(ADM){
+      var ad=el("button","ycard add");ad.type="button";
+      ad.appendChild(el("span","yt","+"));ad.appendChild(el("span","yd","Add more option"));
+      ad.addEventListener("click",addCard);hc.appendChild(ad);
+    }
     if(curYear)buildYear(curYear,keep||null);
   }
+
+  /* ===== admin / manager: home options, subjects, chapters ===== */
+  function astat(t){var a=$("#hAdmSt"),b=$("#yAdmSt"),inY=!$("#yearView").hidden;if(a)a.textContent=inY?"":(t||"");if(b)b.textContent=t||""}
+  function bankNow(){
+    /* freeze where every subject lives so heuristics never move it later */
+    SUB.forEach(function(s,i){if(!s.cat||!YEARS.some(function(y){return y.k===s.cat}))s.cat=yearOf(i)});
+    return {S:S,SUB:SUB,CARDS:YEARS.map(function(y){return {k:y.k,t:y.t,d:y.d||""}}),
+      Q0:Q.map(function(q,i){return {text:q.text,opts:(QO[i]||q.opts).slice(),ans:(QA[i]!=null?QA[i]:q.ans),sec:q.sec,test:q.test}})};
+  }
+  function publishNow(){
+    if(!window.__publishBank)return Promise.reject(new Error("Sirf admin / manager publish kar sakta hai."));
+    var bank=bankNow();
+    return window.__publishBank(bank).then(function(){
+      Q0.length=0;bank.Q0.forEach(function(x){Q0.push(JSON.parse(JSON.stringify(x)))});
+    });
+  }
+  window.__publishNow=publishNow;
+  function afterStruct(note){
+    recalcT();buildPick(pickedSubs());if(window.__edRefill)window.__edRefill();
+    astat("Saving...");
+    return publishNow().then(function(){astat((note||"Saved")+" \u00b7 sab users ke liye publish ho gaya.")})
+      .catch(function(e){astat("Publish fail: "+((e&&(e.code||e.message))||e))});
+  }
+  function addCard(){
+    var t=prompt("Naye option ka naam (jaise: Book Solved, Mock Tests, Electrical):","");
+    if(t===null||!t.trim())return;
+    var d=prompt("Chhoti description (optional):","");
+    var k="c"+Date.now().toString(36);
+    YEARS.push({k:k,t:t.trim().slice(0,40),d:(d||"").trim().slice(0,100)});
+    afterStruct("Option '"+t.trim()+"' add ho gaya");openYear(k);
+  }
+  function renameCard(k){
+    var y=cardOf(k);if(!y)return;
+    var t=prompt("Option ka naam:",y.t);if(t===null||!t.trim())return;
+    var d=prompt("Description:",y.d||"");if(d===null)d=y.d||"";
+    y.t=t.trim().slice(0,40);y.d=d.trim().slice(0,100);
+    afterStruct("Option update ho gaya");
+  }
+  function deleteCard(k){
+    if(DEF_KEYS.indexOf(k)>=0)return;
+    var y=cardOf(k);if(!y)return;
+    var n=idsOf(k,true).length;
+    if(!confirm("'"+y.t+"' option delete karna hai?"+(n?"\n\nIs ke "+n+" subject(s) 2nd Year mein chale jayenge (questions delete nahi honge).":"")))return;
+    SUB.forEach(function(s){if(s.cat===k)s.cat="y2"});
+    YEARS=YEARS.filter(function(x){return x.k!==k});
+    closeYear();afterStruct("Option delete ho gaya");
+  }
+  function addSubject(k){
+    var pp=(k==="pp");
+    var nm=prompt(pp?"Naye past paper ka naam (jaise: PPSC Sub Engineer 2026):":"Naye subject / book ka naam:","");
+    if(nm===null||!nm.trim())return;nm=nm.trim().slice(0,80);
+    var cd=prompt("Code (optional, jaise CIT-213 ya 2026):","");cd=(cd||"").trim().slice(0,20)||(pp?"Paper":"Subject");
+    var si=SUB.length;
+    SUB.push({name:nm,short:nm.length>22?nm.slice(0,22)+"\u2026":nm,code:cd,spq:60,time:60,cat:k});
+    S.push({sub:si,name:pp?nm:"Chapter 1",code:cd+" \u00b7 Ch 1"});
+    afterStruct("'"+nm+"' add ho gaya. Ab Edit MCQs se is mein questions daalo");
+  }
+  function addChapter(si){
+    var n=0;S.forEach(function(c){if(c.sub===si)n++});
+    var nm=prompt("Naye chapter ka naam ("+SUB[si].name+"):","Chapter "+(n+1));
+    if(nm===null||!nm.trim())return;
+    S.push({sub:si,name:nm.trim().slice(0,80),code:SUB[si].code+" \u00b7 Ch "+(n+1)});
+    afterStruct("Chapter add ho gaya. Edit MCQs se is mein questions daalo");
+  }
+  function renameSub(si){
+    var nm=prompt("Naam:",SUB[si].name);if(nm===null||!nm.trim())return;
+    SUB[si].name=nm.trim().slice(0,80);SUB[si].short=SUB[si].name.length>22?SUB[si].name.slice(0,22)+"\u2026":SUB[si].name;
+    afterStruct("Naam update ho gaya");
+  }
+  function buildYearAdmin(k){
+    var ya=$("#yAdm");if(!ya)return;ya.textContent="";ya.hidden=!ADM;if(!ADM)return;
+    ya.appendChild(el("div","label","Admin / Manager \u00b7 is option ko manage karo"));
+    var r1=el("div","yrow");
+    var a=el("button","btn primary",k==="pp"?"+ Past paper add karo":"+ Subject / book add karo");a.type="button";a.addEventListener("click",function(){addSubject(k)});
+    var r=el("button","btn","\u270e Option ka naam badlo");r.type="button";r.addEventListener("click",function(){renameCard(k)});
+    r1.appendChild(a);r1.appendChild(r);
+    if(DEF_KEYS.indexOf(k)<0){var d=el("button","btn danger","Option delete karo");d.type="button";d.addEventListener("click",function(){deleteCard(k)});r1.appendChild(d)}
+    ya.appendChild(r1);
+    var others=[];SUB.forEach(function(s,i){if(yearOf(i)!==k)others.push(i)});
+    if(others.length){
+      var r2=el("div","yrow"),sl=document.createElement("select");sl.setAttribute("aria-label","Move a subject here");
+      var o0=document.createElement("option");o0.value="";o0.textContent="Doosre option se subject yahan laao...";sl.appendChild(o0);
+      others.forEach(function(i){var o=document.createElement("option");o.value=String(i);var c=cardOf(yearOf(i));o.textContent=SUB[i].name+" ("+(c?c.t:"?")+", "+subCount(i)+" Q)";sl.appendChild(o)});
+      var mv=el("button","btn","Yahan move karo");mv.type="button";
+      mv.addEventListener("click",function(){if(sl.value==="")return;SUB[+sl.value].cat=k;afterStruct("Subject move ho gaya")});
+      r2.appendChild(sl);r2.appendChild(mv);ya.appendChild(r2);
+    }
+    var st=el("div","label st");st.id="yAdmSt";ya.appendChild(st);
+    ya.appendChild(el("div","label","MCQs add / edit karne ke liye: Back \u2192 Edit MCQs \u2192 + Add MCQ \u2192 subject aur chapter chuno."));
+  }
+
+  /* ===== quick MCQ / answer editor (admin + manager) ===== */
+  var qeEl=null,qeOpen=false;
+  function rescore(){
+    var k;for(k in ans){if(!Q[k]){delete ans[k];continue}var a=ans[k];a.ok=(a.sel===Q[k].ans);a.w=a.ok?[]:[{sel:a.sel,used:a.used}]}
+    wrongLog=[];order.forEach(function(id,p){var a=ans[id];if(a)a.w.forEach(function(x){wrongLog.push({n:p+1,id:id,used:x.used,sel:x.sel})})});
+    wrongLog.sort(function(x,y){return x.used-y.used});
+  }
+  function quickEdit(id,after){
+    if(!ADM||!Q[id])return;
+    if(!qeEl){
+      qeEl=el("div","ov");qeEl.id="qe";qeEl.hidden=true;
+      var bx=el("div","box"),top=el("div","top");top.appendChild(el("h2","","Edit MCQ / answer"));
+      var cx=el("button","btn","Close");cx.type="button";cx.addEventListener("click",function(){qeEl.hidden=true;qeOpen=false});top.appendChild(cx);bx.appendChild(top);
+      qeEl.meta=el("div","label");bx.appendChild(qeEl.meta);
+      bx.appendChild(el("div","label","Statement"));
+      qeEl.tx=document.createElement("textarea");qeEl.tx.rows=3;bx.appendChild(qeEl.tx);
+      bx.appendChild(el("div","label","Options \u00b7 sahi jawab par tick lagao (khali option hata diya jayega)"));
+      qeEl.rows=[];
+      for(var j=0;j<4;j++){(function(j){
+        var r=el("label","qeo"),rd=document.createElement("input");rd.type="radio";rd.name="qeAns";rd.value=String(j);
+        var ti=document.createElement("input");ti.type="text";ti.placeholder="Option "+LET[j];
+        rd.addEventListener("change",paint);
+        r.appendChild(rd);r.appendChild(el("b","",LET[j]));r.appendChild(ti);bx.appendChild(r);qeEl.rows.push({r:r,rd:rd,ti:ti});
+      })(j)}
+      function paint(){qeEl.rows.forEach(function(x){x.r.classList.toggle("ok",x.rd.checked)})}
+      qeEl.paint=paint;
+      var row=el("div","row");
+      qeEl.sv=el("button","btn primary","Save & publish");qeEl.sv.type="button";
+      var cn=el("button","btn","Cancel");cn.type="button";cn.addEventListener("click",function(){qeEl.hidden=true;qeOpen=false});
+      row.appendChild(qeEl.sv);row.appendChild(cn);bx.appendChild(row);
+      qeEl.st=el("div","label st");bx.appendChild(qeEl.st);
+      qeEl.appendChild(bx);document.body.appendChild(qeEl);
+    }
+    var q=Q[id],o=(QO[id]||q.opts),a=(QA[id]!=null?QA[id]:q.ans);
+    qeEl.meta.textContent=SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].code+" \u00b7 "+q.test;
+    qeEl.tx.value=q.text;
+    qeEl.rows.forEach(function(x,j){x.ti.value=o[j]||"";x.rd.checked=(j===a)});qeEl.paint();
+    qeEl.st.textContent="";qeEl.st.className="label st";qeEl.sv.disabled=false;
+    qeEl.sv.onclick=function(){
+      var text=qeEl.tx.value.trim(),opts=[],na=-1,bad="";
+      qeEl.rows.forEach(function(x){var v=x.ti.value.trim();if(v){opts.push(v);if(x.rd.checked)na=opts.length-1}else if(x.rd.checked)bad="Sahi jawab wala option khali hai."});
+      if(!bad&&!text)bad="Statement likho.";
+      if(!bad&&opts.length<2)bad="Kam az kam 2 options chahiye.";
+      if(!bad&&na<0)bad="Sahi jawab chuno.";
+      if(bad){qeEl.st.textContent=bad;qeEl.st.className="label st err";return}
+      QO[id]=opts.slice();QA[id]=na;q.text=text;
+      var p=perm[id];
+      if(p&&p.length===opts.length){q.opts=p.map(function(i){return opts[i]});q.ans=p.indexOf(na)}
+      else{delete perm[id];q.opts=opts.slice();q.ans=na}
+      rescore();if(order.length)save();
+      try{updateStats();paintMap();renderLog()}catch(e){}
+      qeEl.sv.disabled=true;qeEl.st.className="label st";qeEl.st.textContent="Publishing...";
+      publishNow().then(function(){
+        qeEl.st.className="label st good";qeEl.st.textContent="Save ho gaya \u00b7 sab users ke liye publish ho gaya.";
+        setTimeout(function(){qeEl.hidden=true;qeOpen=false},900);
+      }).catch(function(e){qeEl.st.className="label st err";qeEl.st.textContent="Publish fail: "+((e&&(e.code||e.message))||e);qeEl.sv.disabled=false});
+      if(after)try{after()}catch(e){}
+    };
+    qeEl.hidden=false;qeOpen=true;qeEl.scrollTop=0;
+  }
+  window.__quickEdit=quickEdit;
   function openYear(k){
     curYear=k;buildYear(k,null);
     $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
@@ -945,7 +1197,8 @@ window.APP_CONFIG={
       cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to see its answer";
       hits.slice(0,SHOW).forEach(function(h){
         var q=Q[h.id],li=document.createElement("li");li.className="gs";
-        var n=el("span","n",(S[q.sec].sub<18?"PPSC":"Civil"));
+        var yk=yearOf(S[q.sec].sub),yc=cardOf(yk);
+        var n=el("span","n",yk==="pp"?"PPSC":(/^y[123]$/.test(yk)?"Civil":((yc&&yc.t)||"MCQ").slice(0,8)));
         var t=el("span","t");hl(t,q.text,r.toks);
         t.appendChild(el("span","m",S[q.sec].name+" \u00b7 "+S[q.sec].code+" \u00b7 "+q.test+(h.inT?"":" \u00b7 matched in options")));
         li.appendChild(n);li.appendChild(t);
@@ -959,6 +1212,7 @@ window.APP_CONFIG={
             row.appendChild(el("span","",x+(j===k?"  \u2713":"")));
             d.appendChild(row);
           });
+          if(ADM){var eb=el("button","btn qedit","\u270e Edit MCQ / answer");eb.type="button";eb.addEventListener("click",function(ev){ev.stopPropagation();quickEdit(h.id,render)});d.appendChild(eb)}
           li.appendChild(d);
         });
         res.appendChild(li);
@@ -1068,6 +1322,7 @@ window.APP_CONFIG={
         l3.appendChild(document.createTextNode(a.w.map(function(x){return LET[x.sel]+". "+q.opts[x.sel]+" (at "+fmt(x.used)+")"}).join("  \u00b7  ")));
         card.appendChild(l3);
       }
+      if(ADM){var eb=el("button","btn qedit","\u270e Edit MCQ / answer");eb.type="button";eb.addEventListener("click",function(){quickEdit(id,function(){buildChips();renderReview()})});card.appendChild(eb)}
       host.appendChild(card);
     });
     if(!shown)host.appendChild(el("p","label","Nothing in this list."));
@@ -1095,6 +1350,7 @@ window.APP_CONFIG={
       });
     }
     fillSel($("#edSec"),true);fillSel($("#efSec"),false);
+    window.__edRefill=function(){var a=$("#edSec").value,b=$("#efSec").value;fillSel($("#edSec"),true);fillSel($("#efSec"),false);$("#edSec").value=a;if(!$("#edSec").value)$("#edSec").value="all";$("#efSec").value=b};
     function msg(t,k){var m=$("#edMsg");m.textContent=t||"";m.className="edmsg label"+(k?" "+k:"")}
     function norm(t){return String(t).toLowerCase().replace(/\s+/g," ").trim()}
     function restoreOrig(){Q.forEach(function(q,i){q.opts=QO[i].slice();q.ans=QA[i]})}
@@ -1187,9 +1443,8 @@ window.APP_CONFIG={
     $("#edDlHtml").addEventListener("click",function(){
       if(!window.__publishBank){msg("Only admins can publish.","err");return}
       var b=$("#edDlHtml");b.disabled=true;msg("Publishing...");
-      var bank={S:S,SUB:SUB,Q0:Q.map(function(q){return {text:q.text,opts:q.opts.slice(),ans:q.ans,sec:q.sec,test:q.test}})};
-      window.__publishBank(bank).then(function(){
-        Q0.length=0;bank.Q0.forEach(function(x){Q0.push(JSON.parse(JSON.stringify(x)))});
+      rebuildOpts();
+      publishNow().then(function(){
         msg("Published "+Q.length+" MCQs. Everyone gets them the next time they open the app.","good");
       }).catch(function(e){msg("Publish failed: "+((e&&(e.code||e.message))||e),"err")}).then(function(){b.disabled=false});
     });
@@ -1220,6 +1475,7 @@ window.APP_CONFIG={
 
   recalcT();
   buildPick();
+  if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
   $("#yAll").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=true});refreshPick()});
   $("#yNone").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=false});refreshPick()});
   $("#yBack").addEventListener("click",function(){if(history.state&&history.state.y===1)history.back();else closeYear()});
@@ -1262,7 +1518,7 @@ window.APP_CONFIG={
   });
 
   document.addEventListener("keydown",function(e){
-    if($("#test").hidden||finished||paused||e.ctrlKey||e.metaKey||e.altKey)return;
+    if($("#test").hidden||finished||paused||qeOpen||e.ctrlKey||e.metaKey||e.altKey)return;
     if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||""))return;
     var k=e.key.toLowerCase(),i=-1;
     if("abcd".indexOf(k)>-1&&k.length===1)i="abcd".indexOf(k);
@@ -1275,7 +1531,7 @@ window.APP_CONFIG={
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,query,where,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
@@ -1304,13 +1560,69 @@ function renderContacts(host){
 }
 window.renderContacts=renderContacts;
 
-/* ---------------- login ---------------- */
+/* ---------------- login (Google, Gmail/Email, Phone OTP) ---------------- */
+auth.languageCode="en";
+const gmethods=$("gmethods"),gemail=$("gemail"),gphone=$("gphone"),gverbox=$("gverbox");
+function showMethods(on){gmethods.hidden=!on;if(on)gbtn.disabled=false}
+/* phone -> +92 format. Pakistani 03xxxxxxxxx accepted. */
+function normPhone(v){
+  let d=String(v||"").trim().replace(/[\s\-().]/g,"");
+  if(/^\+\d{8,15}$/.test(d))return d;
+  d=d.replace(/\D/g,"");
+  if(/^03\d{9}$/.test(d))return "+92"+d.slice(1);
+  if(/^3\d{9}$/.test(d))return "+92"+d;
+  if(/^923\d{9}$/.test(d))return "+"+d;
+  if(/^00\d{8,15}$/.test(d))return "+"+d.slice(2);
+  return "";
+}
+/* login ID used everywhere (allowed / managers docs): verified email, else phone number */
+function idOf(user){
+  if(user.email&&user.emailVerified)return user.email.toLowerCase();
+  if(user.phoneNumber)return user.phoneNumber;
+  return (user.email||"").toLowerCase();
+}
+/* parse a textarea of Gmail addresses and/or phone numbers */
+function parseIds(txt){
+  const out=new Set();
+  String(txt||"").split(/[\n,;]+/).forEach(part=>{
+    part=part.trim();if(!part)return;
+    if(part.indexOf("@")>=0){part.split(/\s+/).forEach(x=>{x=x.toLowerCase();if(/^[^\s\/@]+@[^\s\/@]+\.[^\s\/@]+$/.test(x))out.add(x)})}
+    else{const p=normPhone(part);if(p)out.add(p);else part.split(/\s+/).forEach(x=>{const q=normPhone(x);if(q)out.add(q)})}
+  });
+  return [...out];
+}
+function authErr(e){
+  const c=(e&&e.code)||"";
+  const M={
+    "auth/invalid-email":"Email sahi nahi hai.",
+    "auth/user-not-found":"Is email ka account nahi mila. 'Naya account banao' dabao.",
+    "auth/wrong-password":"Password galat hai.",
+    "auth/invalid-credential":"Email ya password galat hai. Naye ho to 'Naya account banao' dabao.",
+    "auth/invalid-login-credentials":"Email ya password galat hai. Naye ho to 'Naya account banao' dabao.",
+    "auth/email-already-in-use":"Yeh email pehle se registered hai. Login karo ya 'Password bhool gaye?' dabao.",
+    "auth/weak-password":"Password kam az kam 6 characters ka rakho.",
+    "auth/too-many-requests":"Bohat zyada koshishen. Thori der baad try karo.",
+    "auth/invalid-phone-number":"Phone number sahi nahi hai. Jaise 03001234567 likho.",
+    "auth/missing-phone-number":"Phone number likho.",
+    "auth/invalid-verification-code":"OTP code galat hai.",
+    "auth/code-expired":"OTP code expire ho gaya. Dobara bhejo.",
+    "auth/quota-exceeded":"SMS limit khatam ho gayi. Baad mein try karo ya Google se login karo.",
+    "auth/operation-not-allowed":"Yeh login tareeqa abhi ON nahi hai. Google se login karo ya admin se rabta karo.",
+    "auth/billing-not-enabled":"Phone login abhi band hai. Google ya Email se login karo.",
+    "auth/captcha-check-failed":"Captcha check fail. Page reload karo.",
+    "auth/network-request-failed":"Internet check karo.",
+    "auth/unauthorized-domain":"Yeh website Firebase mein allowed nahi hai (Authorized domains).",
+    "auth/popup-blocked":"Popup block ho gaya. Chrome ya Safari mein kholo."
+  };
+  return M[c]||("Login nahi hua: "+(c||(e&&e.message)||e));
+}
 try{await setPersistence(auth,browserSessionPersistence)}catch(e){}
 onAuthStateChanged(auth,user=>{
   if(started||busy)return;
   if(user)check(user);
-  else{gbtn.hidden=false;gbtn.disabled=false;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
+  else{showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
 });
+/* Google */
 gbtn.onclick=async()=>{
   msg("");gbtn.disabled=true;
   const p=new GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
@@ -1320,12 +1632,84 @@ gbtn.onclick=async()=>{
       try{await signInWithRedirect(auth,p);return}catch(e2){e=e2}
     }
     gbtn.disabled=false;
-    if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")msg("Login nahi hua: "+(e.code||e.message)+". Chrome ya Safari mein kholo.");
+    if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")msg(authErr(e)+" Chrome ya Safari mein kholo.");
   }
 };
+/* method tabs */
+function tabState(){$("gtEmail").classList.toggle("on",!gemail.hidden);$("gtPhone").classList.toggle("on",!gphone.hidden)}
+$("gtEmail").onclick=()=>{gemail.hidden=!gemail.hidden;gphone.hidden=true;tabState();msg("");if(!gemail.hidden)$("gem").focus()};
+$("gtPhone").onclick=()=>{gphone.hidden=!gphone.hidden;gemail.hidden=true;tabState();msg("");if(!gphone.hidden)$("gph").focus()};
+/* Gmail / Email + password */
+function emailPw(){
+  const e=$("gem").value.trim().toLowerCase(),p=$("gpw").value;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){msg("Sahi Gmail / email likho.");return null}
+  if(p.length<6){msg("Password kam az kam 6 characters ka likho.");return null}
+  return [e,p];
+}
+$("gin").onclick=async()=>{
+  msg("");const v=emailPw();if(!v)return;const b=$("gin");b.disabled=true;
+  try{await signInWithEmailAndPassword(auth,v[0],v[1])}catch(e){msg(authErr(e))}
+  b.disabled=false;
+};
+$("gup").onclick=async()=>{
+  msg("");const v=emailPw();if(!v)return;const b=$("gup");b.disabled=true;
+  try{
+    busy=true;
+    const c=await createUserWithEmailAndPassword(auth,v[0],v[1]);
+    try{await sendEmailVerification(c.user)}catch(e){}
+    busy=false;check(c.user);
+  }catch(e){busy=false;msg(authErr(e))}
+  b.disabled=false;
+};
+$("gfp").onclick=async()=>{
+  const e=$("gem").value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){msg("Pehle upar apni Gmail / email likho, phir 'Password bhool gaye?' dabao.");return}
+  try{await sendPasswordResetEmail(auth,e);msg("Password reset link "+e+" par bhej diya. Inbox / Spam check karo.")}
+  catch(x){msg(authErr(x))}
+};
+/* Phone number + SMS OTP */
+let rcv=null,conf=null;
+function freshRc(){try{if(rcv)rcv.clear()}catch(x){}rcv=null;const o=$("grc"),n=document.createElement("div");n.id="grc";o.replaceWith(n)}
+$("gsend").onclick=async()=>{
+  msg("");const ph=normPhone($("gph").value);
+  if(!ph){msg("Phone number sahi likho, jaise 03001234567.");return}
+  const b=$("gsend");b.disabled=true;msg("OTP bheja ja raha hai...");
+  try{
+    if(!rcv)rcv=new RecaptchaVerifier(auth,"grc",{size:"invisible"});
+    conf=await signInWithPhoneNumber(auth,ph,rcv);
+    $("gotpbox").hidden=false;b.textContent="OTP dobara bhejo";
+    msg("OTP code "+ph+" par SMS kar diya. Code neeche likho.");$("gotp").focus();
+  }catch(e){msg(authErr(e));freshRc()}
+  b.disabled=false;
+};
+$("gverify").onclick=async()=>{
+  const c=$("gotp").value.replace(/\D/g,"");
+  if(!conf){msg("Pehle OTP bhejo.");return}
+  if(c.length!==6){msg("6-digit code likho.");return}
+  const b=$("gverify");b.disabled=true;
+  try{await conf.confirm(c)}catch(e){msg(authErr(e))}
+  b.disabled=false;
+};
+$("gotp").addEventListener("keydown",e=>{if(e.key==="Enter")$("gverify").click()});
+$("gpw").addEventListener("keydown",e=>{if(e.key==="Enter")$("gin").click()});
+/* email verification (Email / password accounts) */
+function needVerify(user,email){
+  busy=false;showMethods(false);gout.hidden=false;gtrial.hidden=true;gverbox.hidden=false;
+  msg("Verification link "+email+" par bhej diya hai. Email (Inbox / Spam) kholo, link dabao, phir neeche 'Maine verify kar liya' dabao.");
+  $("gvok").onclick=async()=>{
+    const b=$("gvok");b.disabled=true;
+    try{
+      await reload(user);
+      if(user.emailVerified){await user.getIdToken(true);gverbox.hidden=true;check(auth.currentUser||user)}
+      else msg("Abhi verify nahi hua. Email mein link dabao, phir dobara try karo.");
+    }catch(e){msg(authErr(e))}
+    b.disabled=false;
+  };
+  $("gvres").onclick=async()=>{try{await sendEmailVerification(user);msg("Verification email dobara bhej di: "+email+". Spam folder bhi dekho.")}catch(e){msg(authErr(e))}};
+}
 gout.onclick=()=>{signOut(auth).then(()=>location.reload())};
 function deny(email,text){
-  busy=false;gbtn.hidden=true;gout.hidden=false;gtrial.hidden=true;
+  busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=true;
   msg(text+(email?"  ("+email+")":""));renderContacts(gcon);
 }
 /* ---- free trial (12 hours, once per Google account, once per network/IP) ---- */
@@ -1341,7 +1725,7 @@ async function sha256hex(x){
   catch(e){return x.replace(/[^0-9a-zA-Z]/g,"_")}
 }
 function offerTrial(user,email){
-  busy=false;gbtn.hidden=true;gout.hidden=false;gtrial.hidden=false;gtrial.disabled=false;
+  busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=false;gtrial.disabled=false;
   msg("Aap ka account abhi allowed nahi hai ("+email+"). Aap 12 ghante ka free trial le sakte ho (is network par sirf ek dafa).");
   renderContacts(gcon);
   gtrial.onclick=()=>claimTrial(user,email);
@@ -1378,12 +1762,13 @@ async function loadBank(){
 }
 
 async function check(user){
-  busy=true;gbtn.hidden=true;gout.hidden=true;msg("Access check ho raha hai...");
-  const email=(user.email||"").toLowerCase();
+  busy=true;showMethods(false);gout.hidden=true;gverbox.hidden=true;msg("Access check ho raha hai...");
+  const email=idOf(user);
+  if(user.email&&!user.emailVerified&&!user.phoneNumber)return needVerify(user,email);
+  if(!email)return deny("","Is account se login nahi ho sakta.");
   IS_OWNER=ADMINS.includes(email);IS_ADMIN=IS_OWNER;ME=email;
   let EXP=null,TRIAL=false;
   try{
-    if(!user.emailVerified)return deny(email,"Is Google account ki email verified nahi hai.");
     if(!IS_OWNER){try{const m=await getDoc(doc(db,"managers",email));if(m.exists())IS_ADMIN=true}catch(e){}}
     if(!IS_ADMIN){
       const a=await getDoc(doc(db,"allowed",email));
@@ -1402,7 +1787,7 @@ async function check(user){
       started=true;$("gate").remove();userbar();openAdmin("bank");return;
     }
     BANK_JSON=b.json;BANK_META=b.meta;
-    window.__PROFILE={name:user.displayName||email.split("@")[0],email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL};
+    window.__PROFILE={name:user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL};
     startApp(JSON.parse(b.json));
   }catch(e){
     deny(email,"Error: "+(e.code||e.message));
@@ -1425,7 +1810,7 @@ function startApp(bank){
   if(!IS_ADMIN){const e=$("btnEdit");if(e)e.style.display="none"}
   else window.__publishBank=publishBank;
   const ds=document.createElement("script");
-  ds.textContent="const S="+JSON.stringify(bank.S)+";\nconst SUB="+JSON.stringify(bank.SUB)+";\nconst Q0="+JSON.stringify(bank.Q0)+";\nconst Q=JSON.parse(JSON.stringify(Q0));";
+  ds.textContent="const S="+JSON.stringify(bank.S)+";\nconst SUB="+JSON.stringify(bank.SUB)+";\nconst CARDS="+JSON.stringify(Array.isArray(bank.CARDS)?bank.CARDS:null)+";\nconst Q0="+JSON.stringify(bank.Q0)+";\nconst Q=JSON.parse(JSON.stringify(Q0));";
   document.body.appendChild(ds);
   const ls=document.createElement("script");ls.textContent=$("app-js").textContent;
   document.body.appendChild(ls);
@@ -1434,6 +1819,7 @@ function startApp(bank){
 /* ---------------- publish questions (admin) ---------------- */
 function validBank(b){
   if(!b||!Array.isArray(b.S)||!Array.isArray(b.SUB)||!Array.isArray(b.Q0)||!b.Q0.length)return "Format galat hai: S, SUB aur Q0 chahiye.";
+  if(b.CARDS!=null&&(!Array.isArray(b.CARDS)||b.CARDS.some(c=>!c||typeof c.k!=="string"||typeof c.t!=="string")))return "Home options (CARDS) ka format galat hai.";
   for(const q of b.Q0){
     if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||q.opts.length<2||q.opts.length>4||!Number.isInteger(q.ans)||q.ans<0||q.ans>=q.opts.length||!Number.isInteger(q.sec)||q.sec<0||q.sec>=b.S.length)return "Kuch questions ka format galat hai.";
   }
@@ -1493,20 +1879,20 @@ function ustat(d){
   return {t:tr+"Active · koi expiry nahi"};
 }
 function buildUsers(host){
-  const ta=el("textarea");ta.rows=4;ta.placeholder="Gmail addresses (ek line mein ek, ya comma se alag)";
+  const ta=el("textarea");ta.rows=4;ta.placeholder="Gmail ya phone number (jaise 03001234567) - ek line mein ek, ya comma se alag";
   const dys=el("input");dys.type="text";dys.inputMode="numeric";dys.placeholder="Kitne din ke liye? (jaise 30)";dys.setAttribute("aria-label","Days");
   const chips=el("div");chips.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px";
   [7,15,30,90,180,365].forEach(n=>{const c=el("button","chip",n+" din");c.type="button";c.onclick=()=>{dys.value=String(n);dt.value=""};chips.appendChild(c)});
   const dt=el("input");dt.type="date";dt.setAttribute("aria-label","Valid until");
   const add=el("button","btn primary","Add / update users");add.type="button";
   const st=el("div","label st");
-  const sr=el("input");sr.type="search";sr.placeholder="Search email...";
+  const sr=el("input");sr.type="search";sr.placeholder="Search Gmail / phone...";
   const list=el("div");
   host.append(ta,el("div","label","Kitne din ka access? (khali = hamesha)"),dys,chips,el("div","label","Ya aakhri date chuno (optional)"),dt,add,st,sr,list);
   let USERS=[];
   function render(){
-    const q=sr.value.trim().toLowerCase();list.textContent="";
-    const rows=USERS.filter(u=>!q||u.id.indexOf(q)>=0);
+    const q=sr.value.trim().toLowerCase(),qp=normPhone(q);list.textContent="";
+    const rows=USERS.filter(u=>!q||u.id.indexOf(q)>=0||(qp&&u.id===qp));
     st.textContent=USERS.length+" user(s)"+(q?" · "+rows.length+" match":"");
     rows.forEach(u=>{
       const r=el("div","urow"),w=el("div","who");
@@ -1528,8 +1914,8 @@ function buildUsers(host){
   }
   sr.oninput=render;
   add.onclick=async()=>{
-    const em=[...new Set((ta.value.toLowerCase().match(/[^\s,;]+/g)||[]).filter(x=>/^[^\s\/@]+@[^\s\/@]+\.[^\s\/@]+$/.test(x)))];
-    if(!em.length){st.textContent="Koi sahi email nahi mili.";return}
+    const em=parseIds(ta.value);
+    if(!em.length){st.textContent="Koi sahi Gmail ya phone number nahi mila.";return}
     const dd=parseInt(dys.value,10);
     const exp=dd>0?Timestamp.fromMillis(Date.now()+dd*86400000):(dt.value?Timestamp.fromDate(new Date(dt.value+"T23:59:59")):null);
     add.disabled=true;st.textContent="Saving...";
@@ -1553,7 +1939,7 @@ function buildBank(host){
   const go=el("button","btn primary","Publish uploaded file");go.type="button";go.hidden=true;
   const dl=el("button","btn","Download backup (current questions)");dl.type="button";
   const rl=el("button","btn","Reload app");rl.type="button";rl.hidden=true;rl.onclick=()=>location.reload();
-  const note=el("div","label","Questions edit karne ke liye: start screen par Edit MCQs, changes karo, phir Publish to everyone dabao.");
+  const note=el("div","label","Questions edit karne ke liye: start screen par Edit MCQs, changes karo, phir Publish to everyone dabao. Kisi bhi MCQ ka jawab test, result ya search mein '\u270e Edit MCQ / answer' se seedha theek ho sakta hai. Home par '+ Add more option' se naye options banao.");
   host.append(info,upl,go,dl,rl,st,note);
   let pending=null;
   pick.onchange=e=>{
@@ -1895,8 +2281,8 @@ function buildLibAdmin(host){
 
 /* ================= MANAGERS (owner only) ================= */
 function buildManagers(host){
-  const note=el("div","label","Manager ko Users, Questions, Library aur Settings ka poora control milta hai. Managers ki list sirf owner badal sakta hai.");
-  const ta=el("textarea");ta.rows=3;ta.placeholder="Manager ki Gmail (ek line mein ek, ya comma se alag)";
+  const note=el("div","label","Manager ko Users, Questions, MCQ answer edit, Home options, Library aur Settings ka poora control milta hai. Managers ki list sirf owner badal sakta hai.");
+  const ta=el("textarea");ta.rows=3;ta.placeholder="Manager ki Gmail ya phone number (ek line mein ek, ya comma se alag)";
   const add=el("button","btn primary","Add manager");add.type="button";
   const st=el("div","label st"),list=el("div");
   host.append(note,ta,add,st,list);
@@ -1918,8 +2304,8 @@ function buildManagers(host){
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   }
   add.onclick=async()=>{
-    const em=[...new Set((ta.value.toLowerCase().match(/[^\s,;]+/g)||[]).filter(x=>/^[^\s\/@]+@[^\s\/@]+\.[^\s\/@]+$/.test(x)))];
-    if(!em.length){st.textContent="Koi sahi email nahi mili.";return}
+    const em=parseIds(ta.value);
+    if(!em.length){st.textContent="Koi sahi Gmail ya phone number nahi mila.";return}
     add.disabled=true;st.textContent="Saving...";
     try{
       const b=writeBatch(db);em.forEach(e=>b.set(doc(db,"managers",e),{email:e,addedAt:serverTimestamp()}));await b.commit();
