@@ -2017,19 +2017,20 @@ function aiPiece(plan,j){
 async function aiCall(cfg,contents,on){
   let plans=aiPlans(cfg);
   if(aiGood&&aiGood.key===cfg.key){const g=plans.filter(x=>x.id===aiGood.id);if(g.length)plans=g.concat(plans.filter(x=>x.id!==aiGood.id))}
-  let httpErr=null,netErr=null;
+  let httpErr=null,netErr=null;const tried=[];
   for(const plan of plans){
     for(let attempt=0;attempt<2;attempt++){
       let r;
       try{r=await fetch(plan.url,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},plan.h),body:JSON.stringify(aiBody(plan,contents,attempt===1))})}
-      catch(e){netErr=netErr||e;break}
+      catch(e){netErr=netErr||e;tried.push(plan.id+" network: "+String((e&&e.message)||e).slice(0,80));break}
       if(!r.ok){
         let j=null;try{j=await r.json()}catch(e){}
         const err=aiErrMsg(r.status,j);
         if(attempt===0&&r.status===400&&/thinking/i.test(err.message))continue;
+        tried.push(plan.id+" "+r.status+": "+String(err.message).replace(/\s+/g," ").slice(0,140));
         if(!httpErr)httpErr=err;
         if([400,401,403,404].indexOf(r.status)>=0)break;
-        throw err;
+        err.detail=tried.join(" | ");throw err;
       }
       const rd=r.body.getReader(),dec=new TextDecoder();let buf="",full="",all="";
       for(;;){
@@ -2056,7 +2057,8 @@ async function aiCall(cfg,contents,on){
       return full;
     }
   }
-  throw httpErr||netErr||new Error("AI failed");
+  const fe=httpErr||netErr||new Error("AI failed");try{fe.detail=tried.join(" | ")}catch(_){}
+  throw fe;
 }
 window.__aiStart=async ctx=>{
   const cfg=await aiKey();
@@ -2068,18 +2070,19 @@ window.__aiStart=async ctx=>{
     return full;
   }};
 };
-window.__aiErr=e=>{
+const aiErrBase=e=>{
   const m=String((e&&(e.message||e.code))||e);
   if(/NO_KEY/.test(m))return "AI is not set up yet. Admin: Admin panel \u2192 Settings \u2192 paste the API key and Save. Until then, use the Gemini link below.";
   if(/permission-denied|Missing or insufficient permissions/i.test(m)&&!(e&&e.http))return "AI is only for active members. Please log in again.";
-  if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there.";
-  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud.";
+  if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there. If the key starts with AQ., create a free Gemini key (starts with AIza) at aistudio.google.com/apikey and paste that instead.";
+  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud. If the key starts with AQ., create a free Gemini key (starts with AIza) at aistudio.google.com/apikey and paste that instead.";
   if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "AI limit reached, please try again in a while.";
   if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This model is not available for the key. Admin: clear the Model box or choose another model in Settings.";
   if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The AI service is busy right now, please try again in a minute.";
   if(/network|fetch|Failed to load/i.test(m))return "AI could not be reached (internet, or the browser blocked it). Admin: try another Provider in Settings.";
   return "AI error: "+m;
 };
+window.__aiErr=e=>{const t=aiErrBase(e),d=e&&e.detail;return (IS_ADMIN&&d)?t+" [Details: "+d+"]":t};
 window.__aiTest=async cfg=>aiCall(cfg,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
 
 
