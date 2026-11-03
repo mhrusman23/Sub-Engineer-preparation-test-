@@ -704,6 +704,36 @@ h1,h2,h3{font-family:var(--brand-font);font-weight:800;letter-spacing:-.01em}
 .credit3d{position:relative;overflow:hidden}
 .credit3d::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sheen 5s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.px-orbs i,.credit3d::after,.card.q{animation:none}.btn,.opt,.ycard{transition:none}}
+
+/* ---- progress dashboard, result history, share, bookmarks ---- */
+.dash{padding:16px;margin:12px}
+.dash h3{margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.dash .dhstar{margin-left:auto}
+.dstat{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.dstat>div{flex:1 1 100px;min-width:100px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:color-mix(in srgb,var(--panel) 86%,var(--bg))}
+.dstat b{display:block;font-family:var(--mono);font-size:22px;line-height:1.2}
+.dstat span{font-size:12px;color:var(--muted)}
+.dhis{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.dhrow{display:flex;align-items:center;gap:10px;font-size:13px}
+.dhrow .dhb{flex:1;min-width:120px;height:8px;border-radius:99px;background:color-mix(in srgb,var(--line) 55%,transparent);overflow:hidden}
+.dhrow .dhb i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.dhrow.ok .dhb i{background:var(--ok)}
+.dhrow.mid .dhb i{background:var(--warn)}
+.dhrow.low .dhb i{background:var(--bad)}
+.dhrow .dhv{font-family:var(--mono);white-space:nowrap}
+.dhrow .dht{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
+.dweak{margin:0 0 12px;padding:0;list-style:none}
+.dweak li{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px dashed var(--line);font-size:13px}
+.dweak b{margin-left:auto;font-family:var(--mono)}
+.dempty{color:var(--muted);font-size:13px;margin:6px 0 10px}
+.dclear{margin-left:auto}
+.sharerow{display:flex;gap:10px;flex-wrap:wrap;padding:0 20px 16px}
+.sharebtn{display:inline-flex;align-items:center;gap:8px}
+.sharebtn svg{flex:none}
+.bkmon{color:var(--warn)!important;font-weight:700}
+.revrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;margin:12px}
+.revrow .rrname{flex:1;min-width:140px}
+.revrow .rrname small{display:block;color:var(--muted)}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -793,6 +823,12 @@ window.APP_CONFIG={
       <div class="ybar"><span id="ySel">Nothing selected</span><button class="btn primary" id="btnStart" type="button" disabled>Start selected</button></div>
     </div>
     <div id="homeExtra">
+    <div class="card dash" id="dashCard" hidden></div>
+    <div class="card hcard revrow" id="revCard" hidden>
+      <div class="rrname"><b>&#9733; Revision mode</b><small id="revInfo">Practice your bookmarked MCQs</small></div>
+      <button class="btn primary" id="btnRev" type="button">Start revision</button>
+      <button class="btn" id="btnRevClear" type="button">Clear bookmarks</button>
+    </div>
     <div class="card srch" id="gsrch" style="margin:12px">
       <div class="row">
         <input id="gsIn" type="search" placeholder="Search any MCQ in all papers and subjects..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
@@ -836,9 +872,11 @@ window.APP_CONFIG={
         <button class="btn primary" id="edAdd" type="button">+ Add MCQ</button>
       </div>
       <div class="edtools">
-        <button class="btn" id="edDlHtml" type="button">Publish to everyone</button>
+        <button class="btn primary" id="edDlHtml" type="button">Publish to everyone</button>
         <button class="btn" id="edExport" type="button">Export JSON</button>
-        <label class="btn" for="edImport">Import JSON</label><input type="file" id="edImport" accept=".json,application/json" hidden>
+        <label class="btn" for="edImport">Replace with JSON</label><input type="file" id="edImport" accept=".json,application/json" hidden>
+        <button class="btn" id="edAddJson" type="button" style="background-image:var(--grad-gold)">+ Import JSON files</button><input type="file" id="edFileJson" accept=".json,application/json" multiple hidden>
+        <button class="btn" id="edAddHtml" type="button" style="background-image:var(--grad-gold)">+ Import HTML files</button><input type="file" id="edFileHtml" accept=".html,.htm,.txt,text/html,text/plain" multiple hidden>
         <button class="btn" id="edReset" type="button">Reset to original</button>
         <button class="btn" id="edBack" type="button">Back to start</button>
       </div>
@@ -896,7 +934,7 @@ window.APP_CONFIG={
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
             <button class="btn" id="nextUn" type="button">Next unanswered</button>
@@ -929,6 +967,8 @@ window.APP_CONFIG={
         <div><div class="label">Net marks</div><div class="big mono" id="rNet"></div></div>
         <div><div class="label">Percentage</div><div class="big mono" id="rPct"></div></div>
       </div>
+      <div class="sharerow" id="shareRow" hidden></div>
+      <div class="card dash" id="resDash" hidden></div>
       <div class="tb" id="rTb"></div>
       <div class="scroll" style="padding:0 20px 8px"><table class="tbl" id="rTbl"></table></div>
       <div style="padding:8px 20px 20px"><h3 style="margin-bottom:10px">Wrong attempts log</h3><ul class="log" id="rLog" style="max-height:none"></ul></div>
@@ -978,6 +1018,102 @@ window.APP_CONFIG={
   function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
   function fmt(s){s=Math.max(0,Math.floor(s));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;var mm=(m<10?"0":"")+m,rr=(r<10?"0":"")+r;return h>0?h+":"+mm+":"+rr:mm+":"+rr}
 
+  /* ===== new: local storage helpers (IndexedDB "eg23"/kv + localStorage) ===== */
+  var hxDb=null;
+  function hxOpen(){return new Promise(function(res,rej){if(hxDb)return res(hxDb);var r=indexedDB.open("eg23",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){hxDb=r.result;res(hxDb)};r.onerror=function(){rej(r.error)}})}
+  function hxGet(k){return hxOpen().then(function(d){return new Promise(function(res,rej){var q=d.transaction("kv").objectStore("kv").get(k);q.onsuccess=function(){res(q.result==null?null:q.result)};q.onerror=function(){rej(q.error)}})}).catch(function(){return null})}
+  function hxSet(k,v){return hxOpen().then(function(d){return new Promise(function(res,rej){var t=d.transaction("kv","readwrite");t.objectStore("kv").put(v,k);t.oncomplete=res;t.onerror=function(){rej(t.error)}})}).catch(function(){})}
+  var HKEY="eg23hist",HMAX=80,BKM="eg23bkm",TTITLE="";
+  /* bookmarks store question texts (not ids) so they survive bank updates */
+  function loadBkm(){try{var a=JSON.parse(localStorage.getItem(BKM)||"[]");return Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x}).slice(0,500):[]}catch(e){return []}}
+  function bkmIds(){return loadBkm().map(function(t){for(var i=0;i<Q.length;i++)if(Q[i].text===t)return i;return -1}).filter(function(i){return i>-1})}
+  function saveBkm(a){try{localStorage.setItem(BKM,JSON.stringify(a.slice(0,500)))}catch(e){}}
+  function bkmHas(id){return Q[id]&&loadBkm().indexOf(Q[id].text)>-1}
+  function bkmToggle(id){
+    if(!Q[id])return false;
+    var a=loadBkm(),t=Q[id].text,p=a.indexOf(t);
+    if(p>-1){a.splice(p,1);saveBkm(a);return false}
+    a.push(t);saveBkm(a);return true;
+  }
+  function hpageTitle(){
+    if(TTITLE)return TTITLE;
+    if(sel.length){var nm=sel.map(function(i){return SUB[i]?SUB[i].name:""}).join(" + ");return nm.length>64?nm.slice(0,63)+"\u2026":nm}
+    return "Custom test";
+  }
+  function hxAdd(rec){
+    return hxGet(HKEY).then(function(l){l=Array.isArray(l)?l:[];l.push(rec);if(l.length>HMAX)l=l.slice(-HMAX);return hxSet(HKEY,l)});
+  }
+  function hxDash(target,opt){
+    var host=target;opt=opt||{};
+    return hxGet(HKEY).then(function(l){
+      if(!host)return;l=Array.isArray(l)?l.slice():[];
+      host.textContent="";host.hidden=false;
+      var h3=el("h3","","📈 Progress");
+      if(opt.star&&Array.isArray(opt.wrong)&&opt.wrong.length){
+        var bb=el("button","btn","☆ Bookmark all wrong ("+opt.wrong.length+")");bb.type="button";
+        bb.addEventListener("click",function(){var a=loadBkm();opt.wrong.forEach(function(id){if(!Q[id])return;var t=Q[id].text;if(a.indexOf(t)<0)a.push(t)});saveBkm(a);bb.textContent="☆ Bookmarked "+a.length;paintRev()});
+        h3.appendChild(bb);
+      }
+      var cl=el("button","btn dclear","Clear");cl.type="button";
+      cl.addEventListener("click",function(){
+        if(!confirm("Delete your saved progress history from this device?"))return;
+        hxSet(HKEY,[]).then(function(){paintRev();hxDash(host,opt)});
+      });
+      h3.appendChild(cl);
+      host.appendChild(h3);
+      if(!l.length){host.appendChild(el("p","dempty","No finished attempts saved yet. Complete a test and your progress will appear here."));return}
+      var tot=l.length,ansd=0,ok=0,best=0,sum=0;
+      l.forEach(function(r){ansd+=r.a||0;ok+=r.o||0;if(r.p>best)best=r.p;sum+=(r.p||0)});
+      var avg=sum/tot;
+      var ds=el("div","dstat");
+      [[tot,"Attempts"],[ansd,"Questions answered"],[(ok/(ansd||1)*100).toFixed(1)+"%","Accuracy"],[avg.toFixed(1)+"%","Average score"],[best.toFixed(1)+"%","Best"]].forEach(function(x){
+        var d=el("div");d.appendChild(el("b","",String(x[0])));d.appendChild(el("span","",x[1]));ds.appendChild(d);
+      });
+      host.appendChild(ds);
+      if(!opt.mini){
+        host.appendChild(el("div","label","Last attempts"));
+        var hl=el("div","dhis");
+        l.slice(-8).reverse().forEach(function(r){
+          var pct=r.p||0,cls=pct>=60?"ok":pct>=35?"mid":"low";
+          var row=el("div","dhrow "+cls);
+          row.appendChild(el("span","dht",(r.t?r.t+" · ":"")+new Date(r.ts).toLocaleDateString([],{day:"numeric",month:"short"})));
+          var b=el("span","dhb");var i=el("i");i.style.width=Math.max(3,pct)+"%";b.appendChild(i);row.appendChild(b);
+          row.appendChild(el("span","dhv",(r.n!=null?r.n.toFixed(2):"0")+"/"+r.a+" \u00b7 "+pct.toFixed(1)+"%"));
+          hl.appendChild(row);
+        });
+        host.appendChild(hl);
+      }
+      if(!opt.mini){
+        /* weakest subjects across recent attempts */
+        var by={};
+        l.slice(-40).forEach(function(r){(r.subs||[]).forEach(function(s){
+          var k=s.n;by[k]=by[k]||{n:0,o:0};
+          by[k].o+=s.o;by[k].n+=s.t;
+        })});
+        var wk=Object.keys(by).filter(function(k){return by[k].n>=8}).map(function(k){
+          return {name:k,pct:by[k].o/by[k].n*100,n:by[k].n};
+        }).sort(function(a,b){return a.pct-b.pct}).slice(0,3);
+        if(wk.length){
+          var wl=el("ul","dweak");
+          wk.forEach(function(w){
+            var li=el("li");li.appendChild(el("span","","⚠ "+w.name));li.appendChild(el("b","",w.pct.toFixed(0)+"% right"));
+            wl.appendChild(li);
+          });
+          host.appendChild(el("div","label","Weakest areas (study these)"));
+          host.appendChild(wl);
+        }
+      }
+    });
+  }
+  function paintRev(){
+    var rc=$("#revCard");if(!rc)return;
+    var n=bkmIds().length;
+    rc.hidden=!n;
+    $("#revInfo").textContent=n?(n+" bookmarked MCQ" + (n===1?"":"s")+" · shuffled each time"):"Practice your bookmarked MCQs";
+    $("#btnRev").disabled=!n;
+  }
+
+
   var order=[],pos=0,ans={},started=false,startTs=0,tick=null,finished=false,usedAtEnd=0,filter="all";
   var wrongLog=[],sel=[];
   var $sl=null,paused=false,pausedAt=0;
@@ -987,7 +1123,7 @@ window.APP_CONFIG={
   $("#stAtt").textContent="0/0";
 
   var KEY="ppsc-civil-allinone-mock-v1";
-  function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,bv:bv,n:Q.length,order:order,ans:ans,started:started,startTs:startTs,paused:paused,pausedAt:pausedAt,pos:pos,sel:sel,tot:TOTAL,perm:perm}))}catch(e){}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,bv:bv,n:Q.length,order:order,ans:ans,started:started,startTs:startTs,paused:paused,pausedAt:pausedAt,pos:pos,sel:sel,tot:TOTAL,ti:TTITLE,perm:perm}))}catch(e){}}
   function subCount(i){var n=0;Q.forEach(function(q){if(S[q.sec].sub===i)n++});return n}
   function recalcT(){SUB.forEach(function(s,i){s.time=Math.max(60,Math.round(subCount(i)*s.spq))})}
   function mins(s){return Math.round(s/60)}
@@ -1095,6 +1231,7 @@ window.APP_CONFIG={
       ad.addEventListener("click",addCard);hc.appendChild(ad);
     }
     if(curYear)buildYear(curYear,keep||null);
+    try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
   }
 
   /* ===== admin / manager: home options, subjects, chapters ===== */
@@ -1426,7 +1563,7 @@ window.APP_CONFIG={
   function resume(){
     var s=readSave();if(!s)return;
     applyPerm(s.perm);
-    order=s.order;sel=s.sel||[];TOTAL=s.tot;ans=s.ans||{};started=!!s.started;startTs=s.startTs||0;paused=!!s.paused&&started;pausedAt=s.pausedAt||0;pos=Math.min(s.pos||0,order.length-1);
+    order=s.order;sel=s.sel||[];TOTAL=s.tot;ans=s.ans||{};started=!!s.started;startTs=s.startTs||0;paused=!!s.paused&&started;pausedAt=s.pausedAt||0;pos=Math.min(s.pos||0,order.length-1);TTITLE=s.ti||"";
     cancelAuto();finished=false;filter="all";wrongLog=[];clearInterval(tick);$("#confirm").hidden=true;
     for(var k in ans){
       if(!Q[k]){delete ans[k];continue}
@@ -1444,7 +1581,7 @@ window.APP_CONFIG={
     if(!s){b.hidden=true;i.textContent="";return}
     var n=0;for(var k in (s.ans||{}))n++;
     if(!n&&!s.started){b.hidden=true;i.textContent="";return}
-    b.hidden=false;i.textContent="Saved attempt: "+n+" answered";
+    b.hidden=false;i.textContent="Saved attempt: "+(s&&s.ti?s.ti+" · ":"")+n+" answered";
   }
   function elapsed(){if(!started)return 0;var now=paused?pausedAt:Date.now();return Math.floor((now-startTs)/1000)}
   function counts(){var ok=0,bad=0,att=0;for(var k in ans){att++;if(ans[k].ok)ok++;bad+=(ans[k].w?ans[k].w.length:0)}return {ok:ok,bad:bad,att:att}}
@@ -1456,12 +1593,17 @@ window.APP_CONFIG={
   }
 
   function start(ch){
-    if(typeof ch==="number"){
+    TTITLE="";
+    if(ch==="bkm"){
+      sel=[];order=bkmIds().filter(function(id){return Q[id]});
+      if(!order.length)return;TTITLE="Revision \u2605";
+    }else if(typeof ch==="number"){
       sel=[S[ch].sub];order=[];Q.forEach(function(q,i){if(q.sec===ch)order.push(i)});
       if(!order.length)return;TOTAL=Math.max(60,Math.round(order.length*SUB[S[ch].sub].spq));
     }else{
     sel=Array.isArray(ch)?ch.slice():pickedSubs();if(!sel.length)return;TOTAL=0;sel.forEach(function(i){TOTAL+=SUB[i].time});order=[];Q.forEach(function(q,i){if(sel.indexOf(S[q.sec].sub)>=0)order.push(i)});
     }
+    if(ch!=="bkm")TOTAL=TOTAL||order.length; else TOTAL=order.length;
     {for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t}}
     applyPerm($("#optShuf").checked?makePerm():{});
     cancelAuto();pos=0;ans={};started=false;finished=false;paused=false;pausedAt=0;wrongLog=[];filter="all";
@@ -1561,6 +1703,8 @@ window.APP_CONFIG={
     }
     $("#prev").disabled=pos===0;
     $("#next").disabled=pos===order.length-1;
+    var qb=$("#qBkm");
+    if(qb){var on=bkmHas(id);qb.textContent=on?"\u2605 Bookmarked":"\u2606 Bookmark";qb.classList.toggle("bkmon",on)}
     paintMap();
   }
 
@@ -1766,8 +1910,40 @@ window.APP_CONFIG={
   }
 
   function renderResult(why){
-    var c=counts(),n=net(),un=order.length-c.att;
-    $("#rWhy").textContent=why+" · time used "+fmt(usedAtEnd);
+    var c=counts(),n=net(),un=order.length-c.att,pct=Math.max(0,n/order.length*100);
+    /* ---- save this attempt to local progress history ---- */
+    if(c.att>0){
+      var subs=[];
+      SUB.forEach(function(sb,bi){
+        var T=0,K=0;
+        order.forEach(function(id){if(S[Q[id].sec].sub!==bi)return;T++;var a=ans[id];if(a&&a.ok)K++});
+        if(T)subs.push({n:sb.name,t:T,o:K});
+      });
+      hxAdd({ts:Date.now(),t:hpageTitle(),a:order.length,n:Math.round(n*100)/100,p:Math.round(pct*10)/10,o:c.ok,b:c.bad,time:usedAtEnd,subs:subs}).then(paintRev);
+    }
+    /* ---- share buttons ---- */
+    var shareTxt="I scored "+n.toFixed(2)+"/"+order.length+" ("+pct.toFixed(1)+"%) in "+hpageTitle()+" on Engrgroup23 mock test! "+location.href;
+    var sr=$("#shareRow");
+    if(sr){
+      sr.hidden=false;sr.textContent="";
+      var mk=function(href,label,icon){
+        var a=el("a","btn primary sharebtn");a.href=href;a.target="_blank";a.rel="noopener";
+        a.appendChild(el("span","",icon));a.appendChild(el("span","",label));return a;
+      };
+      sr.appendChild(mk("https://wa.me/?text="+encodeURIComponent(shareTxt),"WhatsApp","\ud83d\udcf1"));
+      sr.appendChild(mk("https://t.me/share/url?url="+encodeURIComponent(location.href)+"&text="+encodeURIComponent(shareTxt),"Telegram","\u2708"));
+      var cp=el("button","btn sharebtn","\ud83d\udccb");cp.type="button";cp.setAttribute("aria-label","Copy result");
+      cp.addEventListener("click",function(){
+        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(shareTxt).then(function(){cp.textContent="\u2705 Copied";setTimeout(function(){cp.textContent="\ud83d\udccb"},1600)}).catch(function(){prompt("Copy your result:",shareTxt)})}
+        else prompt("Copy your result:",shareTxt);
+      });
+      sr.appendChild(cp);
+      if(navigator.share){var ns=el("button","btn primary sharebtn","\ud83d\udd17");ns.type="button";ns.addEventListener("click",function(){try{navigator.share({title:"Engrgroup23 result",text:shareTxt})}catch(e){}});sr.appendChild(ns)}
+    }
+    /* ---- progress on the result page ---- */
+    var rd=$("#resDash");
+    if(rd)hxDash(rd,{star:true,wrong:wrongLog.map(function(x){return x.id})});
+    $("#rWhy").textContent=why+" · "+hpageTitle()+" · time used "+fmt(usedAtEnd);
     $("#rNet").innerHTML="";
     $("#rNet").appendChild(document.createTextNode(n.toFixed(2)));
     var sp=el("span","", " / "+order.length);$("#rNet").appendChild(sp);
@@ -1848,6 +2024,9 @@ window.APP_CONFIG={
       }
       if(window.__AI_ON||ADM||canReport()){
         var rb=el("div","rvbtns");
+        var bb=el("button","btn qedit "+(bkmHas(id)?"bkmon":""),bkmHas(id)?"\u2605 Bookmarked":"\u2606 Bookmark");bb.type="button";
+        bb.addEventListener("click",function(){bkmToggle(id);bb.textContent=bkmHas(id)?"\u2605 Bookmarked":"\u2606 Bookmark";bb.classList.toggle("bkmon",bkmHas(id));paintRev()});
+        rb.appendChild(bb);
         if(canReport()){var rpb=el("button","btn qedit","\u26a0 Report");rpb.type="button";rpb.addEventListener("click",function(){reportQ(id)});rb.appendChild(rpb)}
         if(window.__AI_ON){var aib=el("button","btn ai qedit","\u2728 Ask AI");aib.type="button";aib.addEventListener("click",function(){aiOpenQ(id)});rb.appendChild(aib)}
         if(ADM){var eb=el("button","btn qedit","\u270e Edit MCQ / answer");eb.type="button";eb.addEventListener("click",function(){quickEdit(id,function(){buildChips();renderReview()})});rb.appendChild(eb)}
@@ -1992,6 +2171,125 @@ window.APP_CONFIG={
       };
       rd.readAsText(f);e.target.value="";
     });
+    /* ===== import mock tests: each JSON or HTML file becomes its own new paper under "Mock Tests" ===== */
+    function ensureMockCard(){
+      var y=cardOf("mock");
+      if(!y){YEARS.push({k:"mock",t:"Mock Tests",d:"Custom mock tests added by the admin"});return true}
+      return false;
+    }
+    function finishImport(files,kind){
+      if(!ADM){msg("Only admins can import mock tests.","err");return}
+      var list=Array.prototype.slice.call(files||[]);if(!list.length)return;
+      var added=0,skipped=0,errNotes=[];
+      (function next(){
+        var f=list.shift();
+        if(!f){
+          msg("Import complete: +"+added+" MCQ"+(added===1?"":"s")+(skipped?", "+skipped+" skipped":"")+" \u00b7 publishing...","good");
+          recalcT();rebuildOpts();
+          publishNow().then(function(){
+            buildPick(pickedSubs());paintRev();
+            try{window.__edRefill()}catch(e){}
+            closeForm();render();
+            msg("Published! Everyone gets "+added+" new MCQ"+(added===1?"":"s")+" under the 'Mock Tests' option."+(errNotes.length?" ("+errNotes.length+" file(s) had errors)":""),"good");
+            if(errNotes.length)msg("Published with warnings: "+errNotes.join(" | "),"err");
+          }).catch(function(er){msg("Publish failed: "+((er&&(er.code||er.message))||er),"err")});
+          return;
+        }
+        var rd=new FileReader();
+        rd.onload=function(){
+          msg("Reading "+f.name+" ...");
+          try{
+            var qs=[];
+            if(kind==="json"){
+              var o=JSON.parse(rd.result);
+              if(o&&!Array.isArray(o)){
+                if(Array.isArray(o.bank))o=o.bank;
+                else if(Array.isArray(o.Q0))o=o.Q0;
+                else if(Array.isArray(o.questions))o=o.questions;
+              }
+              if(!Array.isArray(o))throw new Error("JSON must be a list of MCQs (text, opts, ans).");
+              o.forEach(function(x){
+                if(!x||typeof x.text!=="string"||!Array.isArray(x.opts))return;
+                var a=(typeof x.ans==="number"?x.ans:typeof x.key==="number"?x.key:typeof x.answer==="number"?x.answer:typeof x.correct==="number"?x.correct:-1);
+                if(a<0||a>=x.opts.length)return;
+                qs.push({text:x.text,opts:x.opts,ans:a,sec:0,test:"Q"+(qs.length+1)});
+              });
+            }else{
+              qs=parseHtmlQs(String(rd.result));
+            }
+            if(!qs.length)throw new Error("No usable questions found (each MCQ needs a question, 2-4 options and a correct answer).");
+            var before=Q.length;
+            var nm=f.name.replace(/\.(html?|txt|json)$/i,"").replace(/[_-]+/g," ").trim().slice(0,60)||"New Mock Test";
+            ensureMockCard();
+            var si=SUB.length;
+            SUB.push({name:nm,short:nm.length>22?nm.slice(0,22)+"\u2026":nm,code:"Mock",spq:60,time:60,cat:"mock"});
+            var ci=S.length;
+            S.push({sub:si,name:"Chapter 1",code:"Mock \u00b7 "+nm.slice(0,30)+" \u00b7 Ch 1"});
+            qs.forEach(function(x){
+              var q=cleanQ(x);
+              if(!validQ(q)){skipped++;return}
+              q.sec=ci;
+              QO.push(q.opts.slice());QA.push(q.ans);Q.push(q);
+            });
+            added+=Q.length-before;
+            next();
+          }catch(er){
+            errNotes.push(f.name+": "+((er&&er.message)||er));
+            next();
+          }
+        };
+        rd.onerror=function(){errNotes.push(f.name+": could not be read");next()};
+        rd.readAsText(f);
+      })();
+    }
+    /* generic MCQ extractor for mock-test HTML/text files: numbered questions, options A-D and an answer line */
+    function parseHtmlQs(html){
+      var out=[];
+      try{
+        var doc=new DOMParser().parseFromString(html,"text/html");
+        doc.querySelectorAll("script,style,noscript,iframe,svg,button,input,select,img").forEach(function(n){n.remove()});
+        var t=doc.body?doc.body.textContent||"":"";
+        t=t.replace(/\r/g,"").replace(/\n{2,}/g,"\n").replace(/[ \t]+/g," ");
+        var OPT=/^([A-D])\s*[).:\-\]]\s*(.+)/;
+        var ANS=/(?:correct\s*(?:answer)?|answer|ans|key|jawab|sahi)[ \t:.\u2013-]*\(?\s*([A-D])\s*\)?(?:\s|$|\.|,)/i;
+        var ST=/^\s*(?:Q(?:ues|uestion)?\.?\s*)?(\d{1,4})\s*[.\).:\-]\s*(.+)$/;
+        var lines=t.split("\n").map(function(x){return x.trim()}).filter(function(x){return x});
+        var cur=null;
+        function flush(){
+          if(cur&&cur.text){
+            var q=cur.text.replace(/^\d+\s*[.\).:\-]\s*/,"").trim();
+            if(q&&cur.opts.length>=2&&cur.ans>=0&&cur.ans<cur.opts.length)
+              out.push({text:q,opts:cur.opts,ans:cur.ans,sec:0,test:"Q"+(out.length+1)});
+          }
+          cur=null;
+        }
+        for(var i=0;i<lines.length;i++){
+          var L=lines[i];
+          if(cur&&ANS.test(L)&&!/^[A-D]\s*[).:\-]/.test(L)){
+            var m=ANS.exec(L);
+            cur.ans="ABCD".indexOf(m[1].toUpperCase());flush();continue;
+          }
+          var om=OPT.exec(L);
+          if(om&&cur&&cur.opts.length<4){cur.opts.push(om[2].trim());continue}
+          var st=ST.exec(L);
+          if(st){flush();cur={text:st[2],opts:[],ans:-1};continue}
+          if(cur){
+            /* option lists may not use the A./B. marks: if we already have A and B and this line looks like a
+               plain option it is appended as text unless a new question number appears */
+            if(cur.opts.length===0&&L.length>2&&cur.text.length>12){cur.text+=" "+L}
+            else if(cur.opts.length>=2&&/^(all|none)/i.test(L)){cur.opts.push(L)}
+            else cur.text+=" "+L;
+          }
+          else if(L.length>12){cur={text:L,opts:[],ans:-1}}
+        }
+        flush();
+      }catch(e){}
+      return out;
+    }
+    $("#edAddJson").addEventListener("click",function(){$("#edFileJson").click()});
+    $("#edAddHtml").addEventListener("click",function(){$("#edFileHtml").click()});
+    $("#edFileJson").addEventListener("change",function(e){finishImport(e.target.files,"json");e.target.value=""});
+    $("#edFileHtml").addEventListener("change",function(e){finishImport(e.target.files,"html");e.target.value=""});
     var rarm=false;
     $("#edReset").addEventListener("click",function(){
       var b=$("#edReset");
@@ -2005,7 +2303,11 @@ window.APP_CONFIG={
 
   recalcT();
   buildPick();
+  try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
   (function(){var ab=$("#qAuto");if(!ab)return;paintAuto();ab.addEventListener("click",function(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()})})();
+  var qbk=$("#qBkm");qbk.addEventListener("click",function(){cancelAuto();bkmToggle(order[pos]);renderQ();try{paintRev()}catch(e){}});
+  $("#btnRev").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");start("bkm")});
+  $("#btnRevClear").addEventListener("click",function(){if(confirm("Remove all bookmarks from this device?")){saveBkm([]);paintRev()}});
   if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])})}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
   if(canReport()){var qrp=$("#qRep");qrp.hidden=false;qrp.addEventListener("click",function(){cancelAuto();reportQ(order[pos])})}
