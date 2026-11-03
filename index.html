@@ -2521,13 +2521,13 @@ function buildAdmin(){
   const top=el("div","top");top.appendChild(el("h2","","Admin panel"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
-  const names={users:"Users",bank:"Questions",library:"Library",settings:"Settings"};
+  const names={users:"Users",guests:"Guests",bank:"Questions",library:"Library",settings:"Settings"};
   if(IS_OWNER)names.managers="Managers";
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
-  buildUsers(tabs.users.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
+  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
   if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
@@ -2547,7 +2547,7 @@ function ustat(d){
   }
   return {t:tr+"Active · no expiry"};
 }
-function buildUsers(host){
+function buildUsers(host,onlyG){
   const ta=el("textarea");ta.rows=4;ta.placeholder="Gmail or phone number (e.g. 03001234567) - one per line, or separated by commas";
   const dys=el("input");dys.type="text";dys.inputMode="numeric";dys.placeholder="For how many days? (e.g. 30)";dys.setAttribute("aria-label","Days");
   const chips=el("div");chips.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px";
@@ -2557,7 +2557,8 @@ function buildUsers(host){
   const st=el("div","label st");
   const sr=el("input");sr.type="search";sr.placeholder="Search Gmail / phone...";
   const list=el("div");
-  host.append(ta,el("div","label","Access for how many days? (empty = forever)"),dys,chips,el("div","label","Or pick an end date (optional)"),dt,add,st,sr,list);
+  if(onlyG)host.append(st,sr,list);
+  else host.append(ta,el("div","label","Access for how many days? (empty = forever)"),dys,chips,el("div","label","Or pick an end date (optional)"),dt,add,st,sr,list);
   let USERS=[];
   function render(){
     const q=sr.value.trim().toLowerCase(),qp=normPhone(q);list.textContent="";
@@ -2566,7 +2567,7 @@ function buildUsers(host){
     const allG=USERS.filter(isG),now=Date.now();
     const gAct=allG.filter(u=>u.d.enabled===true&&u.d.expires&&u.d.expires.toMillis()>now).length;
     const gExp=allG.filter(u=>u.d.expires&&u.d.expires.toMillis()<=now);
-    st.textContent=(USERS.length-allG.length)+" approved user(s) · "+allG.length+" guest(s)"+(q?" · "+rows.length+" match":"");
+    st.textContent=onlyG?"Guests: total "+allG.length+" · active now "+gAct+" · expired "+gExp.length:(USERS.length-allG.length)+" approved user(s) · "+allG.length+" guest(s) (see Guests tab)"+(q?" · "+rows.length+" match":"");
     function mkRow(u){
       const r=el("div","urow"),w=el("div","who");
       w.appendChild(el("span","",isG(u)?"Guest · "+u.id.slice(6,14):u.id));
@@ -2582,9 +2583,8 @@ function buildUsers(host){
       r.append(w,tg,dl);return r;
     }
     const reg=rows.filter(u=>!isG(u)),gst=rows.filter(isG);
-    const h1=el("div","label","Approved users ("+reg.length+")");h1.style.fontWeight="700";list.appendChild(h1);
-    reg.forEach(u=>list.appendChild(mkRow(u)));
-    const h2=el("div","label","Guests — total "+allG.length+" · active now "+gAct+" · expired "+gExp.length);h2.style.cssText="font-weight:700;margin-top:18px";list.appendChild(h2);
+    if(!onlyG){reg.forEach(u=>list.appendChild(mkRow(u)));return}
+    const h2=el("div","label","Guests — total "+allG.length+" · active now "+gAct+" · expired "+gExp.length);h2.style.cssText="font-weight:700;margin-top:10px";list.appendChild(h2);
     if(gExp.length){
       const ce=el("button","btn danger","Delete expired guests ("+gExp.length+")");ce.type="button";let a2=false;
       ce.onclick=async()=>{
@@ -2619,7 +2619,7 @@ function buildUsers(host){
     }catch(e){st.textContent="Error: "+(e.code||e.message)}
     add.disabled=false;
   };
-  tabs.users.load=load;
+  (onlyG?tabs.guests:tabs.users).load=load;
 }
 function buildBank(host){
   const info=el("div","label"),st=el("div","label st");
