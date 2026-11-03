@@ -1975,7 +1975,6 @@ let aiKeyP=null,aiGood=null;
 function aiKey(){
   if(!aiKeyP)aiKeyP=getDoc(doc(db,"meta","ai")).then(d=>{
     const x=d.exists()?d.data():{},k=String(x.key||"").trim();
-    if(!k)throw new Error("NO_KEY");
     return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim()};
   }).catch(e=>{aiKeyP=null;throw e});
   return aiKeyP;
@@ -1991,19 +1990,24 @@ function aiPlans(cfg){
   const gemq=()=>({id:"gemini-q",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const oai=()=>({id:"openai",kind:"o",model:model,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}});
-  if(p==="gemini")return [gem(),gemq()];
-  if(p==="vertex")return [vtx()];
-  if(p==="openai")return [oai()];
-  if(cfg.baseUrl)return [oai()];
-  if(/^AQ\./.test(key))return [vtx(),gem(),gemq()];
-  if(/^AIza/.test(key))return [gem(),gemq(),vtx()];
-  if(/^sk-/.test(key))return [oai()];
-  return [gem(),gemq(),vtx(),oai()];
+  /* keyless free fallback (no API key needed) */
+  const free=()=>({id:"free",kind:"o",free:true,model:"openai",url:"https://text.pollinations.ai/openai",h:{}});
+  if(p==="free"||!key)return [free()];
+  let pl;
+  if(p==="gemini")pl=[gem(),gemq()];
+  else if(p==="vertex")pl=[vtx()];
+  else if(p==="openai"||cfg.baseUrl)pl=[oai()];
+  /* NEW Google AI Studio keys start with AQ. and work on the normal Gemini endpoint (same as old AIza keys) */
+  else if(/^(AQ\.|AIza)/.test(key))pl=[gem(),gemq(),vtx()];
+  else if(/^sk-/.test(key))pl=[oai()];
+  else pl=[gem(),gemq(),vtx(),oai()];
+  pl.push(free());
+  return pl;
 }
 function aiBody(plan,contents,noThink){
   if(plan.kind==="o"){
     const msgs=[{role:"system",content:AI_SYS}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
-    return {model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
+    return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
   }
   const gc={temperature:0.4,maxOutputTokens:1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
   return {systemInstruction:{parts:[{text:AI_SYS}]},contents,generationConfig:gc};
@@ -2029,8 +2033,7 @@ async function aiCall(cfg,contents,on){
         if(attempt===0&&r.status===400&&/thinking/i.test(err.message))continue;
         tried.push(plan.id+" "+r.status+": "+String(err.message).replace(/\s+/g," ").slice(0,140));
         if(!httpErr)httpErr=err;
-        if([400,401,403,404].indexOf(r.status)>=0)break;
-        err.detail=tried.join(" | ");throw err;
+        break;
       }
       const rd=r.body.getReader(),dec=new TextDecoder();let buf="",full="",all="";
       for(;;){
@@ -2072,10 +2075,9 @@ window.__aiStart=async ctx=>{
 };
 const aiErrBase=e=>{
   const m=String((e&&(e.message||e.code))||e);
-  if(/NO_KEY/.test(m))return "AI is not set up yet. Admin: Admin panel \u2192 Settings \u2192 paste the API key and Save. Until then, use the Gemini link below.";
   if(/permission-denied|Missing or insufficient permissions/i.test(m)&&!(e&&e.http))return "AI is only for active members. Please log in again.";
-  if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there. If the key starts with AQ., create a free Gemini key (starts with AIza) at aistudio.google.com/apikey and paste that instead.";
-  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud. If the key starts with AQ., create a free Gemini key (starts with AIza) at aistudio.google.com/apikey and paste that instead.";
+  if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there. Create a new key at aistudio.google.com/apikey (new keys start with AQ.), paste it in Settings and Save.";
+  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud. Create a new key at aistudio.google.com/apikey (new keys start with AQ.), paste it in Settings and Save.";
   if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "AI limit reached, please try again in a while.";
   if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This model is not available for the key. Admin: clear the Model box or choose another model in Settings.";
   if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The AI service is busy right now, please try again in a minute.";
@@ -2507,21 +2509,21 @@ function buildSettings(host){
   const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Trial: only once per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
-  const kl=el("div","label","AI API key (any provider: Gemini AIza..., Vertex AI Express AQ...., OpenAI-style sk-...)");kl.style.marginTop="12px";
+  const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = free keyless AI");kl.style.marginTop="12px";
   const kw=el("div","",null);kw.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
   const ki=el("input");ki.type="password";ki.placeholder="Paste API key";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","AI API key");
   const ks=el("button","btn","Show");ks.type="button";ks.onclick=()=>{ki.type=ki.type==="password"?"text":"password";ks.textContent=ki.type==="password"?"Show":"Hide"};
   const kt=el("button","btn","Test key");kt.type="button";
   kw.append(ki,ks,kt);
   const ps=el("select");ps.setAttribute("aria-label","AI provider");
-  [["auto","Provider: Auto-detect (recommended)"],["gemini","Google Gemini - AI Studio key (AIza...)"],["vertex","Google Vertex AI Express - key AQ...."],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];ps.appendChild(op)});
+  [["auto","Provider: Auto-detect (recommended)"],["gemini","Google Gemini - AI Studio key (AQ... or AIza...)"],["vertex","Google Cloud Vertex AI Express key only"],["free","Free - no key needed"],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];ps.appendChild(op)});
   const mi=el("input");mi.type="text";mi.placeholder="Model (optional, default gemini-2.5-flash)";mi.setAttribute("aria-label","AI model");
   const bi=el("input");bi.type="text";bi.placeholder="Base URL, OpenAI-compatible only (e.g. https://openrouter.ai/api/v1)";bi.setAttribute("aria-label","AI base URL");
   const kst=el("div","label");
   kt.onclick=async()=>{
-    const k=ki.value.trim();if(!k){kst.textContent="Paste the key first.";return}
+    const k=ki.value.trim();
     kt.disabled=true;kst.textContent="Testing...";
-    try{const r=await window.__aiTest({key:k,provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim()});kst.textContent=r?"Key works \u2714 ("+(aiGood?aiGood.id:"")+") AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
+    try{const r=await window.__aiTest({key:k,provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim()});kst.textContent=r?(k?"Key works":"Free AI works")+" \u2714 ("+(aiGood?aiGood.id:"")+") AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
     catch(e){kst.textContent=window.__aiErr(e)}
     kt.disabled=false;
   };
