@@ -775,7 +775,7 @@ window.APP_CONFIG={
   admins:["maherusman1947@gmail.com"],
   /* AI helper: Gemini model. The Gemini API key is pasted by the owner in
      Admin panel > Settings > Gemini API key (saved in Firestore, not in this file). */
-  aiModel:"gemini-2.5-flash",
+  aiModel:"gemini-flash-latest",
   contacts:[
     {role:"Admin",name:"Usman Amjad",phone:"03494482609"},
     {role:"Manager",name:"Umar Sajjid",phone:"03400658893"}
@@ -2459,7 +2459,7 @@ function aiErrMsg(st,j){
 }
 /* which endpoints to try for a key (any key works: Gemini AIza..., Vertex AI Express AQ...., OpenAI-style sk-...) */
 function aiPlans(cfg){
-  const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-2.5-flash",em=encodeURIComponent(model),ek=encodeURIComponent(key);
+  const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-flash-latest",em=encodeURIComponent(model),ek=encodeURIComponent(key);
   const gem=()=>({id:"gemini",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
   const gemq=()=>({id:"gemini-q",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
@@ -3080,8 +3080,90 @@ function buildBank(host){
   const ih=el("button","btn","+ Import HTML files (new mock tests)");ih.type="button";ih.onclick=()=>{const e=$("#edFileHtml");if(e)e.click()};
   const rl=el("button","btn","Reload app");rl.type="button";rl.hidden=true;rl.onclick=()=>location.reload();
   const note=el("div","label","To edit questions: tap Edit MCQs on the start screen, make changes, then tap Publish to everyone. Any MCQ answer can also be fixed directly from the test, result or search with '\u270e Edit MCQ / answer'. Create new home options with '+ Add more option'.");
-  host.append(info,upl,go,dl,ij,ih,rl,st,note);
+  /* extra upload options: add (keep existing) from JSON, and add from CSV */
+  const pickAdd=el("input");pickAdd.type="file";pickAdd.accept=".json,application/json";pickAdd.hidden=true;
+  const uplAdd=el("label","btn","+ Add more questions from JSON (keeps existing)");uplAdd.appendChild(pickAdd);
+  uplAdd.style.cssText="display:block;text-align:center;cursor:pointer;margin-top:8px";
+  const csvH=el("div","label","Add questions from a CSV / TXT file (Excel: Save As > CSV UTF-8). Columns: question, A, B, C, D, answer (A-D or 1-4). First row may be a header.");csvH.style.marginTop="14px";
+  const chSel=el("select");chSel.setAttribute("aria-label","Chapter for the CSV questions");
+  const tIn=el("input");tIn.type="text";tIn.placeholder="Test / paper name (e.g. PPSC 2024). Empty = Custom";tIn.maxLength=60;
+  const pickCsv=el("input");pickCsv.type="file";pickCsv.accept=".csv,.txt,text/csv,text/plain";pickCsv.hidden=true;
+  const uplCsv=el("label","btn","+ Add questions from CSV / TXT");uplCsv.appendChild(pickCsv);
+  uplCsv.style.cssText="display:block;text-align:center;cursor:pointer;margin-top:8px";
+  host.append(info,upl,uplAdd,csvH,chSel,tIn,uplCsv,go,dl,ij,ih,rl,st,note);
   let pending=null;
+  function preview(b,msg){pending=b;go.textContent="Publish "+b.Q0.length+" questions to everyone";go.hidden=false;st.textContent=msg+" Now tap Publish."}
+  function curBank(){if(!BANK_JSON){st.textContent="Upload a full bank JSON first (there is no question bank yet).";go.hidden=true;return null}return JSON.parse(BANK_JSON)}
+  function readText(f,cb){const rd=new FileReader();rd.onload=()=>cb(String(rd.result).replace(/^\uFEFF/,""));rd.readAsText(f)}
+  pickAdd.onchange=e=>{
+    const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+    const cur=curBank();if(!cur)return;
+    readText(f,t=>{
+      try{
+        const add=JSON.parse(t),bad=validBank(add);if(bad){st.textContent=bad;go.hidden=true;return}
+        const map=[];
+        add.S.forEach((x,i)=>{
+          const sub=add.SUB[x.sub]||{};
+          let si=cur.SUB.findIndex(y=>y.name===sub.name);
+          if(si<0){cur.SUB.push(Object.assign({},sub));si=cur.SUB.length-1}
+          let ci=cur.S.findIndex(y=>y.sub===si&&y.name===x.name);
+          if(ci<0){cur.S.push(Object.assign({},x,{sub:si}));ci=cur.S.length-1}
+          map[i]=ci;
+        });
+        if(Array.isArray(add.CARDS)){cur.CARDS=Array.isArray(cur.CARDS)?cur.CARDS:[];add.CARDS.forEach(c=>{if(!cur.CARDS.some(y=>y.k===c.k))cur.CARDS.push(c)})}
+        const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase()));let n=0,d=0;
+        add.Q0.forEach(q=>{const k=q.text.trim().toLowerCase();if(seen.has(k)){d++;return}seen.add(k);cur.Q0.push(Object.assign({},q,{sec:map[q.sec]}));n++});
+        if(!n){st.textContent="Nothing new: all "+d+" questions already exist.";go.hidden=true;return}
+        preview(cur,n+" new question(s) will be added, "+d+" duplicate(s) skipped. Total: "+cur.Q0.length+".");
+      }catch(x){st.textContent="Could not read the file: "+x.message;go.hidden=true}
+    });
+  };
+  /* CSV parser (quotes, commas, new lines inside quotes; also tab / semicolon separated) */
+  function parseCsv(t){
+    const first=t.split(/\r?\n/)[0]||"",sep=(first.match(/\t/g)||[]).length>=2?"\t":((first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?";":",");
+    const rows=[];let r=[],c="",q=false;
+    for(let i=0;i<t.length;i++){
+      const ch=t[i];
+      if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+      else if(ch==='"')q=true;
+      else if(ch===sep){r.push(c);c=""}
+      else if(ch==="\n"){r.push(c);rows.push(r);r=[];c=""}
+      else if(ch!=="\r")c+=ch;
+    }
+    if(c!==""||r.length){r.push(c);rows.push(r)}
+    return rows.filter(x=>x.some(y=>y.trim()));
+  }
+  pickCsv.onchange=e=>{
+    const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+    const cur=curBank();if(!cur)return;
+    const si=parseInt(chSel.value,10);if(!(si>=0)||!cur.S[si]){st.textContent="Choose the chapter first.";return}
+    readText(f,t=>{
+      try{
+        let rows=parseCsv(t);
+        if(rows.length&&/^(q(uestion)?|sr|s\.?no|#)\b/i.test(rows[0][0].trim())&&!/^[A-D1-4]$/i.test((rows[0][5]||"").trim()))rows.shift();
+        const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase()));
+        const test=tIn.value.trim()||"Custom";let n=0,d=0,bad=0;
+        rows.forEach(r=>{
+          const text=(r[0]||"").trim(),opts=r.slice(1,5).map(x=>(x||"").trim()).filter(Boolean),a=(r[5]||"").trim().toUpperCase();
+          const ans=/^[A-D]$/.test(a)?a.charCodeAt(0)-65:(/^[1-4]$/.test(a)?+a-1:-1);
+          /* the answer letter refers to the original column, so rebuild options keeping blanks in order */
+          const raw=r.slice(1,5).map(x=>(x||"").trim());
+          const ok=text&&opts.length>=2&&ans>=0&&raw[ans];
+          if(!ok){bad++;return}
+          const k=text.toLowerCase();if(seen.has(k)){d++;return}seen.add(k);
+          const o=[];let na=-1;raw.forEach((x,j)=>{if(x){o.push(x);if(j===ans)na=o.length-1}});
+          cur.Q0.push({text,opts:o,ans:na,sec:si,test});n++;
+        });
+        if(!n){st.textContent="No valid questions found ("+bad+" bad row(s), "+d+" duplicate(s)). Check the columns.";go.hidden=true;return}
+        preview(cur,n+" question(s) will be added to "+chSel.options[chSel.selectedIndex].text+" ("+d+" duplicate(s), "+bad+" bad row(s) skipped). Total: "+cur.Q0.length+".");
+      }catch(x){st.textContent="Could not read the file: "+x.message;go.hidden=true}
+    });
+  };
+  function fillChapters(){
+    chSel.textContent="";
+    if(!BANK_JSON){const o=el("option","","(no bank yet)");o.value="";chSel.appendChild(o);return}
+    try{const b=JSON.parse(BANK_JSON);b.S.forEach((x,i)=>{const o=el("option","",((b.SUB[x.sub]||{}).name||"?")+" \u00b7 "+x.name);o.value=String(i);chSel.appendChild(o)})}catch(e){}
+  }
   pick.onchange=e=>{
     const f=e.target.files&&e.target.files[0];if(!f)return;
     const rd=new FileReader();
@@ -3104,6 +3186,7 @@ function buildBank(host){
     a.download="bank-backup.json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
   };
   function refresh(){
+    fillChapters();
     info.textContent=BANK_META?("Published: "+BANK_META.count+" questions · "+(BANK_META.updatedAt&&BANK_META.updatedAt.toMillis?new Date(BANK_META.updatedAt.toMillis()).toLocaleString():"")+" · "+BANK_META.parts+" part(s)"):"No questions published yet. Upload a bank JSON.";
   }
   tabs.bank.load=refresh;
@@ -3129,7 +3212,7 @@ function buildSettings(host){
   kw.append(ki,ks,kt);
   const ps=el("select");ps.setAttribute("aria-label","AI provider");
   [["auto","Provider: Auto-detect (recommended)"],["gemini","Google Gemini - AI Studio key (AQ... or AIza...)"],["vertex","Google Cloud Vertex AI Express key only"],["free","Free - no key needed"],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];ps.appendChild(op)});
-  const mi=el("input");mi.type="text";mi.placeholder="Model (optional, default gemini-2.5-flash)";mi.setAttribute("aria-label","AI model");
+  const mi=el("input");mi.type="text";mi.placeholder="Model (optional, default gemini-flash-latest)";mi.setAttribute("aria-label","AI model");
   const bi=el("input");bi.type="text";bi.placeholder="Base URL, OpenAI-compatible only (e.g. https://openrouter.ai/api/v1)";bi.setAttribute("aria-label","AI base URL");
   const kst=el("div","label");
   kt.onclick=async()=>{
