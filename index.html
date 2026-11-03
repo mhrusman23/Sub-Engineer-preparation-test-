@@ -734,6 +734,30 @@ h1,h2,h3{font-family:var(--brand-font);font-weight:800;letter-spacing:-.01em}
 .revrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;margin:12px}
 .revrow .rrname{flex:1;min-width:140px}
 .revrow .rrname small{display:block;color:var(--muted)}
+/* mock tests section */
+.mts{margin:12px;padding:14px 16px}
+.mts-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.mts-head b{font-size:17px}
+.mts-btns{display:flex;gap:8px;flex-wrap:wrap}
+.mts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.mfolder{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:var(--panel);text-align:left;cursor:pointer;transition:box-shadow .2s}
+.mfolder:hover{box-shadow:var(--sh-md)}
+.mfolder .mf-ic{font-size:26px}
+.mfolder b{font-size:14px;line-height:1.3}
+.mfolder small{color:var(--muted);font-size:12px}
+.mfolder .mf-adm{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.mfolder .mf-adm .btn{padding:4px 8px;min-height:32px;font-size:12px}
+.mts-dhead{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.mts-dhead b{font-size:16px}
+.mts-list{display:flex;flex-direction:column;gap:8px}
+.mtrow{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.mtrow .mt-ic{font-size:22px}
+.mtrow .mt-info{flex:1;min-width:0}
+.mtrow .mt-info b{display:block;font-size:14px;overflow-wrap:anywhere}
+.mtrow .mt-info small{color:var(--muted);font-size:12px}
+.mtrow .mt-actions{display:flex;gap:6px;flex-wrap:wrap}
+.mtrow .mt-actions .btn{padding:6px 10px;min-height:34px;font-size:13px}
+.mtempty{color:var(--muted);font-size:13px;padding:8px 0}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -812,6 +836,21 @@ window.APP_CONFIG={
     </div></div>
     <div class="profile" id="profile"><div class="avatar" id="pfAv">U</div><div class="pfinfo"><div class="pfname" id="pfName"></div><div class="pfmail" id="pfMail"></div><div class="pfmeta" id="pfMeta"></div></div></div>
     <div class="resumebox" id="resumeBox"><button class="btn primary" id="btnResume" type="button" hidden="">Resume saved attempt</button><span id="resumeInfo" class="label"></span></div>
+    <div id="mtSec" class="card mts">
+      <div class="mts-head">
+        <div><b>&#128193; Mock Tests &amp; Notes</b><div class="label" id="mtCount"></div></div>
+        <div class="mts-btns">
+          <button class="btn primary" id="mtAddFolder" type="button" hidden>+ New folder</button>
+          <button class="btn" id="mtAddFile" type="button" hidden>+ Add file</button>
+        </div>
+      </div>
+      <div class="mts-grid" id="mtGrid"></div>
+      <div id="mtDetail" hidden>
+        <div class="mts-dhead"><button class="btn" id="mtBack" type="button">&larr; Back</button><b id="mtDTitle"></b><span class="label" id="mtDCount"></span><button class="btn" id="mtAddItem" type="button" hidden>+ Add file</button></div>
+        <div class="mts-list" id="mtList"></div>
+      </div>
+      <input type="file" id="mtFile" accept=".html,.htm,.pdf,.txt,image/*,application/pdf,text/html,text/plain" multiple hidden>
+    </div>
     <div id="homeCards" class="ycards"></div>
     <div class="label hadmst" id="hAdmSt"></div>
     <div id="yearView" hidden>
@@ -2809,6 +2848,7 @@ async function check(user){
     try{const c=await getDoc(doc(db,"meta","config"));if(c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
     window.__AI_ON=cfg.ai!==false;
+    window.__LIB_ON=cfg.library!==false;
     const br=await bankP;if(br.e)throw br.e;
     const b=br.v;
     if(!b){
@@ -2828,7 +2868,7 @@ function userbar(){
   const lf=el("div","ul"),br=el("div","ubrand");br.appendChild(el("i","shield"));br.appendChild(document.createTextNode("Engrgroup"));br.appendChild(el("b","","23"));
   lf.appendChild(br);lf.appendChild(el("span","em",ME+(IS_OWNER?" (admin)":IS_ADMIN?" (manager)":"")));u.appendChild(lf);
   const r=el("span");r.style.cssText="display:flex;gap:8px";
-  const lb=el("button","btn","Library");lb.type="button";lb.onclick=openLibrary;r.appendChild(lb);
+  if(window.__LIB_ON!==false||IS_ADMIN){const lb=el("button","btn","Library");lb.type="button";lb.onclick=openLibrary;r.appendChild(lb)}
   if(IS_ADMIN){const a=el("button","btn","Admin panel");a.type="button";a.onclick=()=>openAdmin();r.appendChild(a)}
   const o=el("button","btn","Sign out");o.type="button";o.onclick=()=>{signOut(auth).then(()=>location.reload())};r.appendChild(o);
   u.appendChild(r);document.body.appendChild(u);
@@ -2844,6 +2884,7 @@ function startApp(bank){
   document.body.appendChild(ds);
   const ls=document.createElement("script");ls.textContent=$("app-js").textContent;
   document.body.appendChild(ls);
+  try{buildMockTests()}catch(e){console.error("Mock tests init failed",e)}
 }
 
 /* ---------------- publish questions (admin) ---------------- */
@@ -3035,9 +3076,11 @@ function buildBank(host){
   upl.style.cssText="display:block;text-align:center;cursor:pointer";
   const go=el("button","btn primary","Publish uploaded file");go.type="button";go.hidden=true;
   const dl=el("button","btn","Download backup (current questions)");dl.type="button";
+  const ij=el("button","btn","+ Import JSON files (new mock tests)");ij.type="button";ij.onclick=()=>{const e=$("#edFileJson");if(e)e.click()};
+  const ih=el("button","btn","+ Import HTML files (new mock tests)");ih.type="button";ih.onclick=()=>{const e=$("#edFileHtml");if(e)e.click()};
   const rl=el("button","btn","Reload app");rl.type="button";rl.hidden=true;rl.onclick=()=>location.reload();
   const note=el("div","label","To edit questions: tap Edit MCQs on the start screen, make changes, then tap Publish to everyone. Any MCQ answer can also be fixed directly from the test, result or search with '\u270e Edit MCQ / answer'. Create new home options with '+ Add more option'.");
-  host.append(info,upl,go,dl,rl,st,note);
+  host.append(info,upl,go,dl,ij,ih,rl,st,note);
   let pending=null;
   pick.onchange=e=>{
     const f=e.target.files&&e.target.files[0];if(!f)return;
@@ -3076,6 +3119,8 @@ function buildSettings(host){
   const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Guest: only one per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
+  const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
+  const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
   const kw=el("div","",null);kw.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
   const ki=el("input");ki.type="password";ki.placeholder="Paste API key";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","AI API key");
@@ -3096,17 +3141,17 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,lb4,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lb2,lb3,lb4,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_OWNER){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb5.checked=d.library!==false;
       if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,updatedAt:serverTimestamp()});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,library:cb5.checked,updatedAt:serverTimestamp()});
       if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
@@ -3158,12 +3203,13 @@ function decodePdf(parts,size){
   if(o!==size)throw new Error("The file is incomplete, please upload it again.");
   return out;
 }
-async function loadParts(id,n){
-  const docs=await Promise.all(Array.from({length:n},(_,i)=>getDoc(doc(db,"libdata",id,"parts",String(i)))));
+async function loadParts(id,n,coll){
+  const docs=await Promise.all(Array.from({length:n},(_,i)=>getDoc(doc(db,coll||"libdata",id,"parts",String(i)))));
   return docs.map(d=>{if(!d.exists())throw new Error("Part of the file is missing.");return d.data().data});
 }
-async function fetchItems(all){
-  const q=all?collection(db,"lib"):query(collection(db,"lib"),where("visible","==",true));
+async function fetchItems(all,coll){
+  const name=coll||"lib";
+  const q=all?collection(db,name):query(collection(db,name),where("visible","==",true));
   const s=await getDocs(q);
   return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0));
 }
@@ -3171,6 +3217,7 @@ function fmtSize(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Ma
 const TYPE_TAG={html:"HTML",pdf:"PDF",image:"PHOTO",link:"LINK"};
 
 function openLibrary(){
+  if(!IS_ADMIN&&window.__LIB_ON===false){alert("The Library is switched off right now. Please try later. / لائبریری فی الحال بند ہے");return}
   if(!libEl)buildLibrary();
   libEl.hidden=false;libEl.load();
 }
@@ -3289,19 +3336,178 @@ async function showPdf(bytes,tok){
   for(let i=1;i<=pdf.numPages;i++){const d=el("div","pg");d.style.width=W+"px";d.style.minHeight=Math.round(W*1.35)+"px";d._n=i;wrap.appendChild(d);io.observe(d)}
   vw.cleanup=()=>{io.disconnect();try{pdf.destroy()}catch(e){}};
 }
-async function openItem(it){
+async function openItem(it,coll){
   if(!vw)buildViewer();
   const tok=++vtoken;
   if(vw.cleanup){try{vw.cleanup()}catch(e){}vw.cleanup=null}
   vw.t.textContent=it.title||"";vw.hidden=false;vstatus("Loading...");
   try{
     if(it.type==="link"){showLink(it);return}
-    const parts=await loadParts(it.id,it.parts||0);if(tok!==vtoken)return;
+    const parts=await loadParts(it.id,it.parts||0,coll||"libdata");if(tok!==vtoken)return;
     if(it.type==="html")showHtml(it,parts.join(""));
     else if(it.type==="image")showImage(decodePdf(parts,it.size||0),it.mime);
     else await showPdf(decodePdf(parts,it.size||0),tok);
   }catch(e){if(tok===vtoken)vstatus("Error: "+(e.code||e.message))}
 }
+
+/* ================= MOCK TESTS: folders + files on the home page ================= */
+const MT_FOLDERS="mocktests",MT_DATA="mockdata";
+const mtNid=()=>"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+async function fetchMockAll(){
+  const s=await getDocs(collection(db,MT_FOLDERS));
+  return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0)||String(a.name||"").localeCompare(String(b.name||"")));
+}
+async function fetchMockItems(fid){
+  const s=await getDocs(query(collection(db,MT_FOLDERS),where("folder","==",fid)));
+  return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0));
+}
+async function loadMockParts(id,n){return loadParts(id,n,MT_DATA)}
+async function openMockItem(it){
+  /* reuse the library viewer; mock file chunks live in mockdata/ */
+  if(!vw)buildViewer();
+  const tok=++vtoken;
+  if(vw.cleanup){try{vw.cleanup()}catch(e){}vw.cleanup=null}
+  vw.t.textContent=it.title||"";vw.hidden=false;vstatus("Loading...");
+  try{
+    if(it.type==="link"){showLink(it);return}
+    const parts=await loadMockParts(it.id,it.parts||0);if(tok!==vtoken)return;
+    if(it.type==="html")showHtml(it,parts.join(""));
+    else if(it.type==="image")showImage(decodePdf(parts,it.size||0),it.mime);
+    else await showPdf(decodePdf(parts,it.size||0),tok);
+  }catch(e){if(tok===vtoken)vstatus("Error: "+(e.code||e.message))}
+}
+const MT_TAG={html:"HTML",pdf:"PDF",image:"PHOTO",link:"LINK"};
+let mtCur=null; /* currently open folder id */
+function mtRefresh(){if(mtCur)mtOpenFolder(mtCur);else mtRender()}
+function mtBtn(t,cls,fn){const b=el("button",cls||"btn",t);b.type="button";b.addEventListener("click",fn);return b}
+function mtRow(it,isAdmin){
+  const r=el("div","mtrow"),ic=el("div","mt-ic",MT_TAG[it.type]||"FILE");
+  const info=el("div","mt-info");info.appendChild(el("b","",it.title||"(no title)"));
+  info.appendChild(el("small","",(it.type||"file").toUpperCase()+(it.size?" · "+fmtSize(it.size):"")));
+  const acts=el("div","mt-actions");acts.appendChild(mtBtn("Open","btn primary",()=>openMockItem(it)));
+  if(isAdmin){
+    acts.appendChild(mtBtn("Rename","btn",async()=>{
+      const nt=prompt("New title:",it.title||"");if(nt===null)return;
+      try{await updateDoc(doc(db,MT_FOLDERS,it.id),{title:nt.trim()||it.title});mtRefresh()}catch(e){alert("Error: "+(e.code||e.message))}
+    }));
+    acts.appendChild(mtBtn("Delete","btn danger",async()=>{
+      if(!confirm("Delete '"+(it.title||"item")+"'?"))return;
+      try{
+        const b=writeBatch(db);
+        for(let i=0;i<(it.parts||0);i++)b.delete(doc(db,MT_DATA,it.id,"parts",String(i)));
+        b.delete(doc(db,MT_FOLDERS,it.id));await b.commit();mtRefresh();
+      }catch(e){alert("Error: "+(e.code||e.message))}
+    }));
+  }
+  r.append(ic,info,acts);return r;
+}
+async function mtRender(){
+  const grid=$("#mtGrid"),det=$("#mtDetail"),cnt=$("#mtCount");
+  if(!grid)return;
+  grid.textContent="";det.hidden=true;grid.hidden=false;
+  let folders=[];
+  try{folders=(await fetchMockAll()).filter(f=>f.kind==="folder")}catch(e){cnt.textContent="Error: "+(e.code||e.message);return}
+  cnt.textContent=folders.length+" folder(s) · admin/manager manage files here";
+  if(!folders.length)grid.appendChild(el("div","mtempty","No mock tests yet. Admin/manager: tap + New folder to add one."));
+  folders.forEach(f=>{
+    const card=el("button","mfolder");card.type="button";
+    card.appendChild(el("div","mf-ic","\u{1F4C1}"));
+    card.appendChild(el("b","",f.name||"Folder"));
+    card.appendChild(el("small","","Tap to open"));
+    if(IS_ADMIN){
+      const adm=el("div","mf-adm");
+      adm.appendChild(el("small","","Admin:"));
+      adm.appendChild(mtBtn("Rename","btn",async(ev)=>{ev.stopPropagation();const nt=prompt("Folder name:",f.name||"");if(nt===null)return;try{await updateDoc(doc(db,MT_FOLDERS,f.id),{name:nt.trim()||f.name});mtRender()}catch(e){alert(e.code||e.message)}}));
+      adm.appendChild(mtBtn("Delete","btn",async(ev)=>{ev.stopPropagation();if(!confirm("Delete folder '"+(f.name||"")+"' and ALL its files?"))return;try{const items=await fetchMockItems(f.id);const b=writeBatch(db);items.forEach(it=>{for(let i=0;i<(it.parts||0);i++)b.delete(doc(db,MT_DATA,it.id,"parts",String(i)));b.delete(doc(db,MT_FOLDERS,it.id))});b.delete(doc(db,MT_FOLDERS,f.id));await b.commit();mtRender()}catch(e){alert(e.code||e.message)}}));
+      card.appendChild(adm);
+    }
+    card.addEventListener("click",()=>mtOpenFolder(f.id));
+    grid.appendChild(card);
+  });
+}
+async function mtOpenFolder(fid){
+  const grid=$("#mtGrid"),det=$("#mtDetail"),cnt=$("#mtCount");
+  grid.hidden=true;det.hidden=false;
+  let folders=[];try{folders=await fetchMockAll()}catch(e){det.hidden=true;grid.hidden=false;cnt.textContent="Error: "+(e.code||e.message);return}
+  const f=folders.find(x=>x.id===fid);
+  $("#mtDTitle").textContent=f?f.name:"Folder";
+  $("#mtAddItem").hidden=!IS_ADMIN;
+  const list=$("#mtList");list.textContent="";
+  let items=[];try{items=await fetchMockItems(fid)}catch(e){list.appendChild(el("div","mtempty","Error: "+(e.code||e.message)));return}
+  $("#mtDCount").textContent=items.length+" item(s)";
+  if(!items.length)list.appendChild(el("div","mtempty",IS_ADMIN?"Empty folder — tap + Add file to upload HTML/PDF/Photo/Link from your phone.":"No files in this folder yet."));
+  items.forEach(it=>list.appendChild(mtRow(it,IS_ADMIN)));
+  mtCur=fid;
+}
+async function mtAddFolderFlow(){
+  const nm=prompt("Folder name (e.g. 'PPSC 2026 Papers'):");if(!nm||!nm.trim())return;
+  try{await setDoc(doc(db,MT_FOLDERS,mtNid()),{kind:"folder",name:nm.trim().slice(0,60),order:Date.now(),createdAt:serverTimestamp(),visible:true});mtRender()}catch(e){alert("Error: "+(e.code||e.message))}
+}
+async function mtAddFileFlow(fid){
+  if(!fid)return;
+  var inp=$("#mtFile");inp.value="";inp.onchange=async function(){
+    const files=Array.from(inp.files||[]);if(!files.length)return;
+    for(const f of files){
+      const isImg=/^image\//i.test(f.type||"")||/\.(png|jpe?g|gif|webp)$/i.test(f.name);
+      const isPdf=f.type==="application/pdf"||/\.pdf$/i.test(f.name);
+      const isHtml=/\.htm(l)?$/i.test(f.name)||f.type==="text/html";
+      if(!isImg&&!isPdf&&!isHtml&&!/\.txt$/i.test(f.name)){alert("Skipped "+f.name+" — only HTML, PDF, photos or text files.");continue}
+      if(isPdf&&f.size>25*1048576){alert("PDF too big (25 MB max). Use Google Drive link instead.");continue}
+      if(isHtml&&f.size>15*1048576){alert("HTML too big (15 MB max).");continue}
+      if(isImg&&f.size>15*1048576){alert("Image too big (15 MB max).");continue}
+      try{
+        const id=mtNid(),base={folder:fid,title:f.name.replace(/\.[^.]+$/,"").slice(0,80)||f.name,createdAt:serverTimestamp(),order:Date.now(),visible:true};
+        let meta,chunks;
+        if(isImg){const u8=await imageBytes(f);meta=Object.assign(base,{type:"image",mime:"image/jpeg",size:u8.length});chunks=binChunks(u8)}
+        else if(isPdf){const u8=new Uint8Array(await f.arrayBuffer());meta=Object.assign(base,{type:"pdf",size:u8.length});chunks=binChunks(u8)}
+        else{const txt=await f.text();meta=Object.assign(base,{type:"html",size:f.size,trusted:false});chunks=textChunks(txt)}
+        meta.parts=chunks.length;
+        for(let i=0;i<chunks.length;i+=4){
+          const b=writeBatch(db);
+          chunks.slice(i,i+4).forEach((d,j)=>b.set(doc(db,MT_DATA,id,"parts",String(i+j)),{i:i+j,data:d}));
+          await b.commit();
+        }
+        await setDoc(doc(db,MT_FOLDERS,id),meta);
+      }catch(e){alert("Could not upload "+f.name+": "+(e.message||e.code))}
+    }
+    mtOpenFolder(fid);
+  };
+  inp.click();
+}
+function buildMockTests(){
+  const addF=$("#mtAddFolder"),addFile=$("#mtAddFile"),addItem=$("#mtAddItem"),back=$("#mtBack");
+  if(IS_ADMIN){addF.hidden=false;addFile.hidden=false;}
+  addF.addEventListener("click",mtAddFolderFlow);
+  addFile.addEventListener("click",()=>{if(!mtCur){const f=prompt("First create/open a folder, then add files inside it. Folder name?");if(f&&f.trim())mtAddFolderFlow()}else mtAddFileFlow(mtCur)});
+  addItem.addEventListener("click",()=>{if(mtCur)mtAddFileFlow(mtCur)});
+  back.addEventListener("click",()=>{mtCur=null;mtRender()});
+  mtRender();
+}
+async function mtFolderByName(name){
+  const nm=String(name||"").trim().slice(0,60)||"General";
+  try{
+    const all=await fetchMockAll();
+    const found=all.find(x=>x.kind==="folder" && (x.name||"").toLowerCase()===nm.toLowerCase());
+    if(found)return found.id;
+    const id=mtNid();
+    await setDoc(doc(db,MT_FOLDERS,id),{kind:"folder",name:nm,order:Date.now(),createdAt:serverTimestamp(),visible:true});
+    return id;
+  }catch(e){if(e&&e.code==="permission-denied")throw new Error("Only admins can create Mock Test folders. / صرف ایڈمن فولڈر بنا سکتا ہے۔");throw e}
+}
+async function copyLibToMock(it,fid){
+  const parts=await loadParts(it.id,it.parts||0,"libdata");
+  const id=mtNid();
+  for(let i=0;i<parts.length;i+=4){
+    const b=writeBatch(db);
+    parts.slice(i,i+4).forEach((d,j)=>b.set(doc(db,MT_DATA,id,"parts",String(i+j)),{i:i+j,data:d}));
+    await b.commit();
+  }
+  const meta={kind:"file",folder:fid,title:it.title||"(no title)",type:it.type||"pdf",mime:it.mime||null,size:it.size||0,parts:parts.length,visible:true,createdAt:serverTimestamp(),order:Date.now()};
+  if(it.type==="html"&&it.trusted)meta.trusted=true;
+  await setDoc(doc(db,MT_FOLDERS,id),meta);
+  return id;
+}
+window.__mockTests={render:mtRender,open:mtOpenFolder};
 
 /* ================= LIBRARY (admin manager) ================= */
 function buildLibAdmin(host){
@@ -3334,6 +3540,21 @@ function buildLibAdmin(host){
       const sm=el("small","",(TYPE_TAG[it.type]||"?")+" · "+(it.category||"General")+(it.size?" · "+fmtSize(it.size):"")+" · "+(it.visible===false?"Hidden":"Visible"));
       if(it.visible===false)sm.style.color="var(--bad)";w.appendChild(sm);
       const op=el("button","btn","Open");op.type="button";op.onclick=()=>openItem(it);
+      const mv=el("button","btn","\u2192 Mock");mv.type="button";mv.setAttribute("aria-label","Move to Mock Tests");
+      mv.onclick=async()=>{
+        const nm=prompt("Move to Mock Tests folder (name, e.g. 'Past Papers'):",it.category||"General");
+        if(nm===null)return;
+        mv.disabled=true;
+        try{
+          const fid=await mtFolderByName(nm);
+          await copyLibToMock(it,fid);
+          const b=writeBatch(db);
+          for(let i=0;i<(it.parts||0);i++)b.delete(doc(db,"libdata",it.id,"parts",String(i)));
+          b.delete(doc(db,"lib",it.id));await b.commit();
+          st.textContent="Moved to Mock Tests > "+(nm.trim()||"General");
+          await load();
+        }catch(e){st.textContent="Error: "+((e&&e.message)||e.code||e);mv.disabled=false}
+      };
       const tg=el("button","btn",it.visible===false?"Show":"Hide");tg.type="button";
       tg.onclick=async()=>{tg.disabled=true;try{await updateDoc(doc(db,"lib",it.id),{visible:it.visible===false});await load()}catch(e){st.textContent="Error: "+(e.code||e.message);tg.disabled=false}};
       const ed=el("button","btn","Edit");ed.type="button";
@@ -3351,7 +3572,7 @@ function buildLibAdmin(host){
           b.delete(doc(db,"lib",it.id));await b.commit();await load();
         }catch(e){st.textContent="Error: "+(e.code||e.message)}
       };
-      r.append(w,op,tg,ed,dx);list.appendChild(r);
+      r.append(w,op,mv,tg,ed,dx);list.appendChild(r);
     });
   }
   async function load(){
