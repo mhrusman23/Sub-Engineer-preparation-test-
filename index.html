@@ -2007,6 +2007,7 @@ const VTX_BASE="https://aiplatform.googleapis.com/v1/publishers/google/models/";
 let aiKeyP=null,aiGood=null;
 /* saved AI settings (Admin panel > Settings): {key, provider, model, baseUrl} */
 function aiKey(){
+  if(!IS_OWNER)return Promise.resolve({key:"",provider:"proxy",model:"",baseUrl:""});
   if(!aiKeyP)aiKeyP=getDoc(doc(db,"meta","ai")).then(d=>{
     const x=d.exists()?d.data():{},k=String(x.key||"").trim();
     return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim()};
@@ -2024,8 +2025,11 @@ function aiPlans(cfg){
   const gemq=()=>({id:"gemini-q",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const oai=()=>({id:"openai",kind:"o",model:model,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}});
+  /* server proxy: the key stays on the server (Vercel env GEMINI_API_KEY), users never see it */
+  const prx=()=>({id:"proxy",kind:"g",proxy:true,url:"/api/ai",h:{}});
   /* keyless free fallback (no API key needed) */
   const free=()=>({id:"free",kind:"o",free:true,model:"openai",url:"https://text.pollinations.ai/openai",h:{}});
+  if(p==="proxy")return [prx(),free()];
   if(p==="free"||!key)return [free()];
   let pl;
   if(p==="gemini")pl=[gem(),gemq()];
@@ -2059,7 +2063,9 @@ async function aiCall(cfg,contents,on){
   for(const plan of plans){
     for(let attempt=0;attempt<2;attempt++){
       let r;
-      try{r=await fetch(plan.url,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},plan.h),body:JSON.stringify(aiBody(plan,contents,attempt===1))})}
+      const hd=Object.assign({"Content-Type":"application/json"},plan.h);
+      if(plan.proxy){try{hd.Authorization="Bearer "+await auth.currentUser.getIdToken()}catch(e){tried.push("proxy: not signed in");break}}
+      try{r=await fetch(plan.url,{method:"POST",headers:hd,body:JSON.stringify(aiBody(plan,contents,attempt===1))})}
       catch(e){netErr=netErr||e;tried.push(plan.id+" network: "+String((e&&e.message)||e).slice(0,80));break}
       if(!r.ok){
         let j=null;try{j=await r.json()}catch(e){}
@@ -2278,7 +2284,7 @@ function deny(email,text){
 }
 /* ---- free trial (12 hours, once per Google account, once per network/IP) ---- */
 async function getIp(){
-  const tries=[["https://api.ipify.org?format=json",async r=>(await r.json()).ip],["https://api64.ipify.org?format=json",async r=>(await r.json()).ip],["https://www.cloudflare.com/cdn-cgi/trace",async r=>{const m=(await r.text()).match(/^ip=(.+)$/m);return m?m[1].trim():""}]];
+  const tries=[["/api/ip",async r=>(await r.json()).ip],["https://api.ipify.org?format=json",async r=>(await r.json()).ip],["https://api64.ipify.org?format=json",async r=>(await r.json()).ip],["https://www.cloudflare.com/cdn-cgi/trace",async r=>{const m=(await r.text()).match(/^ip=(.+)$/m);return m?m[1].trim():""}]];
   for(const t of tries){
     try{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),5000);const r=await fetch(t[0],{signal:ac.signal,cache:"no-store"});clearTimeout(tm);const ip=await t[1](r);if(ip&&/^[0-9a-fA-F:.]{3,45}$/.test(ip))return ip}catch(e){}
   }
