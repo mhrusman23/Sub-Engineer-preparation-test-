@@ -864,7 +864,7 @@ window.APP_CONFIG={
         <div class="stat"><div class="label">Attempted</div><div class="n" id="stAtt">0/0</div></div>
       </div>
       <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
-      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button></div>
+      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button><button class="btn" id="btnSnd" type="button" aria-label="Sound on or off" title="Sound on/off">🔊</button></div>
     </div>
 
     <div id="pausedBox" class="card paused" hidden>
@@ -1403,6 +1403,7 @@ window.APP_CONFIG={
     if(ans[id])return; /* one attempt per MCQ */
     if(!started){started=true;startTs=Date.now();tick=setInterval(onTick,250);$("#btnPause").disabled=false}
     var used=elapsed(),q=Q[id],ok=(i===q.ans);
+    if(window.__sfx)window.__sfx(ok?"good":"sad");
     ans[id]={sel:i,ok:ok,used:used,w:ok?[]:[{sel:i,used:used}]};
     if(!ok)wrongLog.push({n:pos+1,id:id,used:used,sel:i});
     save();justAns=id;
@@ -1919,7 +1920,7 @@ window.APP_CONFIG={
     if(started&&!finished&&!paused)doPause();
     save();showResume();buildPick(pickedSubs());show("start");
   }
-  $("#btnBack").addEventListener("click",function(){if(history.state&&history.state.t===1)history.back();else goHome()});
+  $("#btnBack").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");if(history.state&&history.state.t===1)history.back();else goHome()});
   window.addEventListener("popstate",function(){
     if(!$("#test").hidden)goHome();
     else if(!$("#result").hidden){showResume();buildPick(sel.length?sel:null);show("start")}
@@ -2925,5 +2926,35 @@ function buildManagers(host){
     c.style.transform="rotateX("+(-y*14).toFixed(1)+"deg) rotateY("+(x*14).toFixed(1)+"deg) translateY(-4px)";
   },{passive:true});
   document.addEventListener("pointerleave",reset);
+})();
+</script><script>
+/* sound effects: synthesized with Web Audio (no audio files needed) */
+(function(){
+  var ctx=null;
+  function pref(){try{return localStorage.getItem("eg23snd")!=="0"}catch(e){return true}}
+  function paint(){var b=document.getElementById("btnSnd");if(b){var o=pref();b.textContent=o?"\uD83D\uDD0A":"\uD83D\uDD07";b.setAttribute("aria-pressed",o?"true":"false")}}
+  function on(){return pref()}
+  document.addEventListener("pointerover",function(){var b=document.getElementById("btnSnd");if(b&&!b.dataset.s){b.dataset.s="1";paint()}},true);
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("#btnSnd");if(!b)return;
+    var o=!pref();try{localStorage.setItem("eg23snd",o?"1":"0")}catch(_){}
+    paint();if(o)window.__sfx("click");
+  });
+  function tone(f,t,d,type,v,f2){
+    var o=ctx.createOscillator(),g=ctx.createGain(),n=ctx.currentTime+t;
+    o.type=type;o.frequency.setValueAtTime(f,n);if(f2)o.frequency.exponentialRampToValueAtTime(f2,n+d);
+    g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(v,n+0.02);g.gain.exponentialRampToValueAtTime(0.0001,n+d);
+    o.connect(g);g.connect(ctx.destination);o.start(n);o.stop(n+d+0.05);
+  }
+  window.__sfx=function(k){
+    try{
+      if(!on())return;
+      var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+      if(!ctx)ctx=new AC();if(ctx.state==="suspended")ctx.resume();
+      if(k==="click"){tone(1100,0,.06,"square",.12,500)}
+      else if(k==="good"){tone(659,0,.16,"sine",.28);tone(784,.11,.16,"sine",.28);tone(1047,.22,.34,"sine",.3)}
+      else if(k==="sad"){tone(392,0,.28,"triangle",.3,370);tone(330,.24,.28,"triangle",.3,300);tone(262,.48,.55,"triangle",.32,200)}
+    }catch(e){}
+  };
 })();
 </script></body></html>
