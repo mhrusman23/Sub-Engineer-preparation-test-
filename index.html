@@ -795,7 +795,6 @@ window.APP_CONFIG={
     </div>
         <div class="startrow">
       <label><input type="checkbox" id="optShuf" checked> Re-shuffle options every test</label>
-      <label><input type="checkbox" id="optAuto" checked> Auto-next (1.2 s right, 4 s wrong)</label>
       <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
     </div>
     <div class="contacts" id="contactBox"></div>
@@ -889,7 +888,7 @@ window.APP_CONFIG={
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
             <button class="btn" id="nextUn" type="button">Next unanswered</button>
@@ -1397,6 +1396,8 @@ window.APP_CONFIG={
     updateTimer();
   }
 
+  function autoOn(){try{return localStorage.getItem("eg23auto")!=="0"}catch(e){return true}}
+  function paintAuto(){var b=$("#qAuto");if(b){b.textContent="\u23E9 Auto-next: "+(autoOn()?"ON":"OFF");b.setAttribute("aria-pressed",autoOn()?"true":"false")}}
   function choose(i){
     if(finished||paused)return;
     var id=order[pos];
@@ -1410,7 +1411,7 @@ window.APP_CONFIG={
     updateStats();updateTimer();paintMap();renderQ();renderLog();
     /* auto-next: 1.2 s after a right answer, 4 s after a wrong one */
     cancelAuto();
-    if($("#optAuto")&&$("#optAuto").checked&&pos<order.length-1){
+    if(autoOn()&&pos<order.length-1){
       var at=pos,ms=ok?1200:4000;
       var fd=$("#fb").firstChild;if(fd)fd.appendChild(document.createTextNode(" Next question in "+(ok?"1.2":"4")+" s."));
       autoT=setTimeout(function(){autoT=null;if(!finished&&!paused&&pos===at)go(at+1)},ms);
@@ -1908,6 +1909,7 @@ window.APP_CONFIG={
 
   recalcT();
   buildPick();
+  (function(){var ab=$("#qAuto");if(!ab)return;paintAuto();ab.addEventListener("click",function(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()})})();
   if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])})}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
   if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
