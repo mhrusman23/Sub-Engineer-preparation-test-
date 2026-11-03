@@ -684,7 +684,8 @@ window.APP_CONFIG={
   /* OWNER login IDs: Gmail (lowercase) or phone (+92 format, e.g. "+923001234567").
      Same list must be in firestore.rules (isOwner) */
   admins:["maherusman1947@gmail.com"],
-  /* AI helper model (Firebase console > AI Logic > Gemini Developer API must be ON) */
+  /* AI helper: Gemini model. The Gemini API key is pasted by the owner in
+     Admin panel > Settings > Gemini API key (saved in Firestore, not in this file). */
   aiModel:"gemini-2.5-flash",
   contacts:[
     {role:"Admin",name:"Usman Amjad",phone:"03494482609"},
@@ -1196,7 +1197,7 @@ window.APP_CONFIG={
     f.appendChild(aiEl.inp);f.appendChild(aiEl.sb);
     f.addEventListener("submit",function(e){e.preventDefault();var v=aiEl.inp.value.trim();if(v){aiEl.inp.value="";aiSend(v)}});
     var ex=el("div","aiext");ex.appendChild(el("span","","Or open in:"));
-    [["Gemini","https://gemini.google.com/app"],["Meta AI","https://www.meta.ai/"]].forEach(function(p){
+    [["Gemini","https://gemini.google.com/app"]].forEach(function(p){
       var a=el("a","",p[0]);a.href=p[1];a.target="_blank";a.rel="noopener";
       a.addEventListener("click",function(){try{navigator.clipboard.writeText(aiCtx(aiCur))}catch(e){}aiEl.cp.textContent="Question copied, paste it there."});
       ex.appendChild(a);
@@ -1220,7 +1221,7 @@ window.APP_CONFIG={
     var id=aiCur;
     aiEl.msgs.appendChild(el("div","aim u",text));
     var b=el("div","aim b");b.innerHTML='<span class="aidots"><i></i><i></i><i></i></span>';aiEl.msgs.appendChild(b);aiScroll();
-    if(!window.__aiStart){b.className="aim b err";b.textContent="AI is not available right now. Use the Gemini / Meta AI links below.";return}
+    if(!window.__aiStart){b.className="aim b err";b.textContent="AI is not available right now. Use the Gemini link below.";return}
     aiBusy=true;aiEl.sb.disabled=true;
     var p=aiSess?Promise.resolve(aiSess):window.__aiStart(aiCtx(id)).then(function(s){if(aiCur===id)aiSess=s;return s});
     p.then(function(s){return s.send(text,function(full){b.innerHTML=aiMd(full);aiScroll()})})
@@ -1962,36 +1963,70 @@ function renderContacts(host){
 }
 window.renderContacts=renderContacts;
 
-/* ---------------- AI helper (Gemini via Firebase AI Logic) ---------------- */
-const AI_URL="https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
+/* ---------------- AI helper (Gemini API key, direct) ---------------- */
 const AI_SYS="You are the friendly civil engineering tutor of Engrgroup23. Students are preparing for the Pakistani Sub Engineer (PPSC) and DAE Civil exams. "+
  "Reply in clear, simple English. If the student writes in Urdu or Roman Urdu, you may reply in the same language. "+
  "Keep answers short and clear (at most 150 words) unless the student asks for detail. Use bullet points, and write formulas and units in plain text. "+
  "If an official answer key is given and you believe it is wrong, say so politely and explain why. Only discuss studies and this MCQ.";
-let aiModelP=null;
-function aiModel(){
-  if(!aiModelP)aiModelP=import(AI_URL).then(m=>{
-    const ai=m.getAI(app,{backend:new m.GoogleAIBackend()});
-    return m.getGenerativeModel(ai,{model:CFG.aiModel||"gemini-2.5-flash",systemInstruction:AI_SYS,generationConfig:{temperature:0.4,thinkingConfig:{thinkingBudget:0}}});
-  }).catch(e=>{aiModelP=null;throw e});
-  return aiModelP;
+const AI_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
+let aiKeyP=null;
+function aiKey(){
+  if(!aiKeyP)aiKeyP=getDoc(doc(db,"meta","ai")).then(d=>{
+    const k=d.exists()?String(d.data().key||"").trim():"";
+    if(!k)throw new Error("NO_KEY");return k;
+  }).catch(e=>{aiKeyP=null;throw e});
+  return aiKeyP;
+}
+function aiErrMsg(st,j){
+  const e=(j&&j.error)||{};const m=(e.status||"")+" "+(e.message||"")+" "+JSON.stringify(e.details||"");
+  const x=new Error(m.trim()||("HTTP "+st));x.http=st;return x;
+}
+/* send whole chat to Gemini, stream the reply */
+async function aiCall(key,contents,on,model){
+  const url=AI_BASE+encodeURIComponent(model||CFG.aiModel||"gemini-2.5-flash")+":streamGenerateContent?alt=sse";
+  const body={systemInstruction:{parts:[{text:AI_SYS}]},contents,generationConfig:{temperature:0.4,maxOutputTokens:1024,thinkingConfig:{thinkingBudget:0}}};
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
+  if(!r.ok){let j=null;try{j=await r.json()}catch(e){}throw aiErrMsg(r.status,j)}
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",full="";
+  for(;;){
+    const {value,done}=await rd.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    let i;while((i=buf.indexOf("\n"))>=0){
+      const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+      if(!line.startsWith("data:"))continue;
+      let j;try{j=JSON.parse(line.slice(5))}catch(e){continue}
+      if(j.error)throw aiErrMsg(r.status,j);
+      const c=j.candidates&&j.candidates[0];
+      const t=((c&&c.content&&c.content.parts)||[]).map(p=>p.thought?"":(p.text||"")).join("");
+      if(t){full+=t;on&&on(full)}
+    }
+  }
+  return full;
 }
 window.__aiStart=async ctx=>{
-  const model=await aiModel();
-  const chat=model.startChat({history:[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}]});
+  const key=await aiKey();
+  const hist=[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}];
   return {send:async(msg,on)=>{
-    const r=await chat.sendMessageStream(msg);let full="";
-    for await(const c of r.stream){let t="";try{t=c.text()}catch(e){}full+=t;on(full)}
+    const turn=hist.concat([{role:"user",parts:[{text:msg}]}]);
+    const full=await aiCall(key,turn,on);
+    if(full){hist.push({role:"user",parts:[{text:msg}]},{role:"model",parts:[{text:full}]})}
     return full;
   }};
 };
 window.__aiErr=e=>{
   const m=String((e&&(e.message||e.code))||e);
-  if(/api-not-enabled|has not been used|disabled|firebasevertexai|firebaseml|AI Logic|PERMISSION_DENIED|403/i.test(m))return "AI is not switched on yet. Admin: Firebase console \u2192 AI Logic \u2192 Get started (Gemini Developer API). Until then, use the Gemini / Meta AI links below.";
-  if(/quota|429|RESOURCE_EXHAUSTED/i.test(m))return "AI limit reached, please try again in a while.";
+  if(/NO_KEY/.test(m))return "AI is not set up yet. Admin: Admin panel \u2192 Settings \u2192 paste the Gemini API key and Save. Until then, use the Gemini link below.";
+  if(/permission-denied|Missing or insufficient permissions/i.test(m))return "AI is only for active members. Please log in again.";
+  if(/API_KEY_INVALID|API key not valid|API key expired/i.test(m))return "The Gemini API key is wrong or expired. Admin: paste a new key in Admin panel \u2192 Settings.";
+  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The Gemini key is blocked for this website. Admin: in Google AI Studio / Cloud key settings, allow this website or enable the Generative Language API.";
+  if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "AI limit reached, please try again in a while.";
+  if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This Gemini model is not available for your key.";
+  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "Gemini is busy right now, please try again in a minute.";
   if(/network|fetch|Failed to load/i.test(m))return "AI could not load. Check your internet connection.";
   return "AI error: "+m;
 };
+window.__aiTest=async key=>aiCall(key,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
+
 
 /* ---------------- login (Google, Gmail/Email, Phone OTP) ---------------- */
 auth.languageCode="en";
@@ -2414,16 +2449,34 @@ function buildSettings(host){
   const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Trial: only once per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
+  const kl=el("div","label","Gemini API key (from aistudio.google.com \u2192 Get API key)");kl.style.marginTop="12px";
+  const kw=el("div","",null);kw.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+  const ki=el("input");ki.type="password";ki.placeholder="AIza...";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","Gemini API key");
+  const ks=el("button","btn","Show");ks.type="button";ks.onclick=()=>{ki.type=ki.type==="password"?"text":"password";ks.textContent=ki.type==="password"?"Show":"Hide"};
+  const kt=el("button","btn","Test key");kt.type="button";
+  kw.append(ki,ks,kt);
+  const kst=el("div","label");
+  kt.onclick=async()=>{
+    const k=ki.value.trim();if(!k){kst.textContent="Paste the key first.";return}
+    kt.disabled=true;kst.textContent="Testing...";
+    try{const r=await window.__aiTest(k);kst.textContent=r?"Key works \u2714 Gemini replied: "+r.trim().slice(0,40):"Key works but reply was empty."}
+    catch(e){kst.textContent=window.__aiErr(e)}
+    kt.disabled=false;
+  };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,lb4,sv,st);
+  host.append(lb,tx,lb2,lb3,lb4,kl,kw,kst,sv,st);
+  if(!IS_OWNER){kl.hidden=true;kw.hidden=true;kst.hidden=true}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false}
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;
+      if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));ki.value=a.exists()?(a.data().key||""):""}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,updatedAt:serverTimestamp()});st.textContent="Saved."}
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,updatedAt:serverTimestamp()});
+      if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),updatedAt:serverTimestamp()});
+      aiKeyP=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
     sv.disabled=false;
   };
