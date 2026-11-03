@@ -669,6 +669,34 @@ h1,h2,h3{font-family:var(--brand-font);font-weight:800;letter-spacing:-.01em}
   .qtext{font-size:18px}
 }
 #gate .gfoot::before{content:"";display:block;width:40px;height:2px;margin:0 auto 8px;background:var(--grad-gold);border-radius:2px}
+
+/* ===== PREMIUM 3D LAYER ===== */
+.px-orbs{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.px-orbs i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.38;animation:pxf 22s ease-in-out infinite alternate}
+.px-orbs i:nth-child(1){width:46vmax;height:46vmax;left:-14vmax;top:-12vmax;background:#3D6BFF}
+.px-orbs i:nth-child(2){width:36vmax;height:36vmax;right:-12vmax;top:24vh;background:#D4AF37;opacity:.24;animation-duration:28s}
+.px-orbs i:nth-child(3){width:34vmax;height:34vmax;left:18vw;bottom:-16vmax;background:#7B5CFF;opacity:.26;animation-duration:34s}
+@keyframes pxf{to{transform:translate3d(7vmax,5vmax,0) scale(1.18)}}
+@keyframes pxin{from{opacity:0;transform:perspective(900px) translateY(26px) rotateX(10deg)}to{opacity:1;transform:none}}
+.card{border-radius:20px;border-color:color-mix(in srgb,#fff 30%,var(--line));box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 18px 40px -18px rgba(11,21,48,.38),0 40px 80px -40px rgba(31,79,216,.35)}
+.card.q{animation:pxin .8s cubic-bezier(.2,.8,.2,1) backwards}
+.btn{border-radius:14px;background-image:linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,0) 60%);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 -3px 0 rgba(11,21,48,.16) inset,0 8px 16px -6px rgba(11,21,48,.4)}
+.btn:hover:not([disabled]){transform:translateY(-2px)}
+.btn:active:not([disabled]){transform:translateY(2px);box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 -1px 0 rgba(11,21,48,.16) inset,0 2px 6px -2px rgba(11,21,48,.45)}
+.btn.primary{background-image:linear-gradient(180deg,color-mix(in srgb,var(--accent) 78%,#fff),var(--accent) 55%,color-mix(in srgb,var(--accent) 80%,#000))}
+.btn.ai{background-image:var(--grad-gold)}
+.opt{border-radius:16px;box-shadow:0 3px 0 color-mix(in srgb,var(--line) 85%,#000),0 12px 20px -12px rgba(11,21,48,.4);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease,background .15s ease}
+.opt:hover:not([aria-disabled="true"]){transform:translateY(-2px);box-shadow:0 5px 0 color-mix(in srgb,var(--accent) 45%,var(--line)),0 16px 26px -12px rgba(31,79,216,.45)}
+.opt:active:not([aria-disabled="true"]){transform:translateY(3px);box-shadow:0 0 0 color-mix(in srgb,var(--line) 85%,#000),0 4px 8px -6px rgba(11,21,48,.4)}
+.opt .ltr{background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 65%,#fff),var(--panel));box-shadow:0 2px 0 rgba(11,21,48,.18),0 6px 10px -4px rgba(11,21,48,.35)}
+.opt.right .ltr,.opt.wrong .ltr{box-shadow:0 2px 0 rgba(0,0,0,.25),0 6px 10px -4px rgba(0,0,0,.4)}
+.ycards{perspective:1000px}
+.ycard{animation-fill-mode:backwards;transform-style:preserve-3d;will-change:transform;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 16px 30px -14px rgba(11,21,48,.4)}
+.ycard .yic{transform:translateZ(30px);box-shadow:0 10px 18px -6px rgba(11,21,48,.5)}
+.ycard .yt{transform:translateZ(18px)}
+.credit3d{position:relative;overflow:hidden}
+.credit3d::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:sheen 5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.px-orbs i,.credit3d::after,.card.q{animation:none}.btn,.opt,.ycard{transition:none}}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -720,6 +748,9 @@ window.APP_CONFIG={
     </div>
     <div id="grc"></div>
   </div>
+  <p class="ghint" style="margin-top:14px">Google, Email and Phone login: approved users only.</p>
+  <div class="gor">new here?</div>
+  <button type="button" class="gsec" id="gguest">Continue as Guest &middot; 12 hours free</button>
 </div>
 <div id="gverbox" hidden><button type="button" id="gvok">I have verified</button><button type="button" class="gsec" id="gvres">Resend verification email</button></div>
 <button type="button" id="gout" class="gsec" hidden>Use another account</button>
@@ -1934,7 +1965,7 @@ window.APP_CONFIG={
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,browserLocalPersistence,signInAnonymously,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,query,where,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
@@ -2105,6 +2136,7 @@ function normPhone(v){
 }
 /* login ID used everywhere (allowed / managers docs): verified email, else phone number */
 function idOf(user){
+  if(user.isAnonymous)return "guest_"+user.uid;
   if(user.email&&user.emailVerified)return user.email.toLowerCase();
   if(user.phoneNumber)return user.phoneNumber;
   return (user.email||"").toLowerCase();
@@ -2144,7 +2176,8 @@ function authErr(e){
   };
   return M[c]||("Sign-in failed: "+(c||(e&&e.message)||e));
 }
-try{await setPersistence(auth,browserSessionPersistence)}catch(e){}
+let GFLAG=false;try{GFLAG=localStorage.getItem("eg23g")==="1"}catch(e){}
+try{await setPersistence(auth,GFLAG?browserLocalPersistence:browserSessionPersistence)}catch(e){}
 onAuthStateChanged(auth,user=>{
   if(started||busy)return;
   if(user)check(user);
@@ -2235,7 +2268,7 @@ function needVerify(user,email){
   };
   $("gvres").onclick=async()=>{try{await sendEmailVerification(user);msg("Verification email sent again to "+email+". Check your Spam folder too.")}catch(e){msg(authErr(e))}};
 }
-gout.onclick=()=>{signOut(auth).then(()=>location.reload())};
+gout.onclick=()=>{try{localStorage.removeItem("eg23g")}catch(e){}signOut(auth).then(()=>location.reload())};
 function deny(email,text){
   busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=true;
   msg(text+(email?"  ("+email+")":""));renderContacts(gcon);
@@ -2252,16 +2285,12 @@ async function sha256hex(x){
   try{const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(x));return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("")}
   catch(e){return x.replace(/[^0-9a-zA-Z]/g,"_")}
 }
-function offerTrial(user,email){
-  busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=false;gtrial.disabled=false;
-  msg("Your account does not have access yet ("+email+"). You can start a 12-hour free trial (once per network).");
-  renderContacts(gcon);
-  gtrial.onclick=()=>claimTrial(user,email);
-}
-async function claimTrial(user,email){
-  gtrial.disabled=true;msg("Checking network...");
+/* Guest login: 12 hours, one guest per network (IP). Google / Email / Phone = approved users only. */
+async function claimGuest(user,email){
+  showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=true;
+  msg("Starting your 12-hour guest access...");
   const ip=await getIp();
-  if(!ip){gtrial.disabled=false;msg("Could not check the network (IP). Check your internet or VPN, or contact the admin.");return}
+  if(!ip){busy=false;msg("Could not check the network (IP). Check your internet, turn off VPN, then try again.");return}
   const ipk=await sha256hex("ip:"+ip),exp=Timestamp.fromMillis(Date.now()+12*3600*1000);
   async function attempt(withIp){
     const b=writeBatch(db),data={email,enabled:true,trial:true,expires:exp,createdAt:serverTimestamp()};
@@ -2272,10 +2301,20 @@ async function claimTrial(user,email){
   try{await attempt(true)}
   catch(e1){
     try{await attempt(false)}
-    catch(e2){gtrial.disabled=false;gtrial.hidden=true;msg("Free trial not available: it was already used on this network or trials are off. Also check your phone's date and time.");renderContacts(gcon);return}
+    catch(e2){busy=false;msg("Guest access is not available: this network already used its guest access, or guest login is switched off. Please ask the admin to add your Gmail.");renderContacts(gcon);return}
   }
-  gtrial.hidden=true;busy=false;check(user);
+  busy=false;check(user);
 }
+$("gguest").onclick=async()=>{
+  const b=$("gguest");msg("");b.disabled=true;
+  try{localStorage.setItem("eg23g","1")}catch(e){}
+  try{await setPersistence(auth,browserLocalPersistence)}catch(e){}
+  try{await signInAnonymously(auth)}
+  catch(e){
+    b.disabled=false;try{localStorage.removeItem("eg23g")}catch(_){}
+    msg(e.code==="auth/operation-not-allowed"||e.code==="auth/admin-restricted-operation"?"Guest login is not switched on yet. Admin: Firebase Console > Authentication > Sign-in method > turn on Anonymous.":authErr(e));
+  }
+};
 
 async function loadBank(){
   for(let attempt=0;attempt<2;attempt++){
@@ -2300,10 +2339,10 @@ async function check(user){
     if(!IS_OWNER){try{const m=await getDoc(doc(db,"managers",email));if(m.exists())IS_ADMIN=true}catch(e){}}
     if(!IS_ADMIN){
       const a=await getDoc(doc(db,"allowed",email));
-      if(!a.exists())return offerTrial(user,email);
+      if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);return deny(email,"This account is not approved yet. Ask the admin to add it, or tap Use another account and continue as Guest (12 hours free).")}
       const d=a.data();
       if(d.enabled!==true)return deny(email,"Your access is turned off.");
-      if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?"Your 12-hour free trial has ended.":"Your access has expired.");
+      if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?"Your 12-hour guest access has ended. Please ask the admin to add your Gmail.":"Your access has expired.");
       EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
     }
     let cfg={enabled:true,message:""};
@@ -2316,7 +2355,7 @@ async function check(user){
       started=true;$("gate").remove();userbar();openAdmin("bank");return;
     }
     BANK_JSON=b.json;BANK_META=b.meta;
-    window.__PROFILE={name:user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL};
+    window.__PROFILE={name:user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL};
     startApp(JSON.parse(b.json));
   }catch(e){
     deny(email,"Error: "+(e.code||e.message));
@@ -2504,9 +2543,9 @@ function buildSettings(host){
   lb.append(cb,el("span","","App is ON for all users"));
   const tx=el("input");tx.type="text";tx.placeholder="Message shown to users when the app is OFF";
   const cb2=el("input");cb2.type="checkbox";cb2.id="cfgTrial";
-  const lb2=el("label","",null);lb2.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb2.append(cb2,el("span","","12-hour free trial ON for new users"));
+  const lb2=el("label","",null);lb2.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb2.append(cb2,el("span","","Guest login (12-hour free) ON for new users"));
   const cb3=el("input");cb3.type="checkbox";cb3.id="cfgTrialIp";
-  const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Trial: only once per network (IP)"));
+  const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Guest: only one per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = free keyless AI");kl.style.marginTop="12px";
@@ -2871,4 +2910,20 @@ function buildManagers(host){
   tabs.managers.load=load;
 }
 </script>
-</body></html>
+<script>
+(function(){
+  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  var o=document.createElement("div");o.className="px-orbs";o.innerHTML="<i></i><i></i><i></i>";document.body.appendChild(o);
+  var cur=null;
+  function reset(){if(cur){cur.style.transform="";cur=null}}
+  document.addEventListener("pointermove",function(e){
+    if(e.pointerType!=="mouse")return;
+    var c=e.target.closest&&e.target.closest(".ycard:not(:disabled)");
+    if(!c){reset();return}
+    if(cur&&cur!==c)reset();cur=c;
+    var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    c.style.transform="rotateX("+(-y*14).toFixed(1)+"deg) rotateY("+(x*14).toFixed(1)+"deg) translateY(-4px)";
+  },{passive:true});
+  document.addEventListener("pointerleave",reset);
+})();
+</script></body></html>
