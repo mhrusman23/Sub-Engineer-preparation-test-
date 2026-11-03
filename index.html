@@ -896,7 +896,7 @@ window.APP_CONFIG={
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
             <button class="btn" id="nextUn" type="button">Next unanswered</button>
@@ -1375,6 +1375,46 @@ window.APP_CONFIG={
     qeEl.hidden=false;qeOpen=true;qeEl.scrollTop=0;
   }
   window.__quickEdit=quickEdit;
+  window.__findQ=function(t){for(var i=0;i<Q.length;i++)if(Q[i].text===t)return i;return -1};
+  /* ===== student: report a wrong answer ===== */
+  function canReport(){return !!window.__sendReport&&!!window.__PROFILE&&String(window.__PROFILE.email).indexOf("guest_")!==0}
+  var rpEl=null;
+  function reportQ(id){
+    var q=Q[id];if(!q||!canReport())return;
+    if(!rpEl){
+      rpEl=el("div","ov");rpEl.id="rp";rpEl.hidden=true;
+      var bx=el("div","box"),top=el("div","top");top.appendChild(el("h2","","Report wrong answer \u00b7 \u063a\u0644\u0637 \u062c\u0648\u0627\u0628 \u06a9\u06cc \u0631\u067e\u0648\u0631\u0679"));
+      var cx=el("button","btn","Close");cx.type="button";cx.addEventListener("click",function(){rpEl.hidden=true});top.appendChild(cx);bx.appendChild(top);
+      rpEl.q=el("div","label");bx.appendChild(rpEl.q);
+      bx.appendChild(el("div","label","Which option do you think is correct? (optional) / \u0622\u067e \u06a9\u06d2 \u062e\u06cc\u0627\u0644 \u0645\u06cc\u06ba \u0635\u062d\u06cc\u062d \u062c\u0648\u0627\u0628 \u06a9\u0648\u0646 \u0633\u0627 \u06c1\u06d2\u061f"));
+      rpEl.opts=el("div");bx.appendChild(rpEl.opts);
+      rpEl.note=document.createElement("textarea");rpEl.note.rows=3;rpEl.note.maxLength=300;rpEl.note.placeholder="Note for the admin (optional) / \u0627\u06cc\u0688\u0645\u0646 \u06a9\u06d2 \u0644\u06cc\u06d2 \u0646\u0648\u0679";bx.appendChild(rpEl.note);
+      var row=el("div","row");rpEl.sv=el("button","btn primary","Send report");rpEl.sv.type="button";
+      var cn=el("button","btn","Cancel");cn.type="button";cn.addEventListener("click",function(){rpEl.hidden=true});
+      row.appendChild(rpEl.sv);row.appendChild(cn);bx.appendChild(row);
+      rpEl.st=el("div","label st");bx.appendChild(rpEl.st);
+      rpEl.appendChild(bx);document.body.appendChild(rpEl);
+    }
+    rpEl.q.textContent=q.text;rpEl.opts.textContent="";rpEl.note.value="";rpEl.st.textContent="";rpEl.st.className="label st";rpEl.sv.disabled=false;
+    q.opts.forEach(function(o,j){
+      var l=el("label","qeo"),rd=document.createElement("input");rd.type="radio";rd.name="rpAns";rd.value=String(j);
+      l.appendChild(rd);l.appendChild(el("b","",LET[j]));l.appendChild(el("span","",o));rpEl.opts.appendChild(l);
+    });
+    rpEl.sv.onclick=function(){
+      var sel=rpEl.opts.querySelector("input:checked"),sug=sel?q.opts[+sel.value]:"",note=rpEl.note.value.trim();
+      if(!sug&&!note){rpEl.st.className="label st err";rpEl.st.textContent="Choose an option or write a note.";return}
+      rpEl.sv.disabled=true;rpEl.st.className="label st";rpEl.st.textContent="Sending...";
+      window.__sendReport({qid:String(id),qt:q.text,key:q.opts[q.ans],sug:sug,note:note,sub:SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].name}).then(function(){
+        rpEl.st.className="label st good";rpEl.st.textContent="Thank you! The admin will check this question. / \u0634\u06a9\u0631\u06cc\u06c1\u060c \u0627\u06cc\u0688\u0645\u0646 \u0686\u06cc\u06a9 \u06a9\u0631\u06d2 \u06af\u0627\u06d4";
+        setTimeout(function(){rpEl.hidden=true},1400);
+      }).catch(function(e){
+        rpEl.st.className="label st err";
+        rpEl.st.textContent=(e&&e.code==="permission-denied")?"You already reported this question (or reports are not allowed for your account).":"Could not send: "+((e&&(e.code||e.message))||e);
+        rpEl.sv.disabled=false;
+      });
+    };
+    rpEl.hidden=false;rpEl.scrollTop=0;
+  }
   function openYear(k){
     curYear=k;buildYear(k,null);
     $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
@@ -1806,8 +1846,9 @@ window.APP_CONFIG={
         l3.appendChild(document.createTextNode(a.w.map(function(x){return LET[x.sel]+". "+q.opts[x.sel]+" (at "+fmt(x.used)+")"}).join("  \u00b7  ")));
         card.appendChild(l3);
       }
-      if(window.__AI_ON||ADM){
+      if(window.__AI_ON||ADM||canReport()){
         var rb=el("div","rvbtns");
+        if(canReport()){var rpb=el("button","btn qedit","\u26a0 Report");rpb.type="button";rpb.addEventListener("click",function(){reportQ(id)});rb.appendChild(rpb)}
         if(window.__AI_ON){var aib=el("button","btn ai qedit","\u2728 Ask AI");aib.type="button";aib.addEventListener("click",function(){aiOpenQ(id)});rb.appendChild(aib)}
         if(ADM){var eb=el("button","btn qedit","\u270e Edit MCQ / answer");eb.type="button";eb.addEventListener("click",function(){quickEdit(id,function(){buildChips();renderReview()})});rb.appendChild(eb)}
         card.appendChild(rb);
@@ -1967,6 +2008,7 @@ window.APP_CONFIG={
   (function(){var ab=$("#qAuto");if(!ab)return;paintAuto();ab.addEventListener("click",function(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()})})();
   if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])})}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
+  if(canReport()){var qrp=$("#qRep");qrp.hidden=false;qrp.addEventListener("click",function(){cancelAuto();reportQ(order[pos])})}
   if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
   $("#yAll").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=true});refreshPick()});
   $("#yNone").addEventListener("click",function(){document.querySelectorAll("#yList input.pk").forEach(function(c){c.checked=false});refreshPick()});
@@ -2024,7 +2066,7 @@ window.APP_CONFIG={
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,browserLocalPersistence,signInAnonymously,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,query,where,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,collection,query,where,orderBy,limit,writeBatch,serverTimestamp,Timestamp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
@@ -2182,6 +2224,11 @@ const aiErrBase=e=>{
   if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The AI service is busy right now, please try again in a minute.";
   if(/network|fetch|Failed to load/i.test(m))return "AI could not be reached (internet, or the browser blocked it). Admin: try another Provider in Settings.";
   return "AI error: "+m;
+};
+/* students report a wrong answer: one report per student per question (rules enforce this) */
+window.__sendReport=async p=>{
+  const by=idOf(auth.currentUser),qid="q"+p.qid,cut=(x,n)=>String(x||"").slice(0,n);
+  await setDoc(doc(db,"reports",qid+"__"+by),{qid,qt:cut(p.qt,500),key:cut(p.key,300),sug:cut(p.sug,300),note:cut(p.note,300),sub:cut(p.sub,120),by,at:serverTimestamp(),status:"open"});
 };
 window.__aiErr=e=>{const t=aiErrBase(e),d=e&&e.detail;return (IS_ADMIN&&d)?t+" [Details: "+d+"]":t};
 window.__aiTest=async cfg=>aiCall(cfg,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
@@ -2416,14 +2463,24 @@ $("gguest").onclick=async()=>{
   }
 };
 
+/* tiny IndexedDB helpers (the question bank is cached on the device; always version-checked) */
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open("eg23",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(k){try{const d=await idbOpen();return await new Promise((res,rej)=>{const q=d.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return null}}
+async function idbSet(k,v){try{const d=await idbOpen();await new Promise((res,rej)=>{const t=d.transaction("kv","readwrite");t.objectStore("kv").put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
 async function loadBank(){
   for(let attempt=0;attempt<2;attempt++){
     const m=await getDoc(doc(db,"meta","bank"));
     if(!m.exists())return null;
     const md=m.data();
+    /* same version already saved on this phone -> no need to download the questions again */
+    const c=await idbGet("bank");
+    if(c&&c.version===md.version&&c.parts===md.parts&&typeof c.json==="string"&&c.json.length)return {json:c.json,meta:md};
     const docs=await Promise.all(Array.from({length:md.parts},(_,i)=>getDoc(doc(db,"bank","p"+i))));
-    if(docs.every(d=>d.exists()&&d.data().v===md.version))
-      return {json:docs.map(d=>d.data().data).join(""),meta:md};
+    if(docs.every(d=>d.exists()&&d.data().v===md.version)){
+      const json=docs.map(d=>d.data().data).join("");
+      idbSet("bank",{version:md.version,parts:md.parts,json});
+      return {json,meta:md};
+    }
   }
   throw new Error("Questions are being updated, please open again in a moment.");
 }
@@ -2445,11 +2502,13 @@ async function check(user){
       if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?"Your 12-hour guest access has ended. Please ask the admin to add your Gmail.":"Your access has expired.");
       EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
     }
+    const bankP=loadBank().then(v=>({v}),e=>({e}));
     let cfg={enabled:true,message:""};
     try{const c=await getDoc(doc(db,"meta","config"));if(c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
     window.__AI_ON=cfg.ai!==false;
-    const b=await loadBank();
+    const br=await bankP;if(br.e)throw br.e;
+    const b=br.v;
     if(!b){
       if(!IS_ADMIN)return deny(email,"No questions have been uploaded yet.");
       started=true;$("gate").remove();userbar();openAdmin("bank");return;
@@ -2521,13 +2580,13 @@ function buildAdmin(){
   const top=el("div","top");top.appendChild(el("h2","","Admin panel"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
-  const names={users:"Users",guests:"Guests",bank:"Questions",library:"Library",settings:"Settings"};
+  const names={users:"Users",guests:"Guests",reports:"Reports",bank:"Questions",library:"Library",settings:"Settings"};
   if(IS_OWNER)names.managers="Managers";
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
-  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
+  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
   if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
@@ -2620,6 +2679,52 @@ function buildUsers(host,onlyG){
     add.disabled=false;
   };
   (onlyG?tabs.guests:tabs.users).load=load;
+}
+function buildReports(host){
+  const st=el("div","label st"),bar=el("div"),list=el("div");
+  bar.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0";
+  let R=[],mode="open";
+  const mk=(k,t)=>{const b=el("button","chip",t);b.type="button";b.onclick=()=>{mode=k;render()};b.dataset.m=k;return b};
+  [mk("open","Open"),mk("done","Resolved"),mk("all","All")].forEach(b=>bar.appendChild(b));
+  host.append(st,bar,list);
+  const isDone=r=>r.d.status==="done";
+  function render(){
+    list.textContent="";
+    const open=R.filter(r=>!isDone(r)).length;
+    st.textContent="Reports: "+open+" open · "+(R.length-open)+" resolved";
+    tabs.reports.btn.textContent="Reports"+(open?" ("+open+")":"");
+    Array.from(bar.children).forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
+    const rows=R.filter(r=>mode==="all"||(mode==="done")===isDone(r));
+    if(!rows.length)list.appendChild(el("div","label","Nothing here."));
+    rows.forEach(r=>{
+      const d=r.d,row=el("div","urow"),w=el("div","who");
+      w.appendChild(el("span","",d.qt||"(no text)"));
+      if(d.sub)w.appendChild(el("small","",d.sub));
+      w.appendChild(el("small","","Answer key in app: "+(d.key||"-")));
+      if(d.sug)w.appendChild(el("small","","Student says correct: "+d.sug));
+      if(d.note)w.appendChild(el("small","","Note: "+d.note));
+      w.appendChild(el("small","",(d.by||"")+" · "+(d.at&&d.at.toMillis?new Date(d.at.toMillis()).toLocaleString():"")));
+      const ed=el("button","btn","Edit question");ed.type="button";
+      ed.onclick=()=>{
+        const i=window.__findQ?window.__findQ(d.qt):-1;
+        if(i<0||!window.__quickEdit){st.textContent="Question not found (it may already be edited). Use Questions tab > search.";return}
+        window.__quickEdit(i);
+      };
+      const tg=el("button","btn",isDone(r)?"Reopen":"Resolved");tg.type="button";
+      tg.onclick=async()=>{tg.disabled=true;try{await updateDoc(doc(db,"reports",r.id),{status:isDone(r)?"open":"done"});await load()}catch(e){st.textContent="Error: "+(e.code||e.message);tg.disabled=false}};
+      const dl=el("button","btn danger","Delete");dl.type="button";let arm=false;
+      dl.onclick=async()=>{
+        if(!arm){arm=true;dl.textContent="Confirm?";setTimeout(()=>{arm=false;dl.textContent="Delete"},3000);return}
+        try{await deleteDoc(doc(db,"reports",r.id));await load()}catch(e){st.textContent="Error: "+(e.code||e.message)}
+      };
+      row.append(w,ed,tg,dl);list.appendChild(row);
+    });
+  }
+  async function load(){
+    try{const s=await getDocs(query(collection(db,"reports"),orderBy("at","desc"),limit(300)));R=s.docs.map(x=>({id:x.id,d:x.data()}));render()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)}
+  }
+  tabs.reports.load=load;
 }
 function buildBank(host){
   const info=el("div","label"),st=el("div","label st");
