@@ -1969,11 +1969,14 @@ const AI_SYS="You are the friendly civil engineering tutor of Engrgroup23. Stude
  "Keep answers short and clear (at most 150 words) unless the student asks for detail. Use bullet points, and write formulas and units in plain text. "+
  "If an official answer key is given and you believe it is wrong, say so politely and explain why. Only discuss studies and this MCQ.";
 const AI_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
-let aiKeyP=null;
+const VTX_BASE="https://aiplatform.googleapis.com/v1/publishers/google/models/";
+let aiKeyP=null,aiGood=null;
+/* saved AI settings (Admin panel > Settings): {key, provider, model, baseUrl} */
 function aiKey(){
   if(!aiKeyP)aiKeyP=getDoc(doc(db,"meta","ai")).then(d=>{
-    const k=d.exists()?String(d.data().key||"").trim():"";
-    if(!k)throw new Error("NO_KEY");return k;
+    const x=d.exists()?d.data():{},k=String(x.key||"").trim();
+    if(!k)throw new Error("NO_KEY");
+    return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim()};
   }).catch(e=>{aiKeyP=null;throw e});
   return aiKeyP;
 }
@@ -1981,51 +1984,103 @@ function aiErrMsg(st,j){
   const e=(j&&j.error)||{};const m=(e.status||"")+" "+(e.message||"")+" "+JSON.stringify(e.details||"");
   const x=new Error(m.trim()||("HTTP "+st));x.http=st;return x;
 }
-/* send whole chat to Gemini, stream the reply */
-async function aiCall(key,contents,on,model){
-  const url=AI_BASE+encodeURIComponent(model||CFG.aiModel||"gemini-2.5-flash")+":streamGenerateContent?alt=sse";
-  const body={systemInstruction:{parts:[{text:AI_SYS}]},contents,generationConfig:{temperature:0.4,maxOutputTokens:1024,thinkingConfig:{thinkingBudget:0}}};
-  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});
-  if(!r.ok){let j=null;try{j=await r.json()}catch(e){}throw aiErrMsg(r.status,j)}
-  const rd=r.body.getReader(),dec=new TextDecoder();let buf="",full="";
-  for(;;){
-    const {value,done}=await rd.read();if(done)break;
-    buf+=dec.decode(value,{stream:true});
-    let i;while((i=buf.indexOf("\n"))>=0){
-      const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
-      if(!line.startsWith("data:"))continue;
-      let j;try{j=JSON.parse(line.slice(5))}catch(e){continue}
-      if(j.error)throw aiErrMsg(r.status,j);
-      const c=j.candidates&&j.candidates[0];
-      const t=((c&&c.content&&c.content.parts)||[]).map(p=>p.thought?"":(p.text||"")).join("");
-      if(t){full+=t;on&&on(full)}
+/* which endpoints to try for a key (any key works: Gemini AIza..., Vertex AI Express AQ...., OpenAI-style sk-...) */
+function aiPlans(cfg){
+  const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-2.5-flash",em=encodeURIComponent(model),ek=encodeURIComponent(key);
+  const gem=()=>({id:"gemini",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
+  const gemq=()=>({id:"gemini-q",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
+  const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
+  const oai=()=>({id:"openai",kind:"o",model:model,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}});
+  if(p==="gemini")return [gem(),gemq()];
+  if(p==="vertex")return [vtx()];
+  if(p==="openai")return [oai()];
+  if(cfg.baseUrl)return [oai()];
+  if(/^AQ\./.test(key))return [vtx(),gem(),gemq()];
+  if(/^AIza/.test(key))return [gem(),gemq(),vtx()];
+  if(/^sk-/.test(key))return [oai()];
+  return [gem(),gemq(),vtx(),oai()];
+}
+function aiBody(plan,contents,noThink){
+  if(plan.kind==="o"){
+    const msgs=[{role:"system",content:AI_SYS}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
+    return {model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
+  }
+  const gc={temperature:0.4,maxOutputTokens:1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
+  return {systemInstruction:{parts:[{text:AI_SYS}]},contents,generationConfig:gc};
+}
+function aiPiece(plan,j){
+  if(plan.kind==="o"){const ch=j.choices&&j.choices[0];return (ch&&ch.delta&&ch.delta.content)||""}
+  const c=j.candidates&&j.candidates[0];
+  return ((c&&c.content&&c.content.parts)||[]).map(p=>p.thought?"":(p.text||"")).join("");
+}
+/* send the whole chat, stream the reply; tries the right endpoint for the key automatically */
+async function aiCall(cfg,contents,on){
+  let plans=aiPlans(cfg);
+  if(aiGood&&aiGood.key===cfg.key){const g=plans.filter(x=>x.id===aiGood.id);if(g.length)plans=g.concat(plans.filter(x=>x.id!==aiGood.id))}
+  let httpErr=null,netErr=null;
+  for(const plan of plans){
+    for(let attempt=0;attempt<2;attempt++){
+      let r;
+      try{r=await fetch(plan.url,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},plan.h),body:JSON.stringify(aiBody(plan,contents,attempt===1))})}
+      catch(e){netErr=netErr||e;break}
+      if(!r.ok){
+        let j=null;try{j=await r.json()}catch(e){}
+        const err=aiErrMsg(r.status,j);
+        if(attempt===0&&r.status===400&&/thinking/i.test(err.message))continue;
+        if(!httpErr)httpErr=err;
+        if([400,401,403,404].indexOf(r.status)>=0)break;
+        throw err;
+      }
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf="",full="",all="";
+      for(;;){
+        const {value,done}=await rd.read();if(done)break;
+        const chunk=dec.decode(value,{stream:true});buf+=chunk;all+=chunk;
+        let i;while((i=buf.indexOf("\n"))>=0){
+          const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+          if(!line.startsWith("data:"))continue;
+          const raw=line.slice(5).trim();if(!raw||raw==="[DONE]")continue;
+          let j;try{j=JSON.parse(raw)}catch(e){continue}
+          if(j.error)throw aiErrMsg(r.status,j);
+          const t=aiPiece(plan,j);
+          if(t){full+=t;on&&on(full)}
+        }
+      }
+      if(!full&&all.trim()){
+        try{
+          const j=JSON.parse(all.trim()),arr=Array.isArray(j)?j:[j];
+          arr.forEach(x=>{if(x.error)throw aiErrMsg(r.status,x);full+=aiPiece(plan,x)});
+          if(full&&on)on(full);
+        }catch(e){if(e&&e.http)throw e}
+      }
+      aiGood={key:cfg.key,id:plan.id};
+      return full;
     }
   }
-  return full;
+  throw httpErr||netErr||new Error("AI failed");
 }
 window.__aiStart=async ctx=>{
-  const key=await aiKey();
+  const cfg=await aiKey();
   const hist=[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}];
   return {send:async(msg,on)=>{
     const turn=hist.concat([{role:"user",parts:[{text:msg}]}]);
-    const full=await aiCall(key,turn,on);
+    const full=await aiCall(cfg,turn,on);
     if(full){hist.push({role:"user",parts:[{text:msg}]},{role:"model",parts:[{text:full}]})}
     return full;
   }};
 };
 window.__aiErr=e=>{
   const m=String((e&&(e.message||e.code))||e);
-  if(/NO_KEY/.test(m))return "AI is not set up yet. Admin: Admin panel \u2192 Settings \u2192 paste the Gemini API key and Save. Until then, use the Gemini link below.";
-  if(/permission-denied|Missing or insufficient permissions/i.test(m))return "AI is only for active members. Please log in again.";
-  if(/API_KEY_INVALID|API key not valid|API key expired/i.test(m))return "The Gemini API key is wrong or expired. Admin: paste a new key in Admin panel \u2192 Settings.";
-  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The Gemini key is blocked for this website. Admin: in Google AI Studio / Cloud key settings, allow this website or enable the Generative Language API.";
+  if(/NO_KEY/.test(m))return "AI is not set up yet. Admin: Admin panel \u2192 Settings \u2192 paste the API key and Save. Until then, use the Gemini link below.";
+  if(/permission-denied|Missing or insufficient permissions/i.test(m)&&!(e&&e.http))return "AI is only for active members. Please log in again.";
+  if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there.";
+  if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud.";
   if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "AI limit reached, please try again in a while.";
-  if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This Gemini model is not available for your key.";
-  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "Gemini is busy right now, please try again in a minute.";
-  if(/network|fetch|Failed to load/i.test(m))return "AI could not load. Check your internet connection.";
+  if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This model is not available for the key. Admin: clear the Model box or choose another model in Settings.";
+  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The AI service is busy right now, please try again in a minute.";
+  if(/network|fetch|Failed to load/i.test(m))return "AI could not be reached (internet, or the browser blocked it). Admin: try another Provider in Settings.";
   return "AI error: "+m;
 };
-window.__aiTest=async key=>aiCall(key,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
+window.__aiTest=async cfg=>aiCall(cfg,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
 
 
 /* ---------------- login (Google, Gmail/Email, Phone OTP) ---------------- */
@@ -2449,34 +2504,39 @@ function buildSettings(host){
   const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Trial: only once per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
-  const kl=el("div","label","Gemini API key (from aistudio.google.com \u2192 Get API key)");kl.style.marginTop="12px";
+  const kl=el("div","label","AI API key (any provider: Gemini AIza..., Vertex AI Express AQ...., OpenAI-style sk-...)");kl.style.marginTop="12px";
   const kw=el("div","",null);kw.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
-  const ki=el("input");ki.type="password";ki.placeholder="AIza...";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","Gemini API key");
+  const ki=el("input");ki.type="password";ki.placeholder="Paste API key";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","AI API key");
   const ks=el("button","btn","Show");ks.type="button";ks.onclick=()=>{ki.type=ki.type==="password"?"text":"password";ks.textContent=ki.type==="password"?"Show":"Hide"};
   const kt=el("button","btn","Test key");kt.type="button";
   kw.append(ki,ks,kt);
+  const ps=el("select");ps.setAttribute("aria-label","AI provider");
+  [["auto","Provider: Auto-detect (recommended)"],["gemini","Google Gemini - AI Studio key (AIza...)"],["vertex","Google Vertex AI Express - key AQ...."],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];ps.appendChild(op)});
+  const mi=el("input");mi.type="text";mi.placeholder="Model (optional, default gemini-2.5-flash)";mi.setAttribute("aria-label","AI model");
+  const bi=el("input");bi.type="text";bi.placeholder="Base URL, OpenAI-compatible only (e.g. https://openrouter.ai/api/v1)";bi.setAttribute("aria-label","AI base URL");
   const kst=el("div","label");
   kt.onclick=async()=>{
     const k=ki.value.trim();if(!k){kst.textContent="Paste the key first.";return}
     kt.disabled=true;kst.textContent="Testing...";
-    try{const r=await window.__aiTest(k);kst.textContent=r?"Key works \u2714 Gemini replied: "+r.trim().slice(0,40):"Key works but reply was empty."}
+    try{const r=await window.__aiTest({key:k,provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim()});kst.textContent=r?"Key works \u2714 ("+(aiGood?aiGood.id:"")+") AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
     catch(e){kst.textContent=window.__aiErr(e)}
     kt.disabled=false;
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,lb4,kl,kw,kst,sv,st);
-  if(!IS_OWNER){kl.hidden=true;kw.hidden=true;kst.hidden=true}
+  host.append(lb,tx,lb2,lb3,lb4,kl,kw,ps,mi,bi,kst,sv,st);
+  const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
+  if(!IS_OWNER){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
     try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;
-      if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));ki.value=a.exists()?(a.data().key||""):""}catch(e){}}
+      if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
     try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,updatedAt:serverTimestamp()});
-      if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),updatedAt:serverTimestamp()});
-      aiKeyP=null;st.textContent="Saved.";}
+      if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
+      aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
     sv.disabled=false;
   };
