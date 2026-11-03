@@ -848,6 +848,7 @@ window.APP_CONFIG={
       <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
     </div>
     <div class="contacts" id="contactBox"></div>
+    <div id="qFiles" class="ffiles"></div>
     <div class="sheet-head">
       <div class="label">PPSC Past Papers · Civil 1st, 2nd &amp; 3rd Year · 18 papers + 16 subjects</div>
       <h1>PPSC + Civil Diploma<br>All-in-One Mock Test</h1>
@@ -2579,6 +2580,7 @@ function startApp(bank){
   document.body.appendChild($("app-tpl").content.cloneNode(true));
   if(!IS_ADMIN){const e=$("btnEdit");if(e)e.style.display="none"}
   else window.__publishBank=publishBank;
+  setTimeout(()=>{try{const h=$("qFiles");if(h&&window.__folderFiles)window.__folderFiles("questions",h,"Questions",IS_ADMIN)}catch(e){}},0);
   const ds=document.createElement("script");
   ds.textContent="const S="+JSON.stringify(bank.S)+";\nconst SUB="+JSON.stringify(bank.SUB)+";\nconst CARDS="+JSON.stringify(Array.isArray(bank.CARDS)?bank.CARDS:null)+";\nconst Q0="+JSON.stringify(bank.Q0)+";\nconst Q=JSON.parse(JSON.stringify(Q0));";
   document.body.appendChild(ds);
@@ -2777,7 +2779,46 @@ function buildBank(host){
   const dl=el("button","btn","Download backup (current questions)");dl.type="button";
   const rl=el("button","btn","Reload app");rl.type="button";rl.hidden=true;rl.onclick=()=>location.reload();
   const note=el("div","label","To edit questions: tap Edit MCQs on the start screen, make changes, then tap Publish to everyone. Any MCQ answer can also be fixed directly from the test, result or search with '\u270e Edit MCQ / answer'. Create new home options with '+ Add more option'.");
-  host.append(info,upl,go,dl,rl,st,note);
+  const pick2=el("input");pick2.type="file";pick2.accept=".json,application/json";pick2.hidden=true;
+  const mrg=el("label","btn","\u2795 Upload JSON \u2013 add new + update existing (keeps old questions)");mrg.appendChild(pick2);
+  mrg.style.cssText="display:block;text-align:center;cursor:pointer";
+  const addQ=el("button","btn primary","+ Add new MCQ");addQ.type="button";
+  const edQ=el("button","btn","\u270e Edit / update MCQs");edQ.type="button";
+  const openEd=add=>{adm.hidden=true;const b=$("btnEdit");if(!b){st.textContent="Open the start screen first.";adm.hidden=false;return}b.click();if(add){const a=$("edAdd");if(a)a.click()}};
+  addQ.onclick=()=>openEd(true);edQ.onclick=()=>openEd(false);
+  const qrow=el("div","fbtns");qrow.style.gridTemplateColumns="1fr 1fr";qrow.append(addQ,edQ);
+  const fh=el("div","");fh.style.marginTop="14px";
+  host.append(info,qrow,upl,mrg,go,dl,rl,st,note,fh);
+  setTimeout(()=>{try{if(window.__folderFiles)window.__folderFiles("questions",fh,"Questions",true)}catch(e){}},0);
+  pick2.onchange=e=>{
+    const f=e.target.files&&e.target.files[0];if(!f)return;e.target.value="";
+    if(!BANK_JSON){st.textContent="No questions published yet. Use 'Upload bank JSON' first.";return}
+    const rd=new FileReader();
+    rd.onload=()=>{
+      try{
+        let inc=JSON.parse(rd.result);const cur=JSON.parse(BANK_JSON);
+        if(Array.isArray(inc))inc={S:cur.S,SUB:cur.SUB,Q0:inc};
+        if(!inc||!Array.isArray(inc.Q0)||!inc.Q0.length)throw new Error("The file has no Q0 questions.");
+        const iS=Array.isArray(inc.S)?inc.S:cur.S,key=x=>JSON.stringify(x);
+        const smap=new Map(cur.S.map((x,i)=>[key(x),i]));
+        const norm=t=>String(t||"").toLowerCase().replace(/\s+/g," ").trim();
+        const idx=new Map(cur.Q0.map((q,i)=>[q.sec+"|"+norm(q.text),i]));
+        let add=0,upd=0,skip=0;
+        for(const q of inc.Q0){
+          if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||q.opts.length<2||q.opts.length>4||!Number.isInteger(q.ans)||q.ans<0||q.ans>=q.opts.length||!Number.isInteger(q.sec)){skip++;continue}
+          const sec=smap.get(key(iS[q.sec]));if(sec==null){skip++;continue}
+          const nq=Object.assign({},q,{sec}),k2=sec+"|"+norm(q.text);
+          if(idx.has(k2)){cur.Q0[idx.get(k2)]=Object.assign({},cur.Q0[idx.get(k2)],nq);upd++}
+          else{idx.set(k2,cur.Q0.length);cur.Q0.push(nq);add++}
+        }
+        const bad=validBank(cur);if(bad)throw new Error(bad);
+        if(!add&&!upd){st.textContent="Nothing to add or update ("+skip+" skipped).";go.hidden=true;return}
+        pending=cur;go.textContent="Publish: "+add+" new + "+upd+" updated (total "+cur.Q0.length+")";go.hidden=false;
+        st.textContent=add+" new, "+upd+" updated"+(skip?", "+skip+" skipped (wrong format or unknown chapter)":"")+". Now tap Publish.";
+      }catch(x){st.textContent="Could not read the file: "+x.message;go.hidden=true}
+    };
+    rd.readAsText(f);
+  };
   let pending=null;
   pick.onchange=e=>{
     const f=e.target.files&&e.target.files[0];if(!f)return;
