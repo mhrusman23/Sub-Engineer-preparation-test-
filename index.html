@@ -2461,7 +2461,7 @@ function aiErrMsg(st,j){
 function aiPlans(cfg){
   const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-flash-latest",em=encodeURIComponent(model),ek=encodeURIComponent(key);
   /* if Google says the model is busy (503) / retired (404) / over quota (429), the next model is tried automatically */
-  const fbm=cfg.model?[]:["gemini-3.8-flash","gemini-flash-lite-latest"].filter(x=>x!==model);
+  const fbm=cfg.model?[]:["gemini-3.8-flash","gemini-flash-lite-latest","gemini-2.5-flash-lite"].filter(x=>x!==model);
   const more=()=>fbm.map(m=>({id:"gemini:"+m,m:m,kind:"g",url:AI_BASE+encodeURIComponent(m)+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}}));
   const gem=()=>({id:"gemini",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
   const gemq=()=>({id:"gemini-q",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
@@ -2502,9 +2502,10 @@ function aiPiece(plan,j){
 async function aiCall(cfg,contents,on){
   let plans=aiPlans(cfg);
   if(aiGood&&aiGood.key===cfg.key){const g=plans.filter(x=>x.id===aiGood.id);if(g.length)plans=g.concat(plans.filter(x=>x.id!==aiGood.id))}
-  let httpErr=null,netErr=null;const tried=[],badM=new Set();
+  let httpErr=null,netErr=null,keyOk=false;const tried=[],badM=new Set();
   for(const plan of plans){
     if(plan.m&&badM.has(plan.m))continue;
+    if(plan.id==="vertex"&&keyOk)continue;
     for(let attempt=0;attempt<2;attempt++){
       let r;
       const hd=Object.assign({"Content-Type":"application/json"},plan.h);
@@ -2515,9 +2516,10 @@ async function aiCall(cfg,contents,on){
       if(!r.ok){
         let j=null;try{j=await r.json()}catch(e){}
         const err=aiErrMsg(r.status,j);
-        if(attempt===0&&r.status===400&&/thinking/i.test(err.message))continue;
+        if(attempt===0&&r.status===400)continue;
         tried.push(plan.id+" "+r.status+": "+String(err.message).replace(/\s+/g," ").slice(0,140));
         if(plan.m&&(r.status===404||r.status===429||r.status===503))badM.add(plan.m);
+        if(plan.m&&r.status!==401&&r.status!==403)keyOk=true;
         err.plan=plan.id;
         if(!httpErr)httpErr=err;
         break;
