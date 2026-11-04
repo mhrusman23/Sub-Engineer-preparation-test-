@@ -2460,6 +2460,9 @@ function aiErrMsg(st,j){
 /* which endpoints to try for a key (any key works: Gemini AIza..., Vertex AI Express AQ...., OpenAI-style sk-...) */
 function aiPlans(cfg){
   const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-flash-latest",em=encodeURIComponent(model),ek=encodeURIComponent(key);
+  /* if Google says the model is busy (503) / retired (404) / over quota (429), the next model is tried automatically */
+  const fbm=cfg.model?[]:["gemini-3.8-flash","gemini-flash-lite-latest"].filter(x=>x!==model);
+  const more=()=>fbm.map(m=>({id:"gemini:"+m,kind:"g",url:AI_BASE+encodeURIComponent(m)+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}}));
   const gem=()=>({id:"gemini",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
   const gemq=()=>({id:"gemini-q",kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
@@ -2472,11 +2475,11 @@ function aiPlans(cfg){
   if(p==="free")return [free()];
   if(p==="proxy"||!key)return [prx()];
   let pl;
-  if(p==="gemini")pl=[gem(),gemq()];
+  if(p==="gemini")pl=[gem(),gemq()].concat(more());
   else if(p==="vertex")pl=[vtx()];
   else if(p==="openai"||cfg.baseUrl)pl=[oai()];
   /* NEW Google AI Studio keys start with AQ. and work on the normal Gemini endpoint (same as old AIza keys) */
-  else if(/^(AQ\.|AIza)/.test(key))pl=[gem(),gemq(),vtx()];
+  else if(/^(AQ\.|AIza)/.test(key))pl=[gem(),gemq()].concat(more(),[vtx()]);
   else if(/^sk-/.test(key))pl=[oai()];
   else pl=[gem(),gemq(),vtx(),oai()];
   pl.push(prx());
