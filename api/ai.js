@@ -129,12 +129,22 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function gemini(model, body) {
-  return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-    body: JSON.stringify(body),
-  });
+// waits at most 8 s for Google to start answering, then the next model is tried
+async function gemini(model, body) {
+  const ac = new AbortController();
+  const tm = setTimeout(() => ac.abort(), 8000);
+  try {
+    return await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+      body: JSON.stringify(body),
+      signal: ac.signal,
+    });
+  } catch (e) {
+    return new Response("timeout", { status: 503 });
+  } finally {
+    clearTimeout(tm);
+  }
 }
 
 module.exports = async function handler(req, res) {
