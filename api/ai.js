@@ -9,7 +9,7 @@
 const PROJECT = process.env.FIREBASE_PROJECT_ID || "engrgroup23";
 const MODEL = (process.env.GEMINI_MODEL || "gemini-flash-latest").replace(/[^\w.\-]/g, "");
 // if the main model is busy (503), retired (404) or over quota (429) the next one is tried
-const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest"].filter((m, i, arr) => arr.indexOf(m) === i);
+const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"].filter((m, i, arr) => arr.indexOf(m) === i);
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const PER_MINUTE = 12;
