@@ -42,3 +42,163 @@ async function authorize(token) {
   try {
     claims = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString("utf8"));
   } catch (e) {
+    return 401;
+  }
+  if (
+    claims.aud !== PROJECT ||
+    claims.iss !== "https://securetoken.google.com/" + PROJECT ||
+    !claims.sub ||
+    !(claims.exp * 1000 > now)
+  )
+    return 401;
+  // Firestore checks the token and applies the security rules for this user
+  const r = await fetch(
+    "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents/meta/config",
+    { headers: { Authorization: "Bearer " + token } }
+  );
+  if (r.status === 401) return 401;
+  if (r.status === 403) return 403;
+  if (r.status === 200) {
+    const j = await r.json().catch(() => ({}));
+    const f = j.fields && j.fields.ai;
+    if (f && f.booleanValue === false) return 403;
+  } else if (r.status !== 404) {
+    return 503;
+  }
+  if (okCache.size > 500) okCache.clear();
+  okCache.set(token, { uid: claims.sub, exp: now + 60000 });
+  return claims.sub;
+}
+
+// ---- per-user rate limit (best effort) ----
+const hits = new Map();
+const days = new Map();
+function limited(uid) {
+  const now = Date.now();
+  const recent = (hits.get(uid) || []).filter((t) => now - t < 60000);
+  const day = Math.floor(now / 86400000);
+  const d = days.get(uid);
+  const n = d && d.day === day ? d.n : 0;
+  if (recent.length >= PER_MINUTE || n >= PER_DAY) {
+    hits.set(uid, recent);
+    return true;
+  }
+  recent.push(now);
+  hits.set(uid, recent);
+  days.set(uid, { day, n: n + 1 });
+  if (hits.size > 3000) hits.clear();
+  if (days.size > 3000) days.clear();
+  return false;
+}
+
+function clean(contents) {
+  let src = Array.isArray(contents) ? contents : [];
+  if (src.length > 16) src = [src[0]].concat(src.slice(-15));
+  const out = [];
+  let total = 0;
+  for (const c of src) {
+    const role = c && c.role === "model" ? "model" : "user";
+    const parts = c && Array.isArray(c.parts) ? c.parts : [];
+    const text = parts.map((p) => (p && typeof p.text === "string" ? p.text : "")).join("").slice(0, MAX_TEXT);
+    if (!text.trim()) continue;
+    total += text.length;
+    out.push({ role, parts: [{ text }] });
+  }
+  while (out.length && out[0].role !== "user") out.shift();
+  if (!out.length || out[out.length - 1].role !== "user" || total > MAX_TOTAL) return null;
+  return out;
+}
+
+async function readBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (Buffer.isBuffer(req.body)) return req.body.toString("utf8");
+    if (typeof req.body === "string") return req.body;
+    return JSON.stringify(req.body);
+  }
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) {
+    size += c.length;
+    if (size > MAX_BODY) return null;
+    chunks.push(c);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function gemini(model, body) {
+  return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+    body: JSON.stringify(body),
+  });
+}
+
+module.exports = async function handler(req, res) {
+  try {
+    if (req.method !== "POST") return fail(res, 405, "METHOD_NOT_ALLOWED", "POST only");
+    if (!process.env.GEMINI_API_KEY) return fail(res, 500, "FAILED_PRECONDITION", "AI is not configured on the server (add GEMINI_API_KEY in Vercel).");
+
+    const origin = req.headers.origin;
+    if (origin) {
+      let oh = "";
+      try { oh = new URL(origin).host; } catch (e) {}
+      if (oh !== req.headers.host && !EXTRA_ORIGINS.includes(origin)) return fail(res, 403, "PERMISSION_DENIED", "Origin not allowed");
+    }
+
+    const ah = String(req.headers.authorization || "");
+    const token = ah.startsWith("Bearer ") ? ah.slice(7).trim() : "";
+    if (!token || token.length > 4000) return fail(res, 401, "UNAUTHENTICATED", "Login required");
+
+    const who = await authorize(token);
+    if (who === 401) return fail(res, 401, "UNAUTHENTICATED", "Please log in again");
+    if (who === 403) return fail(res, 403, "PERMISSION_DENIED", "Only approved active members can use AI");
+    if (who === 503) return fail(res, 503, "UNAVAILABLE", "Could not check access, try again");
+    if (limited(who)) return fail(res, 429, "RESOURCE_EXHAUSTED", "Too many AI requests, please wait a minute");
+
+    const raw = await readBody(req);
+    if (raw === null || raw.length > MAX_BODY) return fail(res, 413, "INVALID_ARGUMENT", "Request too large");
+    let b;
+    try { b = JSON.parse(raw); } catch (e) { return fail(res, 400, "INVALID_ARGUMENT", "Bad JSON"); }
+    const contents = clean(b && b.contents);
+    if (!contents) return fail(res, 400, "INVALID_ARGUMENT", "Invalid or too long message");
+
+    const body = {
+      systemInstruction: { parts: [{ text: SYS }] },
+      contents,
+      generationConfig: { temperature: 0.4, maxOutputTokens: 1200, thinkingConfig: { thinkingBudget: 0 } },
+    };
+
+    let up = await gemini(MODEL, body);
+    if (up.status === 400) {
+      // some models do not accept thinkingBudget: retry once without it
+      delete body.generationConfig.thinkingConfig;
+      up = await gemini(MODEL, body);
+    }
+    if (up.status === 404 && MODEL !== FALLBACK_MODEL) up = await gemini(FALLBACK_MODEL, body);
+    if (!up.ok) {
+      if (up.status === 429) return fail(res, 429, "RESOURCE_EXHAUSTED", "AI limit reached, try again later");
+      if (up.status === 503) return fail(res, 503, "UNAVAILABLE", "AI is busy, try again in a minute");
+      let why = "";
+      try { why = (await up.text()).replace(/\s+/g, " ").slice(0, 160); } catch (e) {}
+      return fail(res, 502, "UNAVAILABLE", "AI service error (" + up.status + ") " + why);
+    }
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store, no-transform");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    if (res.flushHeaders) res.flushHeaders();
+    const reader = up.body.getReader();
+    req.on("close", () => { try { reader.cancel(); } catch (e) {} });
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
+  } catch (e) {
+    if (!res.headersSent) fail(res, 502, "UNAVAILABLE", "AI service could not be reached");
+    else try { res.end(); } catch (x) {}
+  }
+};
