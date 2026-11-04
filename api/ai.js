@@ -8,7 +8,8 @@
 
 const PROJECT = process.env.FIREBASE_PROJECT_ID || "engrgroup23";
 const MODEL = (process.env.GEMINI_MODEL || "gemini-flash-latest").replace(/[^\w.\-]/g, "");
-const FALLBACK_MODEL = "gemini-3.8-flash";
+// if the main model is busy (503), retired (404) or over quota (429) the next one is tried
+const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest"].filter((m, i, arr) => arr.indexOf(m) === i);
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const PER_MINUTE = 12;
@@ -57,11 +58,14 @@ async function authorize(token) {
     { headers: { Authorization: "Bearer " + token } }
   );
   if (r.status === 401) return 401;
-  if (r.status === 403) return 403;
+  if (r.status === 403) {
+    const t = await r.text().catch(() => "");
+    return { fail: 403, why: "Firestore: " + t.replace(/\s+/g, " ").slice(0, 120) };
+  }
   if (r.status === 200) {
     const j = await r.json().catch(() => ({}));
     const f = j.fields && j.fields.ai;
-    if (f && f.booleanValue === false) return 403;
+    if (f && f.booleanValue === false) return { fail: 403, why: "AI Helper is switched off in Settings" };
   } else if (r.status !== 404) {
     return 503;
   }
@@ -151,7 +155,7 @@ module.exports = async function handler(req, res) {
 
     const who = await authorize(token);
     if (who === 401) return fail(res, 401, "UNAUTHENTICATED", "Please log in again");
-    if (who === 403) return fail(res, 403, "PERMISSION_DENIED", "Only approved active members can use AI");
+    if (who && who.fail === 403) return fail(res, 403, "PERMISSION_DENIED", "Only approved active members can use AI (" + who.why + ")");
     if (who === 503) return fail(res, 503, "UNAVAILABLE", "Could not check access, try again");
     if (limited(who)) return fail(res, 429, "RESOURCE_EXHAUSTED", "Too many AI requests, please wait a minute");
 
@@ -168,13 +172,16 @@ module.exports = async function handler(req, res) {
       generationConfig: { temperature: 0.4, maxOutputTokens: 1200, thinkingConfig: { thinkingBudget: 0 } },
     };
 
-    let up = await gemini(MODEL, body);
-    if (up.status === 400) {
-      // some models do not accept thinkingBudget: retry once without it
-      delete body.generationConfig.thinkingConfig;
-      up = await gemini(MODEL, body);
+    let up;
+    for (const m of MODELS) {
+      up = await gemini(m, body);
+      if (up.status === 400 && body.generationConfig.thinkingConfig) {
+        // some models do not accept thinkingBudget: retry once without it
+        delete body.generationConfig.thinkingConfig;
+        up = await gemini(m, body);
+      }
+      if (up.ok || ![404, 429, 500, 503].includes(up.status)) break;
     }
-    if (up.status === 404 && MODEL !== FALLBACK_MODEL) up = await gemini(FALLBACK_MODEL, body);
     if (!up.ok) {
       if (up.status === 429) return fail(res, 429, "RESOURCE_EXHAUSTED", "AI limit reached, try again later");
       if (up.status === 503) return fail(res, 503, "UNAVAILABLE", "AI is busy, try again in a minute");
