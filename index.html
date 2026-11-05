@@ -2376,6 +2376,7 @@ window.APP_CONFIG={
         rd.readAsText(f);
       })();
     }
+    window.__parseHtmlQs=function(h){try{return parseHtmlQs(String(h))}catch(e){return []}};
     /* generic MCQ extractor for mock-test HTML/text files: numbered questions, options A-D and an answer line */
     function parseHtmlQs(html){
       var out=[];
@@ -2714,11 +2715,14 @@ const VTX_BASE="https://aiplatform.googleapis.com/v1/publishers/google/models/";
 let aiKeyP=null,aiGood=null;
 /* saved AI settings (Admin panel > Settings): {key, provider, model, baseUrl} */
 function aiKey(){
-  if(!IS_OWNER)return Promise.resolve({key:"",provider:"proxy",model:"",baseUrl:""});
-  if(!aiKeyP)aiKeyP=getDoc(doc(db,"meta","ai")).then(d=>{
-    const x=d.exists()?d.data():{},k=String(x.key||"").trim();
-    return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim()};
-  }).catch(e=>{aiKeyP=null;throw e});
+  /* backup AI (free, no key) is used only if our own AI fails; admin can switch it off in Settings (meta/config.aiFree) */
+  if(!aiKeyP)aiKeyP=(async()=>{
+    let bk=true;
+    try{const c=await getDoc(doc(db,"meta","config"));if(c.exists()&&c.data().aiFree===false)bk=false}catch(e){}
+    if(!IS_OWNER)return {key:"",provider:"proxy",model:"",baseUrl:"",backup:bk};
+    const d=await getDoc(doc(db,"meta","ai")),x=d.exists()?d.data():{},k=String(x.key||"").trim();
+    return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim(),backup:bk};
+  })().catch(e=>{aiKeyP=null;throw e});
   return aiKeyP;
 }
 function aiErrMsg(st,j){
@@ -2741,7 +2745,7 @@ function aiPlans(cfg){
   const free=()=>({id:"free",kind:"o",free:true,model:"openai",url:"https://text.pollinations.ai/openai",h:{}});
   /* secure by default: no key / proxy -> our own server only (login + approval checked there). The third-party free service is used only if the owner picks "Free" explicitly. */
   if(p==="free")return [free()];
-  if(p==="proxy"||!key)return [prx()];
+  if(p==="proxy"||!key)return cfg.backup?[prx(),free()]:[prx()];
   let pl;
   if(p==="gemini")pl=[gem(),gemq()].concat(more());
   else if(p==="vertex")pl=[vtx()];
@@ -2751,6 +2755,7 @@ function aiPlans(cfg){
   else if(/^sk-/.test(key))pl=[oai()];
   else pl=[gem(),gemq(),vtx(),oai()];
   pl.push(prx());
+  if(cfg.backup)pl.push(free());
   return pl;
 }
 function aiBody(plan,contents,noThink){
@@ -2774,6 +2779,7 @@ async function aiCall(cfg,contents,on){
   for(const plan of plans){
     if(plan.m&&badM.has(plan.m))continue;
     if(plan.id==="vertex"&&keyOk)continue;
+    if(plan.free&&httpErr&&httpErr.plan==="proxy"&&(httpErr.http===401||httpErr.http===403))continue; /* not approved / switched off: no backup */
     for(let attempt=0;attempt<2;attempt++){
       let r;
       const hd=Object.assign({"Content-Type":"application/json"},plan.h);
@@ -3486,6 +3492,8 @@ function buildSettings(host){
   const lb3=el("label","",null);lb3.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb3.append(cb3,el("span","","Guest: only one per network (IP)"));
   const cb4=el("input");cb4.type="checkbox";cb4.id="cfgAi";
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
+  const cb6=el("input");cb6.type="checkbox";cb6.id="cfgAiFree";
+  const lb6=el("label","",null);lb6.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb6.append(cb6,el("span","","AI backup (free, no key) if main AI is busy/quota over - question text goes to a 3rd-party service"));
   const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
   const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
@@ -3508,17 +3516,17 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,lb4,lb5,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lb2,lb3,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_OWNER){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb5.checked=d.library!==false;
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;cb5.checked=d.library!==false;
       if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,library:cb5.checked,updatedAt:serverTimestamp()});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,library:cb5.checked,updatedAt:serverTimestamp()});
       if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
@@ -3973,6 +3981,10 @@ async function mtUploadFiles(files,fid,onDone,htmlMode){
       if(routeImport(f,"edFileJson",optCat))imp++;continue}
     if(isHtml){
       if(htmlMode==="file"){try{await mtSaveFile(f,fid,false,false);up++}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}continue}
+      /* a ready-made interactive mock test page has no plain-text MCQs to extract: keep it as a playable page instead of losing it */
+      let nq=1;
+      try{const tx=await f.text();nq=(window.__parseHtmlQs?window.__parseHtmlQs(tx):[]).length}catch(_){}
+      if(!nq){try{await mtSaveFile(f,fid,false,false);up++;errs.push(f.name+" — sawal text se nahi nikle, isliye ready HTML page ki tarah save hui (kholne par chalegi)")}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}continue}
       if(routeImport(f,"edFileHtml",optCat))imp++;continue}
     if(isPdf&&f.size>25*1048576){errs.push(f.name+" (PDF 25 MB se bara)");continue}
     if(isImg&&f.size>15*1048576){errs.push(f.name+" (photo 15 MB se bari)");continue}
