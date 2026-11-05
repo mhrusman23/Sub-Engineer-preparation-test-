@@ -2666,30 +2666,9 @@ window.APP_CONFIG={
       ];
       var day=Math.floor(Date.now()/86400000);
       function paint(t,live){tx.textContent=t;if(dy)dy.textContent=ADM?(live?"\ud83d\udcc9 Live joke \u2726 roz internet se aaya \u00b7 khud Urdu hua (sirf aap ko)":"Aaj ka joke #"+((day%J.length)+1)+" \u00b7 roz khud-ba-khud naya \ud83d\udd04"):"";jk.hidden=false}
-      function keep(t,live){try{localStorage.setItem("eg23jk",JSON.stringify({d:day,txt:t,live:live}))}catch(_){}}
-      var cache=null;try{cache=JSON.parse(localStorage.getItem("eg23jk")||"null")}catch(_){cache=null}
-      if(cache&&cache.d===day&&cache.txt){paint(cache.txt,!!cache.live);if(cache.live)return}
+      /* sirf Roman Urdu jokes (English live joke band) -- roz naya joke */
+      try{localStorage.removeItem("eg23jk")}catch(_){}
       paint(J[day%J.length]||J[0],false);
-      function ok(t){if(t&&tx){keep(t,true);paint(t,true)}}
-      /* online joke: English → Urdu translation; English dikhana hi nahi (wallpaper karo Urdu ya local) */
-      (async function(){
-        var got="",raw="";
-        var urls=["https://v2.jokeapi.dev/joke/Any?safe-mode&type=single&blacklistFlags=nsfw,religious,political,racist,sexist,explicit","https://official-joke-api.appspot.com/random_joke"];
-        for(var i=0;i<urls.length&&!raw;i++){
-          try{
-            var r=await fetch(urls[i],{signal:(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(7000):undefined});
-            if(r.ok){var j=await r.json();if(j&&!j.error&&j.joke)raw=j.joke;else if(j&&j.setup&&j.punchline)raw=j.setup+" \u2014 "+j.punchline}
-          }catch(_){}
-        }
-        if(raw){
-          try{
-            var tr=await fetch("https://api.mymemory.translated.net/get?langpair=en|ur&q="+encodeURIComponent(raw),{signal:(typeof AbortSignal!=="undefined"&&AbortSignal.timeout)?AbortSignal.timeout(9000):undefined});
-            if(tr.ok){var tj=await tr.json();var u=tj&&tj.responseData&&tj.responseData.translatedText?String(tj.responseData.translatedText):"";
-              if(u&&/[\u0600-\u06FF]/.test(u)&&!/TRANSLATION|MYMEMORY/i.test(u))got=u}
-          }catch(_){}
-        }
-        if(got)ok(got);
-      })();
     })()}catch(_){}
     if(window.renderContacts)window.renderContacts($("#contactBox"));
   })();
@@ -3137,7 +3116,7 @@ function aiKey(){
   if(!aiKeyP)aiKeyP=(async()=>{
     let bk=true;
     try{const c=await getDoc(doc(db,"meta","config"));if(c.exists()&&c.data().aiFree===false)bk=false}catch(e){}
-    if(!IS_OWNER)return {key:"",provider:"proxy",model:"",baseUrl:"",backup:bk};
+    if(!IS_ADMIN)return {key:"",provider:"proxy",model:"",baseUrl:"",backup:bk};
     const d=await getDoc(doc(db,"meta","ai")),x=d.exists()?d.data():{},k=String(x.key||"").trim();
     return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim(),backup:bk};
   })().catch(e=>{aiKeyP=null;throw e});
@@ -3551,6 +3530,7 @@ async function check(user){
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
     window.__AI_ON=cfg.ai!==false;
     window.__LIB_ON=cfg.library!==false;
+    window.__CHATNOTE=cfg.chatNote===true;
     const br=await bankP;if(br.e)throw br.e;
     const b=br.v;
     if(!b){
@@ -4123,16 +4103,16 @@ function buildSettings(host){
   const st=el("div","label st");
   host.append(lb,tx,lb2,lb3,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
-  if(!IS_OWNER){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
+  if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
     try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;cb5.checked=d.library!==false;
-      if(IS_OWNER)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
+      if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,library:cb5.checked,updatedAt:serverTimestamp()});
-      if(IS_OWNER)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
+      if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
     sv.disabled=false;
@@ -4338,8 +4318,17 @@ function chatName(){
   n=n.replace(/\s+/g," ").slice(0,24);
   return n||"User";
 }
+function chatNoteSync(){
+  try{const n=document.getElementById("chatNote");if(n)n.hidden=!(IS_ADMIN||window.__CHATNOTE===true)}catch(_){}
+}
+async function chatCfgLoad(){
+  try{const c=await getDoc(doc(db,"meta","config"));window.__CHATNOTE=!!(c.exists()&&c.data().chatNote===true);
+    const ck=document.getElementById("chatNoteCk");if(ck)ck.checked=window.__CHATNOTE}catch(_){}
+  chatNoteSync();
+}
 function openChat(){
   if(!chatEl)chatEl=buildChat();
+  chatNoteSync();chatCfgLoad();
   chatEl.hidden=false;chatListen();chatScroll();
 }
 function chatOff(){
@@ -4358,6 +4347,19 @@ function buildChat(){
   const note=el("div","label");note.style.cssText="padding:8px 14px 0";
   note.textContent="Sab users yahan baat kar sakte hain. Sirf username dikhta hai — email kisi ko nazar nahi aata. Baat-cheet ki izzat rakhein 🙂";
   box.appendChild(note);
+  note.id="chatNote";
+  if(IS_ADMIN){
+    const tr=el("label");tr.style.cssText="display:flex;align-items:center;gap:8px;padding:6px 14px 0;font:600 13px/1.3 sans-serif;color:var(--muted,#555)";
+    const ck=el("input");ck.type="checkbox";ck.id="chatNoteCk";ck.checked=window.__CHATNOTE===true;
+    const tt=el("span","","Users ko ye description dikhayen (ON / OFF)");
+    ck.onchange=async()=>{
+      ck.disabled=true;
+      try{await setDoc(doc(db,"meta","config"),{chatNote:ck.checked,updatedAt:serverTimestamp()},{merge:true});window.__CHATNOTE=ck.checked}
+      catch(e){ck.checked=!ck.checked;alert("Save nahi hui: "+((e&&(e.code||e.message))||e))}
+      ck.disabled=false;
+    };
+    tr.append(ck,tt);box.appendChild(tr);
+  }
   const lst=el("div");lst.className="chatlist";lst.id="chatLst";
   lst.appendChild(el("div","mtempty","Salam! Pehla message aap bhejein 🙂"));
   box.appendChild(lst);
