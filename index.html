@@ -316,7 +316,7 @@ label.btn{display:inline-flex;align-items:center}
 .ytools{display:flex;gap:6px;margin:0 12px 10px}
 #yList{margin:0 12px}
 .ybar{position:sticky;bottom:0;z-index:6;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--panel);border-top:1px solid var(--line)}
-input.pk{width:22px;height:22px;flex:none}
+input.pk,input.cpk{width:22px;height:22px;flex:none}
 .hnote{font-size:13px;color:var(--muted);margin:0 0 10px}
 .hcard{border:1px solid var(--line);border-radius:8px;margin-bottom:10px;background:var(--panel);overflow:hidden}
 .hhead{display:flex;gap:10px;align-items:center;padding:12px;flex-wrap:wrap}
@@ -1416,8 +1416,17 @@ window.APP_CONFIG={
       if(multi){
         var tg=el("button","btn","Chapters \u25be");tg.type="button";hd.appendChild(tg);
         pn=el("div","hchs");pn.hidden=true;
+        var cks=[],bar=el("div","hrow");bar.style.flexWrap="wrap";
+        var bAll=el("button","btn","Select all"),bClr=el("button","btn","Clear"),bGo=el("button","btn primary","Start selected (0)");
+        bAll.type=bClr.type=bGo.type="button";bGo.disabled=true;
+        function updCk(){var p=[],q=0;cks.forEach(function(c){if(c.checked){p.push(+c.value);q+=secN[+c.value]||0}});bGo.textContent="Start selected ("+p.length+(p.length?" \u00b7 "+q+" Q":"")+")";bGo.disabled=!p.length}
+        bAll.addEventListener("click",function(){cks.forEach(function(c){c.checked=true});updCk()});
+        bClr.addEventListener("click",function(){cks.forEach(function(c){c.checked=false});updCk()});
+        bGo.addEventListener("click",function(){var p=[];cks.forEach(function(c){if(c.checked)p.push(+c.value)});if(p.length)start({chapters:p})});
+        bar.append(bAll,bClr,bGo);pn.appendChild(bar);
         chs.forEach(function(ci){
           var r=el("div","hrow"),cn=el("div","hname",S[ci].name);
+          var cc=document.createElement("input");cc.type="checkbox";cc.className="cpk";cc.value=String(ci);cc.setAttribute("aria-label","Select "+S[ci].name);cc.addEventListener("change",updCk);cks.push(cc);r.appendChild(cc);
           cn.appendChild(el("small","",S[ci].code.split(" \u00b7 ").pop()));
           r.appendChild(cn);r.appendChild(el("span","mt",secN[ci]+" Q"));
           var b=el("button","btn primary","Start");b.type="button";b.addEventListener("click",function(){start(ci)});
@@ -1828,6 +1837,12 @@ window.APP_CONFIG={
     if(ch==="bkm"){
       sel=[];order=bkmIds().filter(function(id){return Q[id]});
       if(!order.length)return;TTITLE="Revision \u2605";
+    }else if(ch&&Array.isArray(ch.chapters)){
+      var cs=ch.chapters.filter(function(c){return S[c]});
+      sel=[];cs.forEach(function(c){if(sel.indexOf(S[c].sub)<0)sel.push(S[c].sub)});
+      order=[];Q.forEach(function(q,i){if(cs.indexOf(q.sec)>=0)order.push(i)});
+      if(!order.length)return;
+      TOTAL=0;cs.forEach(function(c){var n=0;Q.forEach(function(q){if(q.sec===c)n++});TOTAL+=Math.round(n*SUB[S[c].sub].spq)});TOTAL=Math.max(60,TOTAL);
     }else if(typeof ch==="number"){
       sel=[S[ch].sub];order=[];Q.forEach(function(q,i){if(q.sec===ch)order.push(i)});
       if(!order.length)return;TOTAL=Math.max(60,Math.round(order.length*SUB[S[ch].sub].spq));
@@ -2637,32 +2652,36 @@ window.APP_CONFIG={
       var jk=$("#jokeCard"),tx=$("#jkTx"),dy=$("#jkDay");if(!jk||!tx)return;
       var ADM=(typeof IS_OWNER!=="undefined"||typeof IS_ADMIN!=="undefined")?((IS_OWNER||IS_ADMIN)&&!PV):false;
       var J=[
-        "Teacher: Tum paper mein parhte kyun nahi? Student: Sir memory full ho gayi hai — phone jaisa hi case hai 📱😂",
-        "Maa: Do ghante se kya kar rahe ho? Beta: Parhai kar raha hoon. Mobile: Main gawah hoon, jhoot hai 📱😅",
-        "Dost: Kya parha hai aaj? Dost2: Sab parha hai, bas yaad nahi kya parha tha 😴",
-        "Paper se pehle sab kehte hain 'kuch nahi parha' — paper mein sab josh josh mein likh rahe hote hain 📝",
-        "Papa: Beta engineer banega? Beta: Papa pehle pass kar do, engineer ki chinta baad mein hogi 😅",
-        "Chai raat 12 baje bhi garam ho jati hai, parhai nahi hoti 🍵",
-        "Teacher: Aane mein der kyun? Student: Sir 8:01 par aana late nahi hai — aaj kal 8 ka matlab 8:30 hota hai 🙂",
-        "Test ka sab se mushkil waqt: jab B o C dono options barabar sahi lagne lagein ✅❌",
-        "Result wale din dil karta hai ke seedha mobile ka notification khul jaye 📱😅",
-        "Mobile 1% par '10 minute' ka waqt deta hai — meri parhai to battery se pehle hi khatam ho jati hai 🔋😅",
-        "Ustad: Concrete ka slump test kya hota hai? Student: Sir mera bhi test time pr slump ho jata hai 🙂",
-        "Exam hall mein sab se ziada exercise: aankhein upar — deewar se jawab nikaalne ki koshish 👀😅",
-        "Dost: B.E. complete karne ke baad kya karoge? Dost2: Pehle to yeh poochunga ke main engineer hoon 😂",
-        "Parhai mein jo chapter sab se boring ho, exam mein wohi pakka aata hai — yehi PPSC ka usool hai 📚😏",
-        "Raat ko book khuli magar aankhein band — subah pata chala kitab to padi hui thi 😴",
-        "Ustad: Lab report kahan hai? Student: Sir rheostat jeet gaya, meter ka grand total lost ho gaya.",
-        "Tension is waqt sab se ziada: jab MCQ ke 4 options bilkul sahi lag rahe hon 🤯",
-        "Site kholi 5 minute ke liye thi, 'Resume saved attempt' ne poora din le liya 😆",
-        "Dost: Aaj ka din kaisa tha? Dost2: Deep tha — beam wala deep.",
-        "Syllabus dekhte dekhte reels chal gaye — ye to reel-ka-test nikla 😅",
-        "Roll number slip aayi to laga jaise dua qabool ho gayi 🙏😅",
-        "Ustad: Formula yaad hai? Student: Haan sir — 'C' se concrete, 'S' se shear, 'P' se pass.",
-        "Sir ne kaha rough work karo — main to question hi rough samajh baitha 📝",
-        "Ye site roz update hoti hai — parh bhi lo kabhi kabhi 😜",
-        "MCQ mein 'All of the above' dekh kar insan confuse ho jata hai 😂",
-        "Best dost wohi jo paper ke baad bole: 'Teri wajah se fail hua' — aur khud pass nikla 🙂"
+        "Ustad: Agar tumhare paas 5 aam hain aur main 2 le loon, to kitne bachenge? Student: Sir 5 hi bachenge, aap ko lene hi nahi dunga! 😂",
+        "Ustad: Pani ka formula batao. Student: H2O sir. Ustad: Aur chai ka? Student: Sir wo zindagi ka formula hai: pani + patti + doodh + cheeni! ☕😂",
+        "Interviewer: Aap ki sab se badi kamzori kya hai? Candidate: Sach bolna. Interviewer: Ye to kamzori nahi. Candidate: Mujhe is baat ki parwah nahi ke aap kya sochte hain! 😂",
+        "Student: Sir, main fail kyun ho gaya? Sir: Tum ne jawab to likhe the. Student: Haan sir, magar sawalon se mel nahi khate the! 😅",
+        "Ustad: Beam par load zyada ho jaye to kya hota hai? Student: Sir wo bhi mere jaisa jhuk jata hai, jab paper ka din aata hai! 😅",
+        "Maa: Parhai kar rahe ho? Beta: Ji ammi, 2 ghante se. Mobile ki screen time: 1 ghanta 55 minute, kitab: 5 minute 😂",
+        "Dost: Paper kaisa gaya? Dost2: Yaar sawal mujh se poochh rahe the 'tum kaun ho?' 😂",
+        "Teacher: Late kyun aaye? Student: Sir raaste mein board laga tha 'School ahead, go slow' — to main slow aa gaya! 😂",
+        "Ustad: Concrete ko 28 din pani kyun dete hain? Student: Sir taake wo bhi mere jaisa strong ho jaye, jo roz 28 chai peeta hai! ☕",
+        "Papa: Beta result kaisa aaya? Beta: Papa result aur aap ke gussay mein ek cheez common hai: dono aate hi sab kuch hila dete hain! 😅",
+        "Student: Sir, mujhe zero kyun diya? Sir: Kyun ke is se kam number hota hi nahi. 😂",
+        "Ustad: Foundation kyun mazboot hona chahiye? Student: Sir jaise meri neend — jab tak neeche se mazboot na ho, upar se kuch nahi hota! 😴",
+        "Ustad: Surveying mein sab se pehle kya karte hain? Student: Sir, chai ka bandobast, phir level lagate hain! ☕",
+        "Dost: Bhai tum engineer ban ke kya karoge? Dost2: Pehle nakshe banaunga, phir ghar walon ko samjhaunga ke ye ghar ka nahi, mere sapne ka nakshe hai! 😂",
+        "Teacher: Newton ne kya kaha tha? Student: Sir unhone kaha tha 'Seb girne do, mujhe neend aa rahi hai'! 🍎😂",
+        "Bachay ne baap se kaha: Papa main bara ho kar civil engineer banunga. Baap: Pehle apna kamra to saaf kar lo, phir bridge bana lena! 😂",
+        "Ustad: Bhai Pythagoras ka theorem sunao. Student: Sir mujhe sirf itna yaad hai ke wo triangle ke sath bohat zulm karta tha! 😂",
+        "Student: Sir, kya mujhe is cheez ki saza milegi jo maine kiya hi nahi? Sir: Nahi. Student: Shukriya sir, maine homework kiya hi nahi! 😂",
+        "Mistri: Sahab, deewar mein crack aa gaya hai. Engineer: Koi baat nahi, usay bol do ke ye design ka part hai! 😂",
+        "Dost: Raat ko kitne ghante parhte ho? Dost2: Parhna kam, 'kal se pakka shuru' ka irada zyada karta hoon! 😅",
+        "Teacher: Sab se tez cheez kya hai? Student: Sir exam ke din ka waqt — aur result ke din ki dhadkan! ⏱️",
+        "Ustad: Bridge ka kaam kya hota hai? Student: Sir do kinaron ko milana — bilkul meri ammi ki tarah jo mujhe aur mere phone ko alag karti hain 😂",
+        "Interviewer: Aap ko kitni salary chahiye? Candidate: Sir jitni aap ke dil mein ho. Interviewer: Theek hai, 5000. Candidate: Sir dil ki baat hi na karein! 😅",
+        "Student: Sir, main 3 din se bukhar mein hoon, paper ke liye parh nahi saka. Sir: Phir bukhar mein hi paper do. Student: Sir, wo to aap ke sawalon se bhi zyada tez nikla! 😅",
+        "Mistri: Sahab, cement kam par gaya. Engineer: Koi nahi, deewar ko bol do ke 'diet' par hai 😂",
+        "Mock test ka usool: jis option par dil kahe 'ye pakka', wohi ghalat hota hai! 😅",
+        "MCQ mein 'All of the above' wahi insaan jaanta hai jis ne chapter parha ho — baaqi sab 'B' laga kar dua karte hain! 🙏",
+        "Ustad: Engineer ki pehchan kya? Student: Sir, jo har cheez ko pehle 'measure' kare — chai ki cheeni bhi, aur dost ki rishtedari bhi! 😂",
+        "Ustad: Zameen ke nichay kya hota hai? Student: Sir, jis ne foundation sahi na dali, uski izzat! 😂",
+        "Student: Sir, mujhe samajh nahi aaya. Sir: Dobara samjhata hoon. Student: Sir, dobara se bhi nahi aayega, pehli baar mein hi nahi aaya tha! 😅"
       ];
       var day=Math.floor(Date.now()/86400000);
       function paint(t,live){tx.textContent=t;if(dy)dy.textContent=ADM?(live?"\ud83d\udcc9 Live joke \u2726 roz internet se aaya \u00b7 khud Urdu hua (sirf aap ko)":"Aaj ka joke #"+((day%J.length)+1)+" \u00b7 roz khud-ba-khud naya \ud83d\udd04"):"";jk.hidden=false}
@@ -4518,7 +4537,53 @@ function showImage(bytes,mime){
   vw.body.textContent="";vw.body.style.overflow="auto";vw.body.appendChild(img);
   vw.cleanup=()=>URL.revokeObjectURL(url);
 }
+function jsonQuizHtml(raw,title){
+  /* JSON MCQ file -> playable quiz page (instead of showing raw text) */
+  try{
+    const t=String(raw||"").replace(/^\uFEFF/,"").trim();
+    if(t[0]!=="["&&t[0]!=="{")return null;
+    let d=JSON.parse(t);
+    if(!Array.isArray(d))d=d.questions||d.mcqs||d.data||d.items;
+    if(!Array.isArray(d)||!d.length)return null;
+    let items=d.map(x=>{
+      if(!x||typeof x!=="object")return null;
+      const q=x.text||x.question||x.q||x.title;
+      let o=x.opts||x.options||x.choices||x.answers;
+      if(o&&!Array.isArray(o)&&typeof o==="object")o=Object.values(o);
+      if(!q||!Array.isArray(o)||o.length<2)return null;
+      return {q:String(q),o:o.map(String),a:(x.ans!==undefined?x.ans:(x.answer!==undefined?x.answer:(x.correct!==undefined?x.correct:x.correctAnswer))),e:String(x.exp||x.explanation||"")};
+    }).filter(Boolean);
+    if(!items.length)return null;
+    const oneBased=items.every(x=>typeof x.a==="number")&&items.some(x=>x.a===x.o.length)&&!items.some(x=>x.a===0);
+    items.forEach(x=>{
+      let a=x.a;
+      if(typeof a==="string"){
+        const k=a.trim(),L="ABCDEFGH".indexOf(k.toUpperCase());
+        if(/^[A-Ha-h]$/.test(k))a=L;
+        else if(/^\d+$/.test(k))a=+k-(oneBased?1:0);
+        else{const ix=x.o.findIndex(v=>v.trim().toLowerCase()===k.toLowerCase());a=ix}
+      }else if(typeof a==="number"&&oneBased)a=a-1;
+      x.a=(typeof a==="number"&&a>=0&&a<x.o.length)?a:-1;
+    });
+    const data=JSON.stringify(items).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029");
+    const ttl=String(title||"MCQ Test").replace(/[<>&]/g,"");
+    const css="*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f3f6fd;color:#10172b}.top{position:sticky;top:0;z-index:5;background:#0f1f4d;color:#fff;padding:10px 14px}.top b{display:block;font-size:16px;margin-bottom:4px}.top span{font-size:13px;opacity:.95}.bar{height:5px;background:#ffffff33;border-radius:9px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#f5c542;transition:width .25s}.w{max-width:760px;margin:0 auto;padding:12px}.c{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 2px 10px #0f1f4d1a}.n{font:700 12px monospace;color:#5b6a8f;margin-bottom:4px}.q{font-weight:650;margin-bottom:10px;white-space:pre-wrap}.o{display:block;width:100%;text-align:left;background:#f3f6fd;border:2px solid #dbe3f5;border-radius:11px;padding:10px 12px;margin:0 0 8px;font:inherit;color:inherit;cursor:pointer}.o b{display:inline-block;min-width:22px;color:#2447c9}.o.ok{background:#dcf7e3;border-color:#26a653}.o.no{background:#fde2e2;border-color:#d9363e}.o[disabled]{cursor:default}.e{font-size:14px;color:#42506f;background:#fff8e1;border-radius:9px;padding:8px 10px;margin-top:4px}.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:700 15px system-ui;background:#2447c9;color:#fff;margin:6px 0 24px}.r{text-align:center;font-weight:700;font-size:18px;padding:10px}";
+    const js="var D="+data+",ok=0,bad=0,R=document.getElementById('r'),S=document.getElementById('s'),B=document.getElementById('b');"
+     +"function up(){var l=D.length-ok-bad;S.textContent='Sahi: '+ok+'  \\u00b7  Ghalat: '+bad+'  \\u00b7  Baqi: '+l+'  \\u00b7  Total: '+D.length;B.style.width=Math.round((ok+bad)*100/D.length)+'%'}"
+     +"function build(){R.textContent='';ok=bad=0;D.forEach(function(x,i){var c=document.createElement('div');c.className='c';"
+     +"var n=document.createElement('div');n.className='n';n.textContent='Q '+(i+1)+' / '+D.length;c.appendChild(n);"
+     +"var q=document.createElement('div');q.className='q';q.textContent=x.q;c.appendChild(q);var bs=[];"
+     +"x.o.forEach(function(t,k){var b=document.createElement('button');b.type='button';b.className='o';var l=document.createElement('b');l.textContent='ABCDEFGH'.charAt(k)+'.';b.appendChild(l);b.appendChild(document.createTextNode(' '+t));bs.push(b);"
+     +"b.onclick=function(){bs.forEach(function(z){z.disabled=true});if(x.a<0){b.className='o';up();return}"
+     +"if(k===x.a){b.className='o ok';ok++}else{b.className='o no';bad++;bs[x.a].className='o ok'}"
+     +"if(x.e){var e=document.createElement('div');e.className='e';e.textContent=x.e;c.appendChild(e)}up();"
+     +"if(ok+bad===D.length){var r=document.createElement('div');r.className='r';r.textContent='Test khatam: '+ok+' / '+D.length+' ('+Math.round(ok*100/D.length)+'%)';R.appendChild(r);r.scrollIntoView({behavior:'smooth'})}};"
+     +"c.appendChild(b)});R.appendChild(c)});var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.textContent='Dobara shuru karein';rb.onclick=function(){build();window.scrollTo(0,0)};R.appendChild(rb);up()}build();";
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+ttl+"</title><style>"+css+"</style></head><body><div class=\"top\"><b>"+ttl+"</b><span id=\"s\"></span><div class=\"bar\"><i id=\"b\"></i></div></div><div class=\"w\" id=\"r\"></div><scr"+"ipt>"+js+"</scr"+"ipt></body></html>";
+  }catch(e){return null}
+}
 function showHtml(it,html){
+  const qz=jsonQuizHtml(html,it&&it.title);if(qz)html=qz;
   const f=document.createElement("iframe");
   f.setAttribute("sandbox","allow-scripts allow-forms allow-modals allow-popups"+(it.trusted?" allow-same-origin":""));
   f.srcdoc=html;vw.body.textContent="";vw.body.style.overflow="hidden";vw.body.appendChild(f);
