@@ -5,9 +5,12 @@
 <meta name="theme-color" content="#0B1530">
 <meta name="description" content="Engrgroup23 - Sub Engineer past paper &amp; book solved. PPSC past papers and Civil 1st, 2nd, 3rd year MCQ mock tests.">
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://firestore.googleapis.com">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin="">
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Montserrat:wght@600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Montserrat:wght@600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Montserrat:wght@600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap"></noscript>
 <style>
 /* Layout: a drafting-sheet exam paper. Title block on the start screen, one question at a time with a question map beside it, grid-paper ground. */
 :root{
@@ -936,7 +939,7 @@ window.APP_CONFIG={
 };
 /* =========================================================== */
 </script>
-<div id="gate"><div class="gbox">
+<div id="gate"><button type="button" id="gmenu" aria-label="Menu" style="position:absolute;top:max(12px,env(safe-area-inset-top));right:14px;left:auto;width:auto;z-index:2;min-height:40px;padding:6px 14px;box-shadow:none;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(18,23,43,.72);color:#fff;font:700 14px sans-serif;cursor:pointer">☰ Menu</button><div class="gbox">
 <div class="glogo shield" role="img" aria-label="Engrgroup23 logo"></div>
 <div class="gbrand">Engrgroup<b>23</b></div>
 <p class="gdesc">Sub Engineer past paper &amp; book solved.</p>
@@ -970,7 +973,7 @@ window.APP_CONFIG={
 <div id="gverbox" hidden><button type="button" id="gvok">I have verified</button><button type="button" class="gsec" id="gvres">Resend verification email</button></div>
 <button type="button" id="gout" class="gsec" hidden>Use another account</button>
 <button type="button" id="gtrial" hidden>Start 12-hour free trial</button>
-<div id="glang" class="glrow"><span class="gllbl">🌐 Language · زبان</span><button type="button" class="glchip" id="glEn">English</button><button type="button" class="glchip" id="glUr">اردو</button></div>
+
 <button type="button" id="gshare" class="gsec" style="margin-top:6px">📤 Site WhatsApp par share karein</button>
 <div id="gcontacts"></div>
 </div><div class="gfoot">By Engr Usman Amjad &amp; Engr Umar Sajjid</div></div>
@@ -1044,15 +1047,16 @@ window.APP_CONFIG={
         <div class="startrow" id="tmRow">
       <label><input type="checkbox" id="optTimer"> ⏱ Timer test (countdown)</label>
       <select id="optTimerMins" aria-label="Timer duration" style="min-height:38px;min-width:104px;padding:4px 8px;border-radius:9px;border:1px solid var(--line,#C9D3DA);background:#fff;font:600 14px sans-serif;color:#13222D">
+        <option value="auto" selected>Auto (by number of MCQs)</option>
         <option value="30">30 minutes</option>
         <option value="45">45 minutes</option>
-        <option value="60" selected>60 minutes</option>
+        <option value="60">60 minutes</option>
         <option value="90">90 minutes</option>
         <option value="120">120 minutes</option>
       </select>
     </div>
     <div class="contacts" id="contactBox"></div>
-    <div class="sheet-head">
+    <div class="sheet-head" hidden style="display:none">
       <div class="label">PPSC Past Papers · Civil 1st, 2nd &amp; 3rd Year · 18 papers + 16 subjects</div>
       <h1>PPSC + Civil Diploma<br>All-in-One Mock Test</h1>
       <p>4645 MCQs: 1440 from 18 solved PPSC Sub Engineer Civil past papers (2018 to 2025) and 3205 from 16 subjects of Civil 1st, 2nd and 3rd year. PPSC answers follow the ticked options in the Ali Technical Academy booklet. Tick the papers and subjects you want, then start. There is no time limit. A correct answer moves on after 1.2 seconds, a wrong one after 4 seconds. Use <b>Edit MCQs</b> to change, add or delete questions. Question order is shuffled each time.</p>
@@ -1062,7 +1066,7 @@ window.APP_CONFIG={
       <div class="label">Rules</div>
       <ul>
         <li>There is no time limit by default. A stopwatch starts when you pick your first answer and only shows how long you have taken.</li>
-        <li>&#9201; Timer test (optional): the tick &#9201; box on the start page gives a 30 / 45 / 60 / 90 / 120-minute countdown like the real PPSC paper. The clock starts with your first answer and the test finishes itself when the time is over. It also applies to revision mode if it is on.</li>
+        <li>&#9201; Timer test (optional): the tick &#9201; box on the start page gives a countdown like the real PPSC paper: Auto (0.9 min per MCQ, e.g. 100 MCQs = 90 min) or 30 / 45 / 60 / 90 / 120 minutes. Mock tests you open from files get the Auto timer by themselves. The clock starts with your first answer and the test finishes itself when the time is over. It also applies to revision mode if it is on.</li>
         <li>Only one attempt per question. The answer is locked as soon as you choose it, and a wrong answer costs 0.25 marks.</li>
         <li>You can pause the test at any time once it has started. The clock stops and the questions are hidden until you resume.</li>
         <li>Skipped questions score zero. The test ends when you press Finish.</li>
@@ -1442,7 +1446,8 @@ window.APP_CONFIG={
         var ha=el("div","hadm");
         var bc=el("button","btn","+ Chapter");bc.type="button";bc.addEventListener("click",function(){addChapter(i)});
         var br=el("button","btn","\u270e Rename");br.type="button";br.addEventListener("click",function(){renameSub(i)});
-        ha.appendChild(bc);ha.appendChild(br);
+        var bd=el("button","btn danger","\ud83d\uddd1 Delete chapter");bd.type="button";bd.addEventListener("click",function(){delChapterPanel(i,card)});
+        ha.appendChild(bc);ha.appendChild(br);ha.appendChild(bd);
         if(!n)ha.appendChild(el("span","label","0 MCQs \u00b7 add questions with Edit MCQs"));
         card.appendChild(ha);
       }
@@ -1538,6 +1543,32 @@ window.APP_CONFIG={
     if(nm===null||!nm.trim())return;
     S.push({sub:si,name:nm.trim().slice(0,80),code:SUB[si].code+" \u00b7 Ch "+(n+1)});
     afterStruct("Chapter added. Add questions to it with Edit MCQs");
+  }
+  function delChapterPanel(si,card){
+    var old=card.querySelector(".chdel");if(old){old.remove();return}
+    var box=el("div","chdel hchs");box.style.cssText="margin:8px 12px 12px;padding:8px;border:1px dashed #B3261E;border-radius:12px";
+    var cnt={};Q.forEach(function(q){cnt[q.sec]=(cnt[q.sec]||0)+1});
+    var any=false;
+    S.forEach(function(c,ci){
+      if(c.sub!==si)return;any=true;
+      var r=el("div","hrow");r.appendChild(el("div","hname",c.name+" \u00b7 "+(cnt[ci]||0)+" MCQs"));
+      var b=el("button","btn danger","Delete");b.type="button";
+      b.addEventListener("click",function(){delChapter(ci)});
+      r.appendChild(b);box.appendChild(r);
+    });
+    if(!any)box.appendChild(el("div","label","No chapters in this subject."));
+    card.appendChild(box);
+  }
+  function delChapter(ci){
+    if(!S[ci])return;
+    var n=0;Q.forEach(function(q){if(q.sec===ci)n++});
+    if(!confirm("Delete chapter '"+S[ci].name+"'?"+(n?"\n\nIts "+n+" MCQ(s) will also be deleted for everyone. This cannot be undone.":"")))return;
+    for(var k=Q.length-1;k>=0;k--){if(Q[k].sec===ci)Q.splice(k,1)}
+    Q.forEach(function(q){if(q.sec>ci)q.sec--});
+    S.splice(ci,1);
+    QO=Q.map(function(q){return q.opts.slice()});QA=Q.map(function(q){return q.ans});perm={};
+    bv=Date.now();clearSave();showResume();
+    afterStruct("Chapter deleted");
   }
   function renameSub(si){
     var nm=prompt("Name:",SUB[si].name);if(nm===null||!nm.trim())return;
@@ -1853,7 +1884,10 @@ window.APP_CONFIG={
     sel=Array.isArray(ch)?ch.slice():pickedSubs();if(!sel.length)return;TOTAL=0;sel.forEach(function(i){TOTAL+=SUB[i].time});order=[];Q.forEach(function(q,i){if(sel.indexOf(S[q.sec].sub)>=0)order.push(i)});
     }
     if(ch!=="bkm")TOTAL=TOTAL||order.length; else TOTAL=order.length;
-    TMOFF=(($("#optTimer")||{}).checked?(Math.max(0,Math.floor(+($("#optTimerMins")||{}).value||0))*60):0);
+    /* auto timer: 0.9 min per MCQ (100 MCQs = 90 min, like the real paper), min 5 min; mock tests from files get it automatically */
+    var _tv=($("#optTimerMins")||{}).value,_au=function(){return Math.max(5,Math.ceil(order.length*0.9))*60};
+    TMOFF=window.__autoTm?_au():(($("#optTimer")||{}).checked?(_tv==="auto"?_au():(Math.max(0,Math.floor(+_tv||0))*60)):0);
+    window.__autoTm=false;
     {for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t}}
     applyPerm($("#optShuf").checked?makePerm():{});
     cancelAuto();pos=0;ans={};started=false;finished=false;paused=false;pausedAt=0;wrongLog=[];filter="all";
@@ -2662,6 +2696,7 @@ window.APP_CONFIG={
         S.push({sub:si,name:"Chapter 1",code:"Mock \u00b7 "+nm.slice(0,30)+" \u00b7 Ch 1"});
         good.forEach(function(q){q.sec=ci;QO.push(q.opts.slice());QA.push(q.ans);Q.push(q)});
         recalcT();
+        window.__autoTm=true;
         start(ci);
         TTITLE=nm;
         return true;
@@ -2765,40 +2800,16 @@ window.APP_CONFIG={
     try{(function(){
       var jk=$("#jokeCard"),tx=$("#jkTx"),dy=$("#jkDay");if(!jk||!tx)return;
       var ADM=(typeof IS_OWNER!=="undefined"||typeof IS_ADMIN!=="undefined")?((IS_OWNER||IS_ADMIN)&&!PV):false;
-      var J=[
-        "Ustad: Agar tumhare paas 5 aam hain aur main 2 le loon, to kitne bachenge? Student: Sir 5 hi bachenge, aap ko lene hi nahi dunga! 😂",
-        "Ustad: Pani ka formula batao. Student: H2O sir. Ustad: Aur chai ka? Student: Sir wo zindagi ka formula hai: pani + patti + doodh + cheeni! ☕😂",
-        "Interviewer: Aap ki sab se badi kamzori kya hai? Candidate: Sach bolna. Interviewer: Ye to kamzori nahi. Candidate: Mujhe is baat ki parwah nahi ke aap kya sochte hain! 😂",
-        "Student: Sir, main fail kyun ho gaya? Sir: Tum ne jawab to likhe the. Student: Haan sir, magar sawalon se mel nahi khate the! 😅",
-        "Ustad: Beam par load zyada ho jaye to kya hota hai? Student: Sir wo bhi mere jaisa jhuk jata hai, jab paper ka din aata hai! 😅",
-        "Maa: Parhai kar rahe ho? Beta: Ji ammi, 2 ghante se. Mobile ki screen time: 1 ghanta 55 minute, kitab: 5 minute 😂",
-        "Dost: Paper kaisa gaya? Dost2: Yaar sawal mujh se poochh rahe the 'tum kaun ho?' 😂",
-        "Teacher: Late kyun aaye? Student: Sir raaste mein board laga tha 'School ahead, go slow' — to main slow aa gaya! 😂",
-        "Ustad: Concrete ko 28 din pani kyun dete hain? Student: Sir taake wo bhi mere jaisa strong ho jaye, jo roz 28 chai peeta hai! ☕",
-        "Papa: Beta result kaisa aaya? Beta: Papa result aur aap ke gussay mein ek cheez common hai: dono aate hi sab kuch hila dete hain! 😅",
-        "Student: Sir, mujhe zero kyun diya? Sir: Kyun ke is se kam number hota hi nahi. 😂",
-        "Ustad: Foundation kyun mazboot hona chahiye? Student: Sir jaise meri neend — jab tak neeche se mazboot na ho, upar se kuch nahi hota! 😴",
-        "Ustad: Surveying mein sab se pehle kya karte hain? Student: Sir, chai ka bandobast, phir level lagate hain! ☕",
-        "Dost: Bhai tum engineer ban ke kya karoge? Dost2: Pehle nakshe banaunga, phir ghar walon ko samjhaunga ke ye ghar ka nahi, mere sapne ka nakshe hai! 😂",
-        "Teacher: Newton ne kya kaha tha? Student: Sir unhone kaha tha 'Seb girne do, mujhe neend aa rahi hai'! 🍎😂",
-        "Bachay ne baap se kaha: Papa main bara ho kar civil engineer banunga. Baap: Pehle apna kamra to saaf kar lo, phir bridge bana lena! 😂",
-        "Ustad: Bhai Pythagoras ka theorem sunao. Student: Sir mujhe sirf itna yaad hai ke wo triangle ke sath bohat zulm karta tha! 😂",
-        "Student: Sir, kya mujhe is cheez ki saza milegi jo maine kiya hi nahi? Sir: Nahi. Student: Shukriya sir, maine homework kiya hi nahi! 😂",
-        "Mistri: Sahab, deewar mein crack aa gaya hai. Engineer: Koi baat nahi, usay bol do ke ye design ka part hai! 😂",
-        "Dost: Raat ko kitne ghante parhte ho? Dost2: Parhna kam, 'kal se pakka shuru' ka irada zyada karta hoon! 😅",
-        "Teacher: Sab se tez cheez kya hai? Student: Sir exam ke din ka waqt — aur result ke din ki dhadkan! ⏱️",
-        "Ustad: Bridge ka kaam kya hota hai? Student: Sir do kinaron ko milana — bilkul meri ammi ki tarah jo mujhe aur mere phone ko alag karti hain 😂",
-        "Interviewer: Aap ko kitni salary chahiye? Candidate: Sir jitni aap ke dil mein ho. Interviewer: Theek hai, 5000. Candidate: Sir dil ki baat hi na karein! 😅",
-        "Student: Sir, main 3 din se bukhar mein hoon, paper ke liye parh nahi saka. Sir: Phir bukhar mein hi paper do. Student: Sir, wo to aap ke sawalon se bhi zyada tez nikla! 😅",
-        "Mistri: Sahab, cement kam par gaya. Engineer: Koi nahi, deewar ko bol do ke 'diet' par hai 😂",
-        "Mock test ka usool: jis option par dil kahe 'ye pakka', wohi ghalat hota hai! 😅",
-        "MCQ mein 'All of the above' wahi insaan jaanta hai jis ne chapter parha ho — baaqi sab 'B' laga kar dua karte hain! 🙏",
-        "Ustad: Engineer ki pehchan kya? Student: Sir, jo har cheez ko pehle 'measure' kare — chai ki cheeni bhi, aur dost ki rishtedari bhi! 😂",
-        "Ustad: Zameen ke nichay kya hota hai? Student: Sir, jis ne foundation sahi na dali, uski izzat! 😂",
-        "Student: Sir, mujhe samajh nahi aaya. Sir: Dobara samjhata hoon. Student: Sir, dobara se bhi nahi aayega, pehli baar mein hi nahi aaya tha! 😅"
-      ];
+      var J=[["Teacher: If you have 5 mangoes and I take 2, how many are left? Student: 5, sir — I won't let you take any! 😂", "استاد: اگر تمہارے پاس 5 آم ہوں اور میں 2 لے لوں تو کتنے بچیں گے؟ طالب علم: سر 5 ہی بچیں گے، میں آپ کو لینے ہی نہیں دوں گا! 😂"], ["Teacher: Tell me the formula of water. Student: H2O, sir. Teacher: And of tea? Student: The formula of life: water + tea leaves + milk + sugar! ☕", "استاد: پانی کا فارمولا بتاؤ۔ طالب علم: H2O سر۔ استاد: اور چائے کا؟ طالب علم: سر وہ زندگی کا فارمولا ہے: پانی + پتی + دودھ + چینی! ☕"], ["Interviewer: What is your biggest weakness? Candidate: Honesty. Interviewer: That's not a weakness. Candidate: I don't care what you think! 😂", "انٹرویور: آپ کی سب سے بڑی کمزوری کیا ہے؟ امیدوار: سچ بولنا۔ انٹرویور: یہ تو کمزوری نہیں۔ امیدوار: مجھے اس بات کی پروا نہیں کہ آپ کیا سوچتے ہیں! 😂"], ["Student: Sir, why did I fail? Sir: You did write answers. Student: Yes sir, but they didn't match the questions! 😅", "طالب علم: سر میں فیل کیوں ہو گیا؟ سر: تم نے جواب تو لکھے تھے۔ طالب علم: جی سر، مگر سوالوں سے میل نہیں کھاتے تھے! 😅"], ["Teacher: What happens when a beam is overloaded? Student: It bends, just like me on exam day! 😅", "استاد: beam پر load زیادہ ہو جائے تو کیا ہوتا ہے؟ طالب علم: سر وہ بھی میری طرح جھک جاتی ہے، جب پیپر کا دن آتا ہے! 😅"], ["Mother: Are you studying? Son: Yes, for 2 hours. Mobile screen time: 1 hour 55 minutes, book: 5 minutes 😂", "ماں: پڑھائی کر رہے ہو؟ بیٹا: جی امی، 2 گھنٹے سے۔ موبائل اسکرین ٹائم: 1 گھنٹہ 55 منٹ، کتاب: 5 منٹ! 😂"], ["Friend: How was the paper? Other: Man, the questions were asking me 'who are you?' 😂", "دوست: پیپر کیسا گیا؟ دوسرا: یار سوال مجھ سے پوچھ رہے تھے 'تم کون ہو؟' 😂"], ["Teacher: Why are you late? Student: Sir, the sign said 'School ahead, go slow' — so I came slow! 😂", "استاد: دیر سے کیوں آئے؟ طالب علم: سر راستے میں بورڈ لگا تھا 'اسکول آگے ہے، آہستہ چلیں' تو میں آہستہ آ گیا! 😂"], ["Teacher: Why do we cure concrete for 28 days? Student: So it becomes strong like me — I drink 28 cups of tea a day! ☕", "استاد: کنکریٹ کو 28 دن پانی کیوں دیتے ہیں؟ طالب علم: سر تاکہ وہ بھی میری طرح مضبوط ہو جائے، جو روز 28 چائے پیتا ہے! ☕"], ["Dad: How was your result? Son: Dad, my result and your anger have one thing in common: both shake everything the moment they arrive! 😅", "ابو: بیٹا نتیجہ کیسا آیا؟ بیٹا: ابو میرے نتیجے اور آپ کے غصے میں ایک چیز مشترک ہے: دونوں آتے ہی سب کچھ ہلا دیتے ہیں! 😅"], ["Student: Sir, why did you give me zero? Sir: Because there is no lower mark. 😂", "طالب علم: سر مجھے زیرو کیوں دیا؟ سر: کیونکہ اس سے کم نمبر ہوتا ہی نہیں۔ 😂"], ["Teacher: Why must a foundation be strong? Student: Like my sleep, sir — unless it is solid from below, nothing works above! 😴", "استاد: foundation مضبوط کیوں ہونی چاہیے؟ طالب علم: سر میری نیند کی طرح، جب تک نیچے سے مضبوط نہ ہو اوپر سے کچھ نہیں ہوتا! 😴"], ["Teacher: What do you do first in surveying? Student: Arrange tea, sir, then set up the level! ☕", "استاد: surveying میں سب سے پہلے کیا کرتے ہیں؟ طالب علم: سر، چائے کا بندوبست، پھر level لگاتے ہیں! ☕"], ["Friend: What will you do as an engineer? Other: First I'll draw plans, then explain to my family that it is my dream's plan, not the house's! 😂", "دوست: بھائی انجینئر بن کر کیا کرو گے؟ دوسرا: پہلے نقشے بناؤں گا، پھر گھر والوں کو سمجھاؤں گا کہ یہ گھر کا نہیں، میرے خوابوں کا نقشہ ہے! 😂"], ["Teacher: What did Newton say? Student: He said 'Let the apple fall, I'm feeling sleepy'! 🍎😂", "استاد: نیوٹن نے کیا کہا تھا؟ طالب علم: سر انہوں نے کہا تھا 'سیب گرنے دو، مجھے نیند آ رہی ہے'! 🍎😂"], ["Child: Dad, I'll become a civil engineer when I grow up. Dad: First clean your room, then build bridges! 😂", "بچے نے کہا: ابو میں بڑا ہو کر civil engineer بنوں گا۔ ابو: پہلے اپنا کمرہ صاف کر لو، پھر پل بنا لینا! 😂"], ["Student: Sir, can I be punished for something I didn't do? Sir: No. Student: Thank you sir, I didn't do the homework! 😂", "طالب علم: سر کیا مجھے اس کام کی سزا مل سکتی ہے جو میں نے کیا ہی نہیں؟ سر: نہیں۔ طالب علم: شکریہ سر، میں نے homework کیا ہی نہیں! 😂"], ["Mason: Sir, a crack has appeared in the wall. Engineer: No problem, tell it that it's part of the design! 😂", "مستری: صاحب دیوار میں crack آ گیا ہے۔ انجینئر: کوئی بات نہیں، اسے بول دو کہ یہ design کا حصہ ہے! 😂"], ["Friend: How many hours do you study at night? Other: Less studying, more of the plan 'from tomorrow for sure'! 😅", "دوست: رات کو کتنے گھنٹے پڑھتے ہو؟ دوسرا: پڑھتا کم ہوں، 'کل سے پکا شروع' کا ارادہ زیادہ کرتا ہوں! 😅"], ["Teacher: What is the fastest thing? Student: Time on exam day, sir — and the heartbeat on result day! ⏱️", "استاد: سب سے تیز چیز کیا ہے؟ طالب علم: سر امتحان کے دن کا وقت، اور رزلٹ کے دن کی دھڑکن! ⏱️"], ["Teacher: What does a bridge do? Student: It joins two sides, sir — unlike my results and my hopes, which have never met! 😂", "استاد: پل کا کام کیا ہوتا ہے؟ طالب علم: سر دو کناروں کو ملانا، میرے نتیجے اور میری امیدوں کی طرح نہیں جو آج تک نہیں ملے! 😂"], ["Interviewer: What salary do you want? Candidate: As much as you feel in your heart, sir. Interviewer: OK, 5000. Candidate: Sir, don't talk about feelings! 😅", "انٹرویور: آپ کو کتنی تنخواہ چاہیے؟ امیدوار: سر جتنی آپ کے دل میں ہو۔ انٹرویور: ٹھیک ہے، 5000۔ امیدوار: سر دل کی بات ہی نہ کریں! 😅"], ["Mason: Sir, we ran short of cement. Engineer: No problem, tell the wall it's on a diet! 😂", "مستری: صاحب سیمنٹ کم پڑ گیا۔ انجینئر: کوئی بات نہیں، دیوار کو بول دو کہ وہ diet پر ہے! 😂"], ["Mock test rule: the option your heart calls 'surely this one' is always the wrong one! 😅", "مورک ٹیسٹ کا اصول: جس option پر دل کہے 'یہ پکا' وہی غلط ہوتا ہے! 😅"], ["In MCQs, only someone who studied the chapter knows 'All of the above' — everyone else picks 'B' and prays! 🙏", "MCQ میں 'All of the above' وہی جانتا ہے جس نے chapter پڑھا ہو، باقی سب 'B' لگا کر دعا کرتے ہیں! 🙏"], ["Teacher: What marks an engineer? Student: Someone who measures everything first, sir — even the sugar in his tea! 😂", "استاد: انجینئر کی پہچان کیا ہے؟ طالب علم: سر جو ہر چیز کو پہلے measure کرے، چائے کی چینی بھی! 😂"], ["Teacher: What lies under the ground? Student: The reputation of whoever laid a bad foundation, sir! 😂", "استاد: زمین کے نیچے کیا ہوتا ہے؟ طالب علم: سر جس نے foundation ٹھیک نہ ڈالی اس کی عزت! 😂"], ["Student: Sir, I didn't understand. Sir: I'll explain again. Student: Sir, I won't understand the second time either — I didn't the first time! 😅", "طالب علم: سر مجھے سمجھ نہیں آیا۔ سر: دوبارہ سمجھاتا ہوں۔ طالب علم: سر دوبارہ سے بھی نہیں آئے گا، پہلی بار میں ہی نہیں آیا تھا! 😅"], ["Teacher: Why is the Leaning Tower of Pisa still standing? Student: Sir, no contractor has touched it yet! 😂", "استاد: پیسا کا مینار اب تک کھڑا کیوں ہے؟ طالب علم: سر اس پر ابھی تک کسی ٹھیکیدار نے کام نہیں کیا! 😂"], ["Engineer: How strong is this slab? Mason: Strong enough, sir — it has survived three inspectors and one monsoon! 😂", "انجینئر: یہ slab کتنی مضبوط ہے؟ مستری: سر تین انسپکٹر اور ایک مون سون جھیل چکا ہے! 😂"]]
       var day=Math.floor(Date.now()/86400000);
-      function paint(t,live){tx.textContent=t;if(dy)dy.textContent=ADM?(live?"\ud83d\udcc9 Live joke \u2726 roz internet se aaya \u00b7 khud Urdu hua (sirf aap ko)":"Aaj ka joke #"+((day%J.length)+1)+" \u00b7 roz khud-ba-khud naya \ud83d\udd04"):"";jk.hidden=false}
+      function paint(t,live){
+        tx.textContent="";
+        var e1=document.createElement("div");e1.lang="en";e1.dir="ltr";e1.textContent=t[0];
+        var e2=document.createElement("div");e2.lang="ur";e2.dir="rtl";e2.textContent=t[1];
+        e2.style.cssText="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(122,90,6,.45);font-size:16px;line-height:1.9;text-align:right";
+        tx.appendChild(e1);tx.appendChild(e2);
+        if(dy)dy.textContent="Joke #"+((day%J.length)+1)+" \u00b7 new every day \ud83d\udd04 \u00b7 \u0631\u0648\u0632 \u0646\u06cc\u0627 \u0645\u0630\u0627\u0642";
+        jk.hidden=false}
       /* sirf Roman Urdu jokes (English live joke band) -- roz naya joke */
       try{localStorage.removeItem("eg23jk")}catch(_){}
       paint(J[day%J.length]||J[0],false);
@@ -2996,6 +3007,29 @@ function langStart(){
   if(__tObs)return;
   try{__tObs=new MutationObserver(tSchedule);__tObs.observe(document.body,{subtree:true,childList:true,characterData:true})}catch(_){}
 }
+function openGateMenu(){
+  const old=document.getElementById("appmenu");if(old)old.remove();
+  const dl=el("div");dl.id="appmenu";dl.setAttribute("role","dialog");dl.style.zIndex="100001";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const bx=el("div","mnbox");
+  const top=el("div","mnhead");top.appendChild(el("b","","Engrgroup23"));top.appendChild(el("small","","Sub Engineer past papers & book solved"));
+  bx.appendChild(top);
+  bx.appendChild(el("div","mnlbl","Language \u00b7 \u0632\u0628\u0627\u0646"));
+  const lr=el("div");lr.style.cssText="display:flex;gap:8px";
+  const lEn=el("button","btn mnit","English"),lUr=el("button","btn mnit","\u0627\u0631\u062f\u0648");
+  lEn.type=lUr.type="button";
+  lEn.style.cssText+="flex:1;justify-content:center";lUr.style.cssText+="flex:1;justify-content:center";
+  if(LUR){lUr.style.outline="2px solid #FFE89A";lUr.style.fontWeight="900"}else{lEn.style.outline="2px solid #FFE89A";lEn.style.fontWeight="900"}
+  lEn.onclick=()=>lgSet("en");lUr.onclick=()=>lgSet("ur");
+  lr.appendChild(lEn);lr.appendChild(lUr);bx.appendChild(lr);
+  bx.appendChild(el("div","mnlbl","Contact admin"));
+  const ch=el("div");bx.appendChild(ch);
+  try{renderContacts(ch)}catch(_){}
+  const cl=el("button","btn mnit","Close");cl.type="button";cl.onclick=()=>dl.remove();bx.appendChild(cl);
+  bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
+  dl.appendChild(bx);document.body.appendChild(dl);
+}
+(function(){const b=document.getElementById("gmenu");if(b)b.onclick=openGateMenu})();
 function lgSet(l){
   if((l==="ur")===LUR)return;
   try{localStorage.setItem("eg23lang",l==="ur"?"ur":"en")}catch(_){}
@@ -3445,11 +3479,13 @@ function authErr(e){
   return M[c]||("Sign-in failed: "+(c||(e&&e.message)||e));
 }
 let GFLAG=false;try{GFLAG=localStorage.getItem("eg23g")==="1"}catch(e){}
-try{await setPersistence(auth,GFLAG?browserLocalPersistence:browserSessionPersistence)}catch(e){}
+/* stay signed in on this phone: after the first login the user opens straight into the app (access is still re-checked on every open) */
+try{await setPersistence(auth,browserLocalPersistence)}catch(e){}
+try{if(localStorage.getItem("eg23in")==="1"){showMethods(false);msg("Signing you in...")}}catch(e){}
 onAuthStateChanged(auth,user=>{
   if(started||busy)return;
   if(user)check(user);
-  else{showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
+  else{try{localStorage.removeItem("eg23in")}catch(_){}showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
 });
 /* Google */
 gbtn.onclick=async()=>{
@@ -3566,7 +3602,7 @@ async function needVerify(user,email,fresh){
     b.disabled=false;
   };
 }
-gout.onclick=()=>{try{localStorage.removeItem("eg23g")}catch(e){}signOut(auth).then(()=>location.reload())};
+gout.onclick=()=>{try{localStorage.removeItem("eg23g");localStorage.removeItem("eg23in")}catch(e){}signOut(auth).then(()=>location.reload())};
 function deny(email,text){
   busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=true;
   msg(text+(email?"  ("+email+")":""));renderContacts(gcon);
@@ -3648,18 +3684,23 @@ async function check(user){
   if(PV){try{document.body.classList.add("pv")}catch(_){}}
   let EXP=null,TRIAL=false;
   try{
-    if(!IS_OWNER){try{const m=await getDoc(doc(db,"managers",email));if(m.exists())IS_ADMIN=true}catch(e){}}
+    /* start everything at once (was one after another): bank, settings, profile name, manager + approval checks */
+    const bankP=loadBank().then(v=>({v}),e=>({e}));
+    const cfgP=getDoc(doc(db,"meta","config")).then(c=>c,()=>null);
+    const puP=user.uid?getDoc(doc(db,"pubusers",user.uid)).then(c=>c,()=>null):Promise.resolve(null);
+    const mgP=IS_OWNER?Promise.resolve(false):getDoc(doc(db,"managers",email)).then(m=>m.exists(),()=>false);
+    const alP=IS_OWNER?null:getDoc(doc(db,"allowed",email)).then(r=>({r}),e=>({e}));
+    if(!IS_OWNER){if(await mgP)IS_ADMIN=true}
     if(!IS_ADMIN){
-      const a=await getDoc(doc(db,"allowed",email));
+      const ar=await alP;if(ar.e)throw ar.e;const a=ar.r;
       if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);return deny(email,"This account is not approved yet. Ask the admin to add it, or tap Use another account and continue as Guest ("+ACC_H+" hours free).")}
       const d=a.data();
       if(d.enabled!==true)return deny(email,"Your access is turned off.");
       if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?(ACC_END||("Your "+ACC_H+"-hour guest access has ended. Please ask the admin to add your Gmail.")):"Your access has expired.");
       EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
     }
-    const bankP=loadBank().then(v=>({v}),e=>({e}));
     let cfg={enabled:true,message:""};
-    try{const c=await getDoc(doc(db,"meta","config"));if(c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
+    try{const c=await cfgP;if(c&&c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
     window.__AI_ON=cfg.ai!==false;
     window.__LIB_ON=cfg.library!==false;
@@ -3676,8 +3717,8 @@ async function check(user){
     try{UNAME=String(localStorage.getItem("eg23name")||"").trim()}catch(_){}
     if(user.uid){
       try{
-        const pu=await getDoc(doc(db,"pubusers",user.uid));
-        if(pu.exists()){
+        const pu=await puP;
+        if(pu&&pu.exists()){
           const n=String(pu.data().name||"").trim();
           if(n){UNAME=n;try{localStorage.setItem("eg23name",UNAME)}catch(_){}}
         }
@@ -3685,6 +3726,7 @@ async function check(user){
     }
     window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:user.photoURL||"",phone:user.phoneNumber||""};
     try{window.__RAWNAME=user.isAnonymous?"Guest":(user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email))}catch(_){window.__RAWNAME="Guest"}
+    try{localStorage.setItem("eg23in","1")}catch(_){}
     startApp(JSON.parse(b.json));
   }catch(e){
     const code=String((e&&(e.code||e.message))||e).trim();
@@ -3749,16 +3791,70 @@ function openMenu(){
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if((IS_ADMIN||IS_OWNER)&&!PV)mi("\u{1F441}\uFE0F Student view (user mode check karein)",function(){try{localStorage.setItem("eg23pv","1")}catch(_){}location.reload()});
+  if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
   mi("\u{1F4E4} WhatsApp par site share karein",()=>shareSite());
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
   if(PV)mi("\u{1F6AA} Student view band karein (wapas admin)",function(){try{localStorage.removeItem("eg23pv")}catch(_){}location.reload()});
-  mi("\u21A9 Sign out",()=>{signOut(auth).then(()=>location.reload())});
+  mi("\u21A9 Sign out",()=>{try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}signOut(auth).then(()=>location.reload())});
   bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
   dl.appendChild(bx);
   document.body.appendChild(dl);
+}
+async function openBin(){
+  if(!IS_ADMIN||PV)return;
+  const old=document.getElementById("binw");if(old)old.remove();
+  const dl=el("div");dl.id="binw";
+  dl.style.cssText="position:fixed;inset:0;z-index:1170;background:rgba(8,12,26,.6);display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow:auto";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);color:var(--ink,#13222D);border-radius:16px;max-width:520px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:20px 0";
+  dl.appendChild(box);document.body.appendChild(dl);
+  const head=el("div");head.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px";
+  head.appendChild(el("h2","","\u{1F5D1}\uFE0F Bin \u00b7 deleted files"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>dl.remove();head.appendChild(cl);box.appendChild(head);
+  box.appendChild(el("div","label","Only admin can see this. Restore brings the file back for everyone; Delete forever removes it for good."));
+  const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:10px";box.appendChild(list);
+  const st=el("div","label st");box.appendChild(st);
+  async function purge(it,all){
+    const b=writeBatch(db);
+    const kids=it.kind==="folder"?all.filter(x=>x.folder===it.id):[];
+    kids.concat([it]).forEach(x=>{for(let i=0;i<(x.parts||0);i++)b.delete(doc(db,MT_DATA,x.id,"parts",String(i)));b.delete(doc(db,MT_FOLDERS,x.id))});
+    await b.commit();
+  }
+  async function load(){
+    list.textContent="";st.textContent="Loading...";
+    let all=[];
+    try{all=await fetchMockAll(true)}catch(e){st.textContent="Error: "+(e.code||e.message);return}
+    const del=all.filter(x=>x.deleted).sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0));
+    st.textContent=del.length?del.length+" item(s) in the Bin":"Bin is empty.";
+    if(del.length>1){
+      const ea=el("button","btn danger","Empty Bin ("+del.length+")");ea.type="button";let arm=false;
+      ea.onclick=async()=>{
+        if(!arm){arm=true;ea.textContent="Tap again to delete all forever";setTimeout(()=>{arm=false;ea.textContent="Empty Bin ("+del.length+")"},3500);return}
+        try{for(const it of del)await purge(it,all);await load()}catch(e){st.textContent="Error: "+(e.code||e.message)}
+      };
+      list.appendChild(ea);
+    }
+    del.forEach(it=>{
+      const r=el("div","mtrow"),ic=el("div","mt-ic",it.kind==="folder"?"FOLDER":(MT_TAG[it.type]||"FILE"));
+      const info=el("div","mt-info");info.appendChild(el("b","",it.kind==="folder"?(it.name||"Folder"):(it.title||"(no title)")));
+      let when="";try{when=it.deletedAt?new Date(it.deletedAt).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):""}catch(_){}
+      info.appendChild(el("small","",(it.kind==="folder"?"Folder":(it.type||"file").toUpperCase()+(it.size?" \u00b7 "+fmtSize(it.size):""))+(when?" \u00b7 deleted "+when:"")));
+      const acts=el("div","mt-actions");
+      acts.appendChild(mtBtn("Restore","btn primary",async()=>{
+        try{await updateDoc(doc(db,MT_FOLDERS,it.id),{deleted:false,deletedAt:null});await load();try{mtRender()}catch(_){}}catch(e){st.textContent="Error: "+(e.code||e.message)}
+      }));
+      const fb=mtBtn("Delete forever","btn danger",async()=>{
+        if(!fb._a){fb._a=true;fb.textContent="Confirm?";setTimeout(()=>{fb._a=false;fb.textContent="Delete forever"},3000);return}
+        try{await purge(it,all);await load()}catch(e){st.textContent="Error: "+(e.code||e.message)}
+      });
+      acts.appendChild(fb);
+      r.append(ic,info,acts);list.appendChild(r);
+    });
+  }
+  load();
 }
 function openAcct(focus){
   const old=document.getElementById("acct");if(old)old.remove();
@@ -4541,7 +4637,7 @@ function chatListen(){
       arr.forEach(m=>{
         const me=cu&&m.uid===cu.uid;
         const b=el("div","cmsg "+(me?"me":"them"));
-        b.appendChild(el("span","cn",me?"Aap":(m.name||"User")));
+        b.appendChild(el("span","cn",me?"You":(m.name||"User")));
         b.appendChild(document.createTextNode(String(m.txt||"")));
         b.appendChild(el("span","ct",m.ts&&m.ts.toDate?m.ts.toDate().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):""));
         lst.appendChild(b);
@@ -4757,13 +4853,13 @@ async function openItem(it,coll){
 /* ================= MOCK TESTS: folders + files on the home page ================= */
 const MT_FOLDERS="mocktests",MT_DATA="mockdata";
 const mtNid=()=>"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-async function fetchMockAll(){
+async function fetchMockAll(raw){
   const s=await getDocs(collection(db,MT_FOLDERS));
-  return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0)||String(a.name||"").localeCompare(String(b.name||"")));
+  return s.docs.map(d=>Object.assign({id:d.id},d.data())).filter(x=>raw||!x.deleted).sort((a,b)=>(a.order||0)-(b.order||0)||String(a.name||"").localeCompare(String(b.name||"")));
 }
 async function fetchMockItems(fid){
   const s=await getDocs(query(collection(db,MT_FOLDERS),where("folder","==",fid)));
-  return s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(a.order||0)-(b.order||0));
+  return s.docs.map(d=>Object.assign({id:d.id},d.data())).filter(x=>!x.deleted).sort((a,b)=>(a.order||0)-(b.order||0));
 }
 async function loadMockParts(id,n){return loadParts(id,n,MT_DATA)}
 async function openMockItem(it){
@@ -4804,12 +4900,9 @@ function mtRow(it,isAdmin,rg){
       try{await updateDoc(doc(db,MT_FOLDERS,it.id),{title:nt.trim()||it.title});rg()}catch(e){alert("Error: "+(e.code||e.message))}
     }));
     acts.appendChild(mtBtn("Delete","btn danger",async()=>{
-      if(!confirm("Delete '"+(it.title||"item")+"'?"))return;
-      try{
-        const b=writeBatch(db);
-        for(let i=0;i<(it.parts||0);i++)b.delete(doc(db,MT_DATA,it.id,"parts",String(i)));
-        b.delete(doc(db,MT_FOLDERS,it.id));await b.commit();rg();
-      }catch(e){alert("Error: "+(e.code||e.message))}
+      if(!confirm("Move '"+(it.title||"item")+"' to the Bin? (Admin can restore it from Menu \u2192 Bin)"))return;
+      try{await updateDoc(doc(db,MT_FOLDERS,it.id),{deleted:true,deletedAt:Date.now(),deletedBy:ME||""});rg()}
+      catch(e){alert("Error: "+(e.code||e.message))}
     }));
   }
   r.append(ic,info,acts);return r;
@@ -4832,7 +4925,7 @@ async function mtRender(){
       const adm=el("div","mf-adm");
       adm.appendChild(el("small","","Admin:"));
       adm.appendChild(mtBtn("Rename","btn",async(ev)=>{ev.stopPropagation();const nt=prompt("Folder name:",f.name||"");if(nt===null)return;try{await updateDoc(doc(db,MT_FOLDERS,f.id),{name:nt.trim()||f.name});mtRender()}catch(e){alert(e.code||e.message)}}));
-      adm.appendChild(mtBtn("Delete","btn",async(ev)=>{ev.stopPropagation();if(!confirm("Delete folder '"+(f.name||"")+"' and ALL its files?"))return;try{const items=await fetchMockItems(f.id);const b=writeBatch(db);items.forEach(it=>{for(let i=0;i<(it.parts||0);i++)b.delete(doc(db,MT_DATA,it.id,"parts",String(i)));b.delete(doc(db,MT_FOLDERS,it.id))});b.delete(doc(db,MT_FOLDERS,f.id));await b.commit();mtRender()}catch(e){alert(e.code||e.message)}}));
+      adm.appendChild(mtBtn("Delete","btn",async(ev)=>{ev.stopPropagation();if(!confirm("Move folder '"+(f.name||"")+"' (with its files) to the Bin?"))return;try{await updateDoc(doc(db,MT_FOLDERS,f.id),{deleted:true,deletedAt:Date.now(),deletedBy:ME||""});mtRender()}catch(e){alert(e.code||e.message)}}));
       card.appendChild(adm);
     }
     card.addEventListener("click",()=>mtOpenFolder(f.id));
