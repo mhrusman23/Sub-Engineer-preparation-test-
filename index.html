@@ -283,7 +283,7 @@ label.btn{display:inline-flex;align-items:center}
 .lrow .tg{flex:none;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink)}
 #viewer{position:fixed;inset:0;z-index:9500;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
 #viewer[hidden]{display:none}
-#viewer .vbar{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+#viewer .vbar{flex:none;flex-direction:row;display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--panel)}
 #viewer .vt{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #viewer .vwrap{position:relative;flex:1;min-height:0}
 #viewer .vbody{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch}
@@ -1195,9 +1195,9 @@ window.APP_CONFIG={
 <script type="text/plain" id="app-js">
 (function(){
   var SRC0="";
-  var TOTAL=0, NEG=0.25, LET=["A","B","C","D"];
+  var TOTAL=0, NEG=0.25, LET=["A","B","C","D","E","F","G","H"];
   var bv=0;
-  function validQ(q){return q&&typeof q.text==="string"&&q.text.trim()&&Array.isArray(q.opts)&&q.opts.length>=2&&q.opts.length<=4&&q.opts.every(function(o){return typeof o==="string"&&o.trim()})&&Number.isInteger(q.ans)&&q.ans>=0&&q.ans<q.opts.length&&(Number.isInteger(q.sec)&&q.sec>=0&&q.sec<S.length)}
+  function validQ(q){return q&&typeof q.text==="string"&&q.text.trim()&&Array.isArray(q.opts)&&q.opts.length>=2&&q.opts.length<=8&&q.opts.every(function(o){return typeof o==="string"&&o.trim()})&&Number.isInteger(q.ans)&&q.ans>=0&&q.ans<q.opts.length&&(Number.isInteger(q.sec)&&q.sec>=0&&q.sec<S.length)}
   function cleanQ(q){return {text:q.text.trim(),opts:q.opts.map(function(o){return o.trim()}),ans:q.ans,sec:q.sec,test:(typeof q.test==="string"&&q.test.trim())?q.test.trim():"Custom"}}
   var BKEY="ppsc-civil-allinone-qbank-v1";
   /* question bank comes from the server (Firestore); no local override */
@@ -1353,7 +1353,9 @@ window.APP_CONFIG={
   $("#stAtt").textContent="0/0";
 
   var KEY="ppsc-civil-allinone-mock-v1";
-  function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,bv:bv,n:Q.length,order:order,ans:ans,started:started,startTs:startTs,paused:paused,pausedAt:pausedAt,pos:pos,sel:sel,tot:TOTAL,ti:TTITLE,perm:perm,tmo:TMOFF}))}catch(e){}}
+  var TMP=null; /* temporary one-time test opened from a Mock Tests file (not saved, not published) */
+  function tmpClean(){if(!TMP)return;var t=TMP;TMP=null;Q.length=t.q;QO.length=t.q;QA.length=t.q;S.length=t.s;SUB.length=t.sub}
+  function save(){if(TMP)return;try{localStorage.setItem(KEY,JSON.stringify({v:1,bv:bv,n:Q.length,order:order,ans:ans,started:started,startTs:startTs,paused:paused,pausedAt:pausedAt,pos:pos,sel:sel,tot:TOTAL,ti:TTITLE,perm:perm,tmo:TMOFF}))}catch(e){}}
   function subCount(i){var n=0;Q.forEach(function(q){if(S[q.sec].sub===i)n++});return n}
   function recalcT(){SUB.forEach(function(s,i){s.time=Math.max(60,Math.round(subCount(i)*s.spq))})}
   function mins(s){return Math.round(s/60)}
@@ -1380,7 +1382,7 @@ window.APP_CONFIG={
   var ADM=!!window.__publishBank&&!document.body.classList.contains("pv");
   var curYear=null;
   function cardOf(k){return YEARS.filter(function(x){return x.k===k})[0]||null}
-  function idsOf(k,all){var r=[];SUB.forEach(function(s,i){if(yearOf(i)===k&&(all||subCount(i)))r.push(i)});return r}
+  function idsOf(k,all){var r=[];SUB.forEach(function(s,i){if(!s.tmp&&yearOf(i)===k&&(all||subCount(i)))r.push(i)});return r}
   function refreshPick(){
     var p=pickedSubs(),n=0;p.forEach(function(i){n+=subCount(i)});
     $("#ySel").textContent=p.length?(p.length+" selected \u00b7 "+n+" Q"):"Nothing selected";
@@ -1709,7 +1711,7 @@ window.APP_CONFIG={
       qeEl.tx=document.createElement("textarea");qeEl.tx.rows=3;bx.appendChild(qeEl.tx);
       bx.appendChild(el("div","label","Options \u00b7 tick the correct answer (empty options are removed)"));
       qeEl.rows=[];
-      for(var j=0;j<4;j++){(function(j){
+      for(var j=0;j<8;j++){(function(j){
         var r=el("label","qeo"),rd=document.createElement("input");rd.type="radio";rd.name="qeAns";rd.value=String(j);
         var ti=document.createElement("input");ti.type="text";ti.placeholder="Option "+LET[j];
         rd.addEventListener("change",paint);
@@ -1828,6 +1830,7 @@ window.APP_CONFIG={
   function net(){var c=counts();return c.ok-NEG*c.bad}
 
   function show(id){
+    if(id==="start")tmpClean();
     ["start","editor","test","result"].forEach(function(x){$("#"+x).hidden=(x!==id)});window.scrollTo(0,0);
     if(id==="test"){try{if(!(history.state&&history.state.t===1))history.pushState({t:1},"")}catch(e){}}
   }
@@ -2135,7 +2138,7 @@ window.APP_CONFIG={
           d=el("div","gsd");var o=opts(h.id),k=key(h.id);
           o.forEach(function(x,j){
             var row=el("div","go"+(j===k?" right":""));
-            row.appendChild(el("b","",["A","B","C","D"][j]+"."));
+            row.appendChild(el("b","",LET[j]+"."));
             row.appendChild(el("span","",x+(j===k?"  \u2713":"")));
             d.appendChild(row);
           });
@@ -2298,7 +2301,7 @@ window.APP_CONFIG={
 
   /* ---- MCQ editor: edit, add, delete, import/export ---- */
   (function(){
-    var ed={edit:-1,limit:50,arm:-1},LT=["A","B","C","D"];
+    var ed={edit:-1,limit:50,arm:-1},LT=["A","B","C","D","E","F","G","H"];
     var eo=$("#efOpts");
     for(var i=0;i<4;i++){
       var r=el("label","eo"),rd=document.createElement("input");rd.type="radio";rd.name="efAns";rd.value=String(i);rd.setAttribute("aria-label","Option "+LT[i]+" is correct");
@@ -2423,7 +2426,7 @@ window.APP_CONFIG={
         try{
           var o=JSON.parse(rd.result);if(o&&!Array.isArray(o)&&Array.isArray(o.bank))o=o.bank;
           if(!Array.isArray(o)||!o.length)throw new Error("The file must contain a non-empty list of MCQs.");
-          for(var k=0;k<o.length;k++)if(!validQ(o[k]))throw new Error("MCQ #"+(k+1)+" is invalid (needs text, 2 to 4 options, ans index, sec 0 to "+(S.length-1)+").");
+          for(var k=0;k<o.length;k++)if(!validQ(o[k]))throw new Error("MCQ #"+(k+1)+" is invalid (needs text, 2 to 8 options, ans index, sec 0 to "+(S.length-1)+").");
           Q.length=0;o.forEach(function(x){Q.push(cleanQ(x))});
           closeForm();persist();render();msg("Imported "+Q.length+" MCQs (replaced the bank).","good");
         }catch(er){msg("Import failed: "+er.message,"err")}
@@ -2451,29 +2454,43 @@ window.APP_CONFIG={
       else if(Array.isArray(x.choices))raw=x.choices;
       else if(Array.isArray(x.answers))raw=x.answers;
       else{
-        var q4=[x.a,x.b,x.c,x.d,x.A,x.B,x.C,x.D],cnt=0,i;
-        for(i=0;i<8;i++)if(typeof q4[i]==="string"&&q4[i].trim())cnt++;
-        if(cnt>=2){raw=[];for(i=0;i<8;i++)if(typeof q4[i]==="string"&&q4[i].trim())raw.push(q4[i])}
+        var q4=[x.a,x.b,x.c,x.d,x.e,x.f,x.g,x.h,x.A,x.B,x.C,x.D,x.E,x.F,x.G,x.H],cnt=0,i;
+        for(i=0;i<16;i++)if(typeof q4[i]==="string"&&q4[i].trim())cnt++;
+        if(cnt>=2){raw=[];for(i=0;i<16;i++)if(typeof q4[i]==="string"&&q4[i].trim())raw.push(q4[i])}
       }
       if(!Array.isArray(raw))return null;
-      var opts=raw.map(function(v){
-        if(typeof v==="string")return v;
-        if(v&&typeof v==="object"){var vt=v.text!=null?v.text:(v.value!=null?v.value:(v.option!=null?v.option:null));return typeof vt==="string"?vt:null}
-        return null;
-      }).filter(function(v){return v&&String(v).trim()!==""}).map(function(v){return String(v).trim()});
-      if(opts.length<2||opts.length>4)return null;
-      var A=null,fk=["ans","answer","key","correct","correct_answer","ansIndex","answer_index","correctIndex","correct_index"];
-      for(var fi=0;fi<fk.length;fi++){if(A!=null)break;if(x[fk[fi]]!=null)A=x[fk[fi]]}
+      var flagA=-1,opts=[];
+      raw.forEach(function(v){
+        var vt=null,fl=false;
+        if(typeof v==="string")vt=v;
+        else if(typeof v==="number")vt=String(v);
+        else if(v&&typeof v==="object"){
+          vt=v.text!=null?v.text:(v.value!=null?v.value:(v.option!=null?v.option:(v.label!=null?v.label:null)));
+          if(typeof vt==="number")vt=String(vt);
+          fl=v.correct===true||v.isCorrect===true||v.is_correct===true||v.right===true;
+        }
+        if(typeof vt!=="string"||!vt.trim())return;
+        if(fl&&flagA<0)flagA=opts.length;
+        opts.push(vt.trim());
+      });
+      if(opts.length<2)return null;
+      var A=null,fk=["ans","answer","key","correct","correct_answer","correctAnswer","correctOption","correct_option","answerKey","answer_key","right","rightAnswer","right_answer","ansIndex","answer_index","correctIndex","correct_index","solution"];
+      for(var fi=0;fi<fk.length;fi++){if(A!=null)break;if(x[fk[fi]]!=null&&x[fk[fi]]!=="")A=x[fk[fi]]}
+      if(A==null&&flagA>=0)A=flagA;
       var a=-1,s,m,oi;
       if(typeof A==="number"&&isFinite(A))a=A;
       else if(typeof A==="string"){
-        s=A.trim();m=/^\(?([A-Da-d])\b/.exec(s);
-        if(m)a="ABCD".indexOf(m[1].toUpperCase());
+        s=A.trim().replace(/^(option|opt|answer|ans)[\s:.\-]*/i,"");m=/^\(?([A-Ha-h])\b/.exec(s);
+        if(m)a="ABCDEFGH".indexOf(m[1].toUpperCase());
         else if(/^-?\d+$/.test(s))a=parseInt(s,10);
-        else if(s){for(oi=0;oi<opts.length;oi++){if(opts[oi].toLowerCase().indexOf(s.toLowerCase())===0){a=oi;break}}}
+        else if(s){
+          for(oi=0;oi<opts.length;oi++){if(opts[oi].toLowerCase()===s.toLowerCase()){a=oi;break}}
+          if(a<0)for(oi=0;oi<opts.length;oi++){if(opts[oi].toLowerCase().indexOf(s.toLowerCase())===0||s.toLowerCase().indexOf(opts[oi].toLowerCase())===0){a=oi;break}}
+        }
       }
       if(a===opts.length)a=a-1; /* answer counted 1,2,3..: last option */
       if(!(a>=0&&a<opts.length))return null;
+      if(opts.length>8){var keep=[a],ii;for(ii=0;ii<opts.length&&keep.length<8;ii++)if(ii!==a)keep.push(ii);keep.sort(function(p,q){return p-q});opts=keep.map(function(k){return opts[k]});a=keep.indexOf(a)}
       return {text:t.trim(),opts:opts,ans:a};
     }
     function finishImport(files,kind){
@@ -2525,9 +2542,9 @@ window.APP_CONFIG={
                 if(n)qs.push({text:n.text,opts:n.opts,ans:n.ans,sec:0,test:"Q"+(qs.length+1)});
               });
             }else{
-              qs=parseHtmlQs(String(rd.result));
+              qs=parseAnyQs(String(rd.result));
             }
-            if(!qs.length)throw new Error("No usable questions found (each MCQ needs a question, 2-4 options and a correct answer).");
+            if(!qs.length)throw new Error("No usable questions found (each MCQ needs a question, 2 or more options and a correct answer).");
             var before=Q.length;
             var nm=f.name.replace(/\.(html?|txt|json)$/i,"").replace(/[_-]+/g," ").trim().slice(0,60)||"New Mock Test";
             if(impCat==="mock")ensureMockCard();
@@ -2552,7 +2569,104 @@ window.APP_CONFIG={
         rd.readAsText(f);
       })();
     }
-    window.__parseHtmlQs=function(h){try{return parseHtmlQs(String(h))}catch(e){return []}};
+    /* ---- v3.8: ANY html/json -> test. Finds MCQ arrays hidden inside <script> of ready-made HTML pages (no eval; relaxed JSON reader) ---- */
+    function matchBr(h,p){
+      var d=0,i=p,n=Math.min(h.length,p+3000000),q="";
+      for(;i<n;i++){
+        var c=h.charAt(i);
+        if(q){if(c==="\\")i++;else if(c===q)q="";continue}
+        if(c==='"'||c==="'"||c==="`"){q=c;continue}
+        if(c==="[")d++;
+        else if(c==="]"){d--;if(!d)return i}
+      }
+      return -1;
+    }
+    function relaxedParse(src){
+      try{return JSON.parse(src)}catch(_){}
+      var o=[],i=0,n=src.length;
+      while(i<n){
+        var c=src.charAt(i);
+        if(c==='"'||c==="'"||c==="`"){
+          var d=c,j=i+1,buf="";
+          while(j<n&&src.charAt(j)!==d){
+            var ch=src.charAt(j);
+            if(ch==="\\"&&j+1<n){var nx=src.charAt(j+1);if(nx==="'"||nx==="`"){buf+=nx}else if(nx==="\n"){}else buf+=ch+nx;j+=2;continue}
+            if(ch==='"')buf+='\\"';else if(ch==="\n")buf+="\\n";else if(ch==="\r"){}else if(ch==="\t")buf+="\\t";else buf+=ch;
+            j++;
+          }
+          o.push('"'+buf+'"');i=j+1;continue;
+        }
+        if(/[A-Za-z_$]/.test(c)){
+          var k=i;while(k<n&&/[\w$]/.test(src.charAt(k)))k++;
+          var id=src.slice(i,k),m=k;while(m<n&&/\s/.test(src.charAt(m)))m++;
+          if(src.charAt(m)===":"&&/^[,{\[]\s*$/.test(o.join("").slice(-3)+" ")||src.charAt(m)===":")o.push('"'+id+'"');else o.push(id);
+          i=k;continue;
+        }
+        if(c===","){var z=i+1;while(z<n&&/\s/.test(src.charAt(z)))z++;if(src.charAt(z)==="}"||src.charAt(z)==="]"){i++;continue}}
+        o.push(c);i++;
+      }
+      try{return JSON.parse(o.join(""))}catch(_){return null}
+    }
+    function embeddedQs(html){
+      var out=[],h=String(html),i=0,tries=0;
+      while(i<h.length&&tries<600){
+        var p=h.indexOf("[",i);if(p<0)break;
+        var q=p+1;while(q<h.length&&/\s/.test(h.charAt(q)))q++;
+        if(h.charAt(q)!=="{"){i=p+1;continue}
+        tries++;
+        var e=matchBr(h,p);
+        if(e<0){i=p+1;continue}
+        var arr=relaxedParse(h.slice(p,e+1)),got=[];
+        if(Array.isArray(arr))arr.forEach(function(x){var nq=normQ(x);if(nq)got.push(nq)});
+        if(got.length&&got.length>=Math.ceil(arr.length/2)){out=out.concat(got);i=e+1}else i=p+1;
+      }
+      return out;
+    }
+    function findArr(o,d){
+      if(Array.isArray(o))return o;
+      if(!o||typeof o!=="object"||(d||0)>4)return null;
+      var k,r;
+      for(k in o){if(Array.isArray(o[k])&&o[k].length&&o[k][0]&&typeof o[k][0]==="object"&&normQ(o[k][0]))return o[k]}
+      for(k in o){
+        var v=o[k];
+        if(Array.isArray(v)){for(var z=0;z<v.length&&z<60;z++){r=(v[z]&&typeof v[z]==="object"&&!Array.isArray(v[z]))?findArr(v[z],(d||0)+1):null;if(r&&r.length)return r}}
+        else if(v&&typeof v==="object"){r=findArr(v,(d||0)+1);if(r&&r.length)return r}
+      }
+      return null;
+    }
+    function parseAnyQs(html){
+      var r=[];
+      try{r=parseHtmlQs(String(html))}catch(_){}
+      if(!r||!r.length){try{r=embeddedQs(html)}catch(_){r=[]}}
+      return r||[];
+    }
+    window.__parseHtmlQs=function(h){try{return parseAnyQs(h)}catch(e){return []}};
+    /* open a JSON / HTML MCQ file from the Mock Tests (VIP) section as a full test: timer, score, Ask AI, review */
+    window.__playMcqs=function(title,text){
+      try{
+        var qs=[],t=String(text||"").replace(/^\uFEFF/,"").trim();
+        if(t.charAt(0)==="["||t.charAt(0)==="{"){
+          var o=JSON.parse(t);
+          if(o&&!Array.isArray(o))o=findArr(o);
+          if(Array.isArray(o))o.forEach(function(x){var n=normQ(x);if(n)qs.push({text:n.text,opts:n.opts,ans:n.ans})});
+        }else qs=parseAnyQs(t);
+        var good=[];
+        qs.forEach(function(x){var q=cleanQ({text:x.text,opts:x.opts,ans:x.ans,sec:0,test:"Q"+(good.length+1)});if(validQ(q))good.push(q)});
+        if(!good.length)return false;
+        tmpClean();
+        var nm=String(title||"Mock Test").trim().slice(0,60)||"Mock Test";
+        TMP={q:Q.length,s:S.length,sub:SUB.length};
+        var si=SUB.length;
+        SUB.push({name:nm,short:nm.length>22?nm.slice(0,22)+"\u2026":nm,code:"Mock",spq:60,time:60,cat:"__tmp",tmp:true});
+        var ci=S.length;
+        S.push({sub:si,name:"Chapter 1",code:"Mock \u00b7 "+nm.slice(0,30)+" \u00b7 Ch 1"});
+        good.forEach(function(q){q.sec=ci;QO.push(q.opts.slice());QA.push(q.ans);Q.push(q)});
+        recalcT();
+        start(ci);
+        TTITLE=nm;
+        return true;
+      }catch(e){try{tmpClean()}catch(_){}return false}
+    };
     /* generic MCQ extractor for mock-test HTML/text files: numbered questions, options A-D and an answer line */
     function parseHtmlQs(html){
       var out=[];
@@ -2561,8 +2675,8 @@ window.APP_CONFIG={
         doc.querySelectorAll("script,style,noscript,iframe,svg,button,input,select,img").forEach(function(n){n.remove()});
         var t=doc.body?doc.body.textContent||"":"";
         t=t.replace(/\r/g,"").replace(/\n{2,}/g,"\n").replace(/[ \t]+/g," ");
-        var OPT=/^([A-D])\s*[).:\-\]]\s*(.+)/;
-        var ANS=/(?:correct\s*(?:answer)?|answer|ans|key|jawab|sahi)[ \t:.\u2013-]*\(?\s*([A-D])\s*\)?(?:\s|$|\.|,)/i;
+        var OPT=/^([A-Ha-h])\s*[).:\-\]]\s*(.+)/;
+        var ANS=/(?:correct\s*(?:answer)?|answer|ans|key|jawab|sahi)[ \t:.\u2013-]*\(?\s*([A-H])\s*\)?(?:\s|$|\.|,)/i;
         var ST=/^\s*(?:Q(?:ues|uestion)?\.?\s*)?(\d{1,4})\s*[.\).:\-]\s*(.+)$/;
         var lines=t.split("\n").map(function(x){return x.trim()}).filter(function(x){return x});
         var cur=null;
@@ -2576,12 +2690,12 @@ window.APP_CONFIG={
         }
         for(var i=0;i<lines.length;i++){
           var L=lines[i];
-          if(cur&&ANS.test(L)&&!/^[A-D]\s*[).:\-]/.test(L)){
+          if(cur&&ANS.test(L)&&!/^[A-Ha-h]\s*[).:\-]/.test(L)){
             var m=ANS.exec(L);
-            cur.ans="ABCD".indexOf(m[1].toUpperCase());flush();continue;
+            cur.ans="ABCDEFGH".indexOf(m[1].toUpperCase());flush();continue;
           }
           var om=OPT.exec(L);
-          if(om&&cur&&cur.opts.length<4){cur.opts.push(om[2].trim());continue}
+          if(om&&cur&&cur.opts.length<8){cur.opts.push(om[2].trim());continue}
           var st=ST.exec(L);
           if(st){flush();cur={text:st[2],opts:[],ans:-1};continue}
           if(cur){
@@ -2764,7 +2878,7 @@ const LMAP=[
   ["+ Add file","+ فائل شامل کریں"],
   ["⬆️ Publish / Upload","⬆️ پبلش / اپلوڈ"],
   ["🎮 Mock test banao — 'Mock Tests' page pe publish","🎮 مک ٹیسٹ بنائیں — ٹیسٹ پیج پر پبلش"],
-  ["📄 File ki tarah jama karo (khul kar dekh sakte hain)","📄 فائل کے طور پر محفوظ کریں (کھول کر دیکھ سکتے ہیں)"],
+  ["📄 File ki tarah jama karo (MCQ wali HTML/JSON phir bhi test ban jati hain)","📄 فائل کے طور پر محفوظ کریں (کھول کر دیکھ سکتے ہیں)"],
   ["📁 Yehi folder (jahan se add kiya)","📁 یہی فولڈر (یہیں سے شامل کیا)"],
   ["📁 Kahan add karna hai?","📁 کہاں شامل کرنا ہے؟"],
   ["🖼 Choose photo","🖼 تصویر چنیں"],
@@ -3749,7 +3863,7 @@ function validBank(b){
   if(!b||!Array.isArray(b.S)||!Array.isArray(b.SUB)||!Array.isArray(b.Q0)||!b.Q0.length)return "Wrong format: S, SUB and Q0 are required.";
   if(b.CARDS!=null&&(!Array.isArray(b.CARDS)||b.CARDS.some(c=>!c||typeof c.k!=="string"||typeof c.t!=="string")))return "Home options (CARDS) have the wrong format.";
   for(const q of b.Q0){
-    if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||q.opts.length<2||q.opts.length>4||!Number.isInteger(q.ans)||q.ans<0||q.ans>=q.opts.length||!Number.isInteger(q.sec)||q.sec<0||q.sec>=b.S.length)return "Some questions have the wrong format.";
+    if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||q.opts.length<2||q.opts.length>8||!Number.isInteger(q.ans)||q.ans<0||q.ans>=q.opts.length||!Number.isInteger(q.sec)||q.sec<0||q.sec>=b.S.length)return "Some questions have the wrong format.";
   }
   return "";
 }
@@ -4537,7 +4651,7 @@ function showImage(bytes,mime){
   vw.body.textContent="";vw.body.style.overflow="auto";vw.body.appendChild(img);
   vw.cleanup=()=>URL.revokeObjectURL(url);
 }
-function jsonQuizHtml(raw,title){
+function jsonQuizHtml(raw,title,aiOn){
   /* JSON MCQ file -> playable quiz page (instead of showing raw text) */
   try{
     const t=String(raw||"").replace(/^\uFEFF/,"").trim();
@@ -4567,8 +4681,8 @@ function jsonQuizHtml(raw,title){
     });
     const data=JSON.stringify(items).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029");
     const ttl=String(title||"MCQ Test").replace(/[<>&]/g,"");
-    const css="*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f3f6fd;color:#10172b}.top{position:sticky;top:0;z-index:5;background:#0f1f4d;color:#fff;padding:10px 14px}.top b{display:block;font-size:16px;margin-bottom:4px}.top span{font-size:13px;opacity:.95}.bar{height:5px;background:#ffffff33;border-radius:9px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#f5c542;transition:width .25s}.w{max-width:760px;margin:0 auto;padding:12px}.c{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 2px 10px #0f1f4d1a}.n{font:700 12px monospace;color:#5b6a8f;margin-bottom:4px}.q{font-weight:650;margin-bottom:10px;white-space:pre-wrap}.o{display:block;width:100%;text-align:left;background:#f3f6fd;border:2px solid #dbe3f5;border-radius:11px;padding:10px 12px;margin:0 0 8px;font:inherit;color:inherit;cursor:pointer}.o b{display:inline-block;min-width:22px;color:#2447c9}.o.ok{background:#dcf7e3;border-color:#26a653}.o.no{background:#fde2e2;border-color:#d9363e}.o[disabled]{cursor:default}.e{font-size:14px;color:#42506f;background:#fff8e1;border-radius:9px;padding:8px 10px;margin-top:4px}.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:700 15px system-ui;background:#2447c9;color:#fff;margin:6px 0 24px}.r{text-align:center;font-weight:700;font-size:18px;padding:10px}";
-    const js="var D="+data+",ok=0,bad=0,R=document.getElementById('r'),S=document.getElementById('s'),B=document.getElementById('b');"
+    const css="*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f3f6fd;color:#10172b}.top{position:sticky;top:0;z-index:5;background:#0f1f4d;color:#fff;padding:10px 14px}.top b{display:block;font-size:16px;margin-bottom:4px}.top span{font-size:13px;opacity:.95}.bar{height:5px;background:#ffffff33;border-radius:9px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#f5c542;transition:width .25s}.w{max-width:760px;margin:0 auto;padding:12px}.c{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 2px 10px #0f1f4d1a}.n{font:700 12px monospace;color:#5b6a8f;margin-bottom:4px}.q{font-weight:650;margin-bottom:10px;white-space:pre-wrap}.o{display:block;width:100%;text-align:left;background:#f3f6fd;border:2px solid #dbe3f5;border-radius:11px;padding:10px 12px;margin:0 0 8px;font:inherit;color:inherit;cursor:pointer}.o b{display:inline-block;min-width:22px;color:#2447c9}.o.ok{background:#dcf7e3;border-color:#26a653}.o.no{background:#fde2e2;border-color:#d9363e}.o[disabled]{cursor:default}.e{font-size:14px;color:#42506f;background:#fff8e1;border-radius:9px;padding:8px 10px;margin-top:4px}.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:700 15px system-ui;background:#2447c9;color:#fff;margin:6px 0 24px}.r{text-align:center;font-weight:700;font-size:18px;padding:10px}.ai{border:0;border-radius:10px;padding:8px 12px;font:700 14px system-ui;background:#f5c542;color:#2b2100;margin:2px 0 8px;cursor:pointer}.ai[disabled]{opacity:.6}";
+    const js="var D="+data+",AI="+(aiOn?"true":"false")+",BX={},ok=0,bad=0,R=document.getElementById('r'),S=document.getElementById('s'),B=document.getElementById('b');"
      +"function up(){var l=D.length-ok-bad;S.textContent='Sahi: '+ok+'  \\u00b7  Ghalat: '+bad+'  \\u00b7  Baqi: '+l+'  \\u00b7  Total: '+D.length;B.style.width=Math.round((ok+bad)*100/D.length)+'%'}"
      +"function build(){R.textContent='';ok=bad=0;D.forEach(function(x,i){var c=document.createElement('div');c.className='c';"
      +"var n=document.createElement('div');n.className='n';n.textContent='Q '+(i+1)+' / '+D.length;c.appendChild(n);"
@@ -4576,17 +4690,35 @@ function jsonQuizHtml(raw,title){
      +"x.o.forEach(function(t,k){var b=document.createElement('button');b.type='button';b.className='o';var l=document.createElement('b');l.textContent='ABCDEFGH'.charAt(k)+'.';b.appendChild(l);b.appendChild(document.createTextNode(' '+t));bs.push(b);"
      +"b.onclick=function(){bs.forEach(function(z){z.disabled=true});if(x.a<0){b.className='o';up();return}"
      +"if(k===x.a){b.className='o ok';ok++}else{b.className='o no';bad++;bs[x.a].className='o ok'}"
-     +"if(x.e){var e=document.createElement('div');e.className='e';e.textContent=x.e;c.appendChild(e)}up();"
+     +"if(x.e){var e=document.createElement('div');e.className='e';e.textContent=x.e;c.appendChild(e)}"
+     +"if(AI){var ab=document.createElement('button');ab.type='button';ab.className='ai';ab.textContent='\u2728 AI se samjhein';var bx=document.createElement('div');bx.className='e';bx.style.display='none';bx.style.whiteSpace='pre-wrap';BX[i]=bx;ab.onclick=function(){bx.style.display='block';bx.textContent='AI soch raha hai...';ab.disabled=true;parent.postMessage({t:'eg23ai',i:i,q:x.q,o:x.o,a:x.a,p:k},'*')};c.appendChild(ab);c.appendChild(bx)}up();"
      +"if(ok+bad===D.length){var r=document.createElement('div');r.className='r';r.textContent='Test khatam: '+ok+' / '+D.length+' ('+Math.round(ok*100/D.length)+'%)';R.appendChild(r);r.scrollIntoView({behavior:'smooth'})}};"
-     +"c.appendChild(b)});R.appendChild(c)});var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.textContent='Dobara shuru karein';rb.onclick=function(){build();window.scrollTo(0,0)};R.appendChild(rb);up()}build();";
+     +"c.appendChild(b)});R.appendChild(c)});var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.textContent='Dobara shuru karein';rb.onclick=function(){build();window.scrollTo(0,0)};R.appendChild(rb);up()}build();window.addEventListener('message',function(ev){var d=ev.data;if(d&&d.t==='eg23aires'&&BX[d.i]){BX[d.i].textContent=d.text;BX[d.i].style.display='block'}});";
     return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+ttl+"</title><style>"+css+"</style></head><body><div class=\"top\"><b>"+ttl+"</b><span id=\"s\"></span><div class=\"bar\"><i id=\"b\"></i></div></div><div class=\"w\" id=\"r\"></div><scr"+"ipt>"+js+"</scr"+"ipt></body></html>";
   }catch(e){return null}
 }
 function showHtml(it,html){
-  const qz=jsonQuizHtml(html,it&&it.title);if(qz)html=qz;
+  const qz=jsonQuizHtml(html,it&&it.title,!!window.__AI_ON&&!!window.__aiStart);if(qz)html=qz;
   const f=document.createElement("iframe");
   f.setAttribute("sandbox","allow-scripts allow-forms allow-modals allow-popups"+(it.trusted?" allow-same-origin":""));
   f.srcdoc=html;vw.body.textContent="";vw.body.style.overflow="hidden";vw.body.appendChild(f);
+  if(qz){
+    const sessions={};
+    const onMsg=async ev=>{
+      const d=ev.data;if(ev.source!==f.contentWindow||!d||d.t!=="eg23ai")return;
+      const reply=t=>{try{f.contentWindow.postMessage({t:"eg23aires",i:d.i,text:t},"*")}catch(_){}};
+      try{
+        const L="ABCDEFGH",opts=(d.o||[]).map((x,k)=>L.charAt(k)+") "+x).join("\n");
+        const ctx="You are a friendly civil engineering tutor for PPSC Sub Engineer exam students. MCQ: "+d.q+"\nOptions:\n"+opts+"\nCorrect answer: "+(d.a>=0?L.charAt(d.a):"unknown")+"\nStudent picked: "+L.charAt(d.p);
+        const s=await window.__aiStart(ctx);
+        const out=await s.send("Is MCQ ko Roman Urdu mein aasan lafzon mein samjhao: sahi jawab kyun sahi hai aur baaqi options kyun ghalat hain. Chota aur saaf jawab do, 5-6 lines.",t=>reply(t));
+        reply(out||"AI ne jawab nahi diya, dobara try karein.");
+      }catch(e){reply((window.__aiErr?window.__aiErr(e):String(e&&e.message||e)))}
+    };
+    window.addEventListener("message",onMsg);
+    const prev=vw.cleanup;
+    vw.cleanup=()=>{window.removeEventListener("message",onMsg);if(prev)try{prev()}catch(_){}};
+  }
 }
 async function showPdf(bytes,tok){
   const pdfjs=await loadPdfJs();
@@ -4643,7 +4775,12 @@ async function openMockItem(it){
   try{
     if(it.type==="link"){showLink(it);return}
     const parts=await loadMockParts(it.id,it.parts||0);if(tok!==vtoken)return;
-    if(it.type==="html")showHtml(it,parts.join(""));
+    if(it.type==="html"){
+      /* JSON / HTML with MCQs -> full test (timer, score, Ask AI) */
+      const txt=parts.join("");
+      if(window.__playMcqs&&window.__playMcqs(it.title||"Mock Test",txt)){closeViewer();return}
+      showHtml(it,txt);
+    }
     else if(it.type==="image")showImage(decodePdf(parts,it.size||0),it.mime);
     else await showPdf(decodePdf(parts,it.size||0),tok);
   }catch(e){if(tok===vtoken)vstatus("Error: "+(e.code||e.message))}
@@ -4874,15 +5011,17 @@ async function mtUploadFiles(files,fid,onDone,htmlMode){
     const isHtml=/\.html?$/.test(nm)||f.type==="text/html";
     const isJson=nm.endsWith(".json")||f.type==="application/json";
     if(isJson){
-      if(htmlMode==="file"){try{await mtSaveFile(f,fid,false,false);up++}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}continue}
-      if(routeImport(f,"edFileJson",optCat))imp++;continue}
+      /* MCQ JSON always becomes a real test (timer, score, Ask AI, bookmarks); only if import is impossible keep it as a file */
+      if(routeImport(f,"edFileJson",optCat)){imp++;continue}
+      try{await mtSaveFile(f,fid,false,false);up++}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}
+      continue}
     if(isHtml){
-      if(htmlMode==="file"){try{await mtSaveFile(f,fid,false,false);up++}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}continue}
-      /* a ready-made interactive mock test page has no plain-text MCQs to extract: keep it as a playable page instead of losing it */
-      let nq=1;
+      /* HTML with readable MCQs -> real test (timer, score, Ask AI); otherwise keep it as a playable page */
+      let nq=0;
       try{const tx=await f.text();nq=(window.__parseHtmlQs?window.__parseHtmlQs(tx):[]).length}catch(_){}
-      if(!nq){try{await mtSaveFile(f,fid,false,false);up++;errs.push(f.name+" — sawal text se nahi nikle, isliye ready HTML page ki tarah save hui (kholne par chalegi)")}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}continue}
-      if(routeImport(f,"edFileHtml",optCat))imp++;continue}
+      if(nq&&routeImport(f,"edFileHtml",optCat)){imp++;continue}
+      try{await mtSaveFile(f,fid,false,false);up++;if(!nq)errs.push(f.name+" -- sawal text se nahi nikle, isliye ready HTML page ki tarah save hui (kholne par chalegi)")}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}
+      continue}
     if(isPdf&&f.size>25*1048576){errs.push(f.name+" (PDF 25 MB se bara)");continue}
     if(isImg&&f.size>15*1048576){errs.push(f.name+" (photo 15 MB se bari)");continue}
     if(!(isImg||isPdf||/\.txt$/.test(nm))){errs.push(f.name+" (sirf HTML, JSON, PDF, photo ya TXT chalega)");continue}
@@ -4892,8 +5031,7 @@ async function mtUploadFiles(files,fid,onDone,htmlMode){
   if(onDone)try{onDone()}catch(_){}
   let m=[];
   if(up)m.push(up+" file(s) add ho gayi.");
-  if(imp)m.push(imp+" file(s) import ho rahi hain — publishing...");
-  if(errs.length)m.push("Skip: "+errs.join(", "));
+  if(errs.length)m.push("Dhyan dein: "+errs.join(", "));
   if(m.length)alert(m.join(" "));
   if(optCat){
     let c=null;
@@ -5032,7 +5170,7 @@ window.__onMockImport=function(n,cardTitle,skipped,errs){
   var parts=[];
   if(n)parts.push("\u2705 "+n+" naye sawal publish ho gaye hain!"+(cardTitle?" Naya test '"+cardTitle+"' option ke andar aa gaya — option wapas kholein.":" Naya test 'Mock Tests' option ke andar aa gaya hai."));
   else parts.push("\u26A0\uFE0F Koi sawal import nahi ho saka. File ka format check karein.");
-  if(skipped)parts.push(skipped+" sawal skip hue (options ya answer adhoore the).");
+  if(skipped)parts.push(skipped+" sawal chhor diye (jawab ya options adhoore the).");
   if(errs&&errs.length)parts.push("Error wali files:\n\u2022 "+errs.join("\n\u2022 "));
   alert(parts.join("\n"));
 };
