@@ -974,7 +974,7 @@ window.APP_CONFIG={
 <button type="button" id="gout" class="gsec" hidden>Use another account</button>
 <button type="button" id="gtrial" hidden>Start 12-hour free trial</button>
 
-<button type="button" id="gshare" class="gsec" style="margin-top:6px">📤 Site WhatsApp par share karein</button>
+<button type="button" id="gshare" class="gsec" style="margin-top:6px">📤 Share</button>
 <div id="gcontacts"></div>
 </div><div class="gfoot">By Engr Usman Amjad &amp; Engr Umar Sajjid</div></div>
 <template id="app-tpl">
@@ -2935,6 +2935,7 @@ const LMAP=[
   ["No mock tests yet. Tap + New folder to add one.","اس وقت کوئی ٹیسٹ نہیں۔ + نیا فولڈر سے شامل کریں۔"],
   ["Abhi koi premium folder nahi. Admin jald add karega.","اس وقت کوئی پریمیم فولڈر نہیں۔ ایڈمن جلد شامل کرے گا۔"],
   ["📤 Site WhatsApp par share karein","📤 سائٹ ویٹس ایپ پر شیئر کریں"],
+  ["📤 Share","📤 شیئر کریں"],
   ["👁\uFE0F Student view (user mode check karein)","👁\uFE0F سٹوڈنٹ ویو (یوزر موڈ دیکھیں)"],
   ["🚪 Student view band karein (wapas admin)","🚪 سٹوڈنٹ ویو بند کریں (واپس ایڈمن)"],
   ["⏱ Timer test (countdown)","⏱ ٹائمر ٹیسٹ (کاؤنٹ ڈاؤن)"],
@@ -3626,19 +3627,20 @@ async function claimGuest(user,email){
   const ip=await getIp();
   if(!ip){busy=false;msg("Could not check the network (IP). Check your internet, turn off VPN, then try again.");return}
   const ipk=await sha256hex("ip:"+ip),exp=Timestamp.fromMillis(Date.now()+ACC_H*3600*1000);
-  async function attempt(withIp){
-    const b=writeBatch(db),data={email,enabled:true,trial:true,expires:exp,createdAt:serverTimestamp()};
+  async function attempt(withIp,pend){
+    const b=writeBatch(db),data={email,enabled:!pend,trial:true,expires:exp,createdAt:serverTimestamp()};
+    if(pend)data.pending=true;
     if(withIp){data.ipk=ipk;b.set(doc(db,"trialips",ipk),{email,at:serverTimestamp()})}
     b.set(doc(db,"allowed",email),data);
     await b.commit();
   }
-  let c1="";
-  try{await attempt(true)}
-  catch(e1){
-    c1=(e1&&(e1.code||e1.message))||"unknown";
-    try{await attempt(false)}
-    catch(e2){busy=false;msg("Guest access is not available: this network already used its guest access, or guest login is switched off. Please ask the admin to add your Gmail.  [code: "+c1+"]");renderContacts(gcon);return}
+  let c1="",ok=false;
+  /* normal mode: instant guest; approval mode (admin switched it on): the request is saved as "waiting" for admin/manager */
+  for(const [wi,pd] of [[true,false],[false,false],[true,true],[false,true]]){
+    try{await attempt(wi,pd);ok=true;break}
+    catch(e1){if(!c1)c1=(e1&&(e1.code||e1.message))||"unknown"}
   }
+  if(!ok){busy=false;msg("Guest access is not available: this network already used its guest access, or guest login is switched off. Please ask the admin to add your Gmail.  [code: "+c1+"]");renderContacts(gcon);return}
   busy=false;check(user);
 }
 $("gguest").onclick=async()=>{
@@ -3693,8 +3695,12 @@ async function check(user){
     if(!IS_OWNER){if(await mgP)IS_ADMIN=true}
     if(!IS_ADMIN){
       const ar=await alP;if(ar.e)throw ar.e;const a=ar.r;
-      if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);return deny(email,"This account is not approved yet. Ask the admin to add it, or tap Use another account and continue as Guest ("+ACC_H+" hours free).")}
+      if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);
+        /* User mode = Admin approval: a new user is saved as a waiting request instead of being turned away */
+        try{await setDoc(doc(db,"allowed",email),{email,enabled:false,trial:false,pending:true,createdAt:serverTimestamp()});return deny(email,"\u23F3 Your request has been sent. Please wait until the admin or manager approves your account, then open the app again. Contact: 03494482609")}catch(_){}
+        return deny(email,"This account is not approved yet. Ask the admin to add it, or tap Use another account and continue as Guest ("+ACC_H+" hours free).")}
       const d=a.data();
+      if(d.enabled!==true&&d.pending===true)return deny(email,"\u23F3 Your guest request has been sent. Please wait until the admin or manager approves it, then open the app again. Contact: 03494482609");
       if(d.enabled!==true)return deny(email,"Your access is turned off.");
       if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?(ACC_END||("Your "+ACC_H+"-hour guest access has ended. Please ask the admin to add your Gmail.")):"Your access has expired.");
       EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
@@ -3751,6 +3757,13 @@ function userbar(){
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
   const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center";
+  if(IS_ADMIN||IS_OWNER){
+    /* admin / manager: one tap between User mode (see the app like a student) and Admin mode (make changes) */
+    const md=el("button","btn",PV?"\u{1F6E0}\uFE0F Admin mode":"\u{1F441}\uFE0F User mode");md.type="button";
+    md.title=PV?"Wapas Admin mode (changes karne ke liye)":"User mode: app student ki tarah dekhein";
+    md.onclick=()=>{try{if(PV)localStorage.removeItem("eg23pv");else localStorage.setItem("eg23pv","1")}catch(_){}location.reload()};
+    r.appendChild(md);
+  }
   const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();r.appendChild(mb);
   u.appendChild(r);document.body.appendChild(u);
 }
@@ -3790,14 +3803,14 @@ function openMenu(){
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
-  if((IS_ADMIN||IS_OWNER)&&!PV)mi("\u{1F441}\uFE0F Student view (user mode check karein)",function(){try{localStorage.setItem("eg23pv","1")}catch(_){}location.reload()});
+  if((IS_ADMIN||IS_OWNER)&&!PV)mi("\u{1F441}\uFE0F User mode (student ki tarah app dekhein)",function(){try{localStorage.setItem("eg23pv","1")}catch(_){}location.reload()});
   if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
   mi("\u{1F4E4} WhatsApp par site share karein",()=>shareSite());
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
-  if(PV)mi("\u{1F6AA} Student view band karein (wapas admin)",function(){try{localStorage.removeItem("eg23pv")}catch(_){}location.reload()});
+  if(PV)mi("\u{1F6E0}\uFE0F Admin mode (wapas changes ke liye)",function(){try{localStorage.removeItem("eg23pv")}catch(_){}location.reload()});
   mi("\u21A9 Sign out",()=>{try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}signOut(auth).then(()=>location.reload())});
   bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
   dl.appendChild(bx);
@@ -4036,6 +4049,7 @@ function showTab(k){
 function dstr(ms){return new Date(ms).toLocaleDateString()}
 function ustat(d){
   const tr=d.trial?"Free trial · ":"";
+  if(d.enabled!==true&&d.pending===true)return {t:"\u23F3 Waiting for approval",bad:true};
   if(d.enabled!==true)return {t:tr+"Disabled",bad:true};
   if(d.expires){
     const ms=d.expires.toMillis();
@@ -4079,8 +4093,9 @@ function buildUsers(host,onlyG){
       w.appendChild(el("span","",isG(u)?"Guest · "+u.id.slice(6,14):u.id));
       const s=ustat(u.d),sm=el("small","",s.t);if(s.bad)sm.style.color="var(--bad)";w.appendChild(sm);
       if(isG(u)&&u.d.createdAt&&u.d.createdAt.toMillis)w.appendChild(el("small","","Came: "+new Date(u.d.createdAt.toMillis()).toLocaleString()));
-      const tg=el("button","btn",u.d.enabled===true?"Disable":"Enable");tg.type="button";
-      tg.onclick=async()=>{tg.disabled=true;try{await updateDoc(doc(db,"allowed",u.id),{enabled:u.d.enabled!==true});await load()}catch(e){st.textContent="Error: "+(e.code||e.message);tg.disabled=false}};
+      const pendG=(u.d.enabled!==true&&u.d.pending===true);
+      const tg=el("button",pendG?"btn primary":"btn",pendG?"\u2713 Approve":(u.d.enabled===true?"Disable":"Enable"));tg.type="button";
+      tg.onclick=async()=>{tg.disabled=true;try{await updateDoc(doc(db,"allowed",u.id),pendG?{enabled:true,pending:false,expires:isG(u)?Timestamp.fromMillis(Date.now()+ACC_H*3600*1000):null}:{enabled:u.d.enabled!==true});await load()}catch(e){st.textContent="Error: "+(e.code||e.message);tg.disabled=false}};
       const dl=el("button","btn danger","Delete");dl.type="button";let arm=false;
       dl.onclick=async()=>{
         if(!arm){arm=true;dl.textContent="Confirm?";setTimeout(()=>{arm=false;dl.textContent="Delete"},3000);return}
@@ -4089,8 +4104,12 @@ function buildUsers(host,onlyG){
       r.append(w,tg,dl);return r;
     }
     const reg=rows.filter(u=>!isG(u)),gst=rows.filter(isG);
-    if(!onlyG){reg.forEach(u=>list.appendChild(mkRow(u)));return}
-    const h2=el("div","label","Guests — total "+allG.length+" · active now "+gAct+" · expired "+gExp.length);h2.style.cssText="font-weight:700;margin-top:10px";list.appendChild(h2);
+    if(!onlyG){
+      const pw=reg.filter(u=>u.d.pending===true&&u.d.enabled!==true);
+      if(pw.length){const hp=el("div","label","\u23F3 Waiting for approval: "+pw.length+" \u2014 tap Approve (no expiry; use Add / update users above to give days)");hp.style.cssText="font-weight:700;margin-top:10px";list.appendChild(hp);pw.forEach(u=>list.appendChild(mkRow(u)))}
+      reg.filter(u=>!(u.d.pending===true&&u.d.enabled!==true)).forEach(u=>list.appendChild(mkRow(u)));return}
+    const gPend=allG.filter(u=>u.d.enabled!==true&&u.d.pending===true);
+    const h2=el("div","label","Guests — total "+allG.length+" · active now "+gAct+" · expired "+gExp.length+(gPend.length?" · \u23F3 waiting approval "+gPend.length:""));h2.style.cssText="font-weight:700;margin-top:10px";list.appendChild(h2);
     if(gExp.length){
       const ce=el("button","btn danger","Delete expired guests ("+gExp.length+")");ce.type="button";let a2=false;
       ce.onclick=async()=>{
@@ -4308,6 +4327,8 @@ function buildSettings(host){
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
   const cb6=el("input");cb6.type="checkbox";cb6.id="cfgAiFree";
   const lb6=el("label","",null);lb6.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb6.append(cb6,el("span","","AI backup (free, no key) if main AI is busy/quota over - question text goes to a 3rd-party service"));
+  const gm=el("select");gm.id="cfgGuestMode";gm.setAttribute("aria-label","User mode");gm.style.cssText="width:100%;margin-top:8px";
+  [["auto","User mode: Normal \u2014 guest starts instantly, other users are added by admin"],["approve","User mode: Admin approval \u2014 every new guest / user waits for admin or manager to approve"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];gm.appendChild(op)});
   const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
   const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
@@ -4330,17 +4351,17 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;cb5.checked=d.library!==false;
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;
       if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
       if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
