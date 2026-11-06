@@ -1124,7 +1124,7 @@ window.APP_CONFIG={
         <div class="stat"><div class="label">Attempted</div><div class="n" id="stAtt">0/0</div></div>
       </div>
       <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
-      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button><button class="btn" id="btnSnd" type="button" aria-label="Sound on or off" title="Sound on/off">🔊</button></div>
+      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button><button class="btn" id="btnSnd" type="button" aria-label="Sound on or off" title="Sound on/off">🔊</button><button class="btn" id="btnAutoTop" type="button"></button><button class="btn" id="btnTmrTop" type="button"></button></div>
     </div>
 
     <div id="pausedBox" class="card paused" hidden>
@@ -1907,7 +1907,7 @@ window.APP_CONFIG={
     if(paused)note="Paused";
     else if(TMOFF>0)note=started?(rem<=0?"Waqat khatam":"Baqi waqat (countdown)"):"Timer: "+mins(TMOFF)+" \u2014 first answer ke sath start hoga";
     else note=started?"Time taken (no time limit)":"Starts when you answer your first question";
-    $("#timerNote").textContent=note;
+    $("#timerNote").textContent=note;paintTmr();
     if(TMOFF>0&&started&&!paused){
       if(rem<=0){t.classList.add("crit");finish("\u23F0 Waqat khatam! Test khud finish ho gaya.")}
       else if(rem<60)t.classList.add("crit");
@@ -1929,7 +1929,8 @@ window.APP_CONFIG={
   }
 
   function autoOn(){try{return localStorage.getItem("eg23auto")!=="0"}catch(e){return true}}
-  function paintAuto(){var b=$("#qAuto");if(b){b.textContent="\u23E9 Auto-next: "+(autoOn()?"ON":"OFF");b.setAttribute("aria-pressed",autoOn()?"true":"false")}}
+  function paintAuto(){["#qAuto","#btnAutoTop"].forEach(function(id){var b=$(id);if(b){b.textContent="\u23E9 Auto-next: "+(autoOn()?"ON":"OFF");b.setAttribute("aria-pressed",autoOn()?"true":"false")}})}
+  function paintTmr(){var b=$("#btnTmrTop");if(b)b.textContent=TMOFF>0?"\u23F1 Timer: "+mins(TMOFF)+" min":"\u23F1 Timer: OFF"}
   function choose(i){
     if(finished||paused)return;
     if(TMOFF>0&&started&&elapsed()>=TMOFF){finish("\u23F0 Waqat khatam! Test khud finish ho gaya.");return}
@@ -2764,7 +2765,19 @@ window.APP_CONFIG={
   recalcT();
   buildPick();
   try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
-  (function(){var ab=$("#qAuto");if(!ab)return;paintAuto();ab.addEventListener("click",function(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()})})();
+  (function(){
+    function flip(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()}
+    ["#qAuto","#btnAutoTop"].forEach(function(id){var b=$(id);if(b)b.addEventListener("click",flip)});
+    paintAuto();
+    var tb=$("#btnTmrTop");
+    if(tb)tb.addEventListener("click",function(){
+      if(finished)return;
+      /* timer on/off during the test: ON = auto time (0.9 min per MCQ, 100 MCQs = 90 min), counted from the first answer */
+      TMOFF=TMOFF>0?0:Math.max(5,Math.ceil(order.length*0.9))*60;
+      try{save()}catch(e){}
+      updateTimer();
+    });
+  })();
   var qbk=$("#qBkm");qbk.addEventListener("click",function(){cancelAuto();bkmToggle(order[pos]);renderQ();try{paintRev()}catch(e){}});
   $("#btnRev").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");start("bkm")});
   $("#btnRevClear").addEventListener("click",function(){if(confirm("Remove all bookmarks from this device?")){saveBkm([]);paintRev()}});
@@ -5239,16 +5252,17 @@ async function optFiles(container,k){
   container.textContent="";
   let items=[];
   try{items=(await fetchMockAll()).filter(x=>(x.kind==="file"||x.kind==null)&&(x.folder||"")===key).sort((a,b)=>(a.order||0)-(b.order||0))}catch(e){}
-  if(!IS_ADMIN&&!items.length){container.hidden=true;return}
+  const canAdd=IS_ADMIN&&!PV;
+  if(!canAdd&&!items.length){container.hidden=true;return}
   container.hidden=false;
-  if(IS_ADMIN){
+  if(canAdd){
     const up=el("button","btn primary","\u{1F4C4} + Add file (HTML \u00b7 JSON \u00b7 PDF \u00b7 Photo)");
     up.type="button";
     up.addEventListener("click",()=>optAddFile(k));
     container.appendChild(up);
   }
   if(!items.length){
-    if(IS_ADMIN)container.appendChild(el("div","mtempty","Abhi koi file nahi. '+ Add file' se phone se HTML / JSON mock test, PDF ya photo add karein."));
+    if(canAdd)container.appendChild(el("div","mtempty","Abhi koi file nahi. '+ Add file' se phone se HTML / JSON mock test, PDF ya photo add karein."));
     return;
   }
   const ttl=el("div","label","Files in this option: "+items.length);
@@ -5256,7 +5270,7 @@ async function optFiles(container,k){
   items.forEach(it=>container.appendChild(mtRow(it,IS_ADMIN&&!PV,()=>optFiles(container,k))));
 }
 async function optAddFile(k){
-  if(!IS_ADMIN)return;
+  if(!IS_ADMIN||PV)return;
   let inp=document.getElementById("optFileInp");
   if(!inp){
     inp=document.createElement("input");
