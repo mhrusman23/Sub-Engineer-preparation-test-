@@ -3958,7 +3958,7 @@ function userbar(){
   avb.onclick=()=>openMenu();
   const cols=el("div");cols.style.cssText="display:flex;flex-direction:column;min-width:0";
   const br=el("div","ubrand");br.appendChild(el("i","shield"));br.appendChild(document.createTextNode("Engrgroup"));br.appendChild(el("b","","23"));
-  br.style.cursor="pointer";br.title="Home / Dashboard";br.onclick=()=>{if(window.__goHome)window.__goHome()};
+  br.style.cursor="pointer";br.title="Home / Dashboard";br.onclick=()=>{goHomeHard()};
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
   const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center";
@@ -3978,6 +3978,11 @@ function _menuAv(P,big){
   if(P.photo){const im=el("img");im.src=P.photo;im.alt=P.name||"";av.appendChild(im)}
   else av.appendChild(el("span","",String(P.name||"?").charAt(0).toUpperCase()));
   return av;
+}
+function goHomeHard(){
+  try{["appmenu","modech","jkw","binw","acct","shd","upw"].forEach(i=>{const e=document.getElementById(i);if(e)e.remove()});["adm","aip","ws","viewer","jobsp","chatp","lib","qe","rp"].forEach(i=>{const e=document.getElementById(i);if(e)e.hidden=true})}catch(_){}
+  if(typeof window.__goHome==="function"){try{window.__goHome();window.scrollTo({top:0});return}catch(_){}}
+  location.href=location.pathname; /* app screens not ready yet: simply open the home page again */
 }
 function openModeChooser(){
   const old=document.getElementById("modech");if(old){old.remove();return}
@@ -4023,7 +4028,7 @@ function openMenu(){
     b.onclick=()=>{dl.remove();if(fn)fn()};
     bx.appendChild(b);
   }
-  mi("\u{1F3E0} Dashboard (Home)",()=>{if(window.__goHome)window.__goHome()});
+  mi("\u{1F3E0} Dashboard (Home)",()=>{goHomeHard()});
   mi("\u{1F464} Account settings + membership",()=>openAcct());
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
