@@ -1041,19 +1041,7 @@ window.APP_CONFIG={
       <ul class="res" id="gsRes" hidden=""></ul>
     </div>
         <div class="startrow">
-      <label><input type="checkbox" id="optShuf" checked> Re-shuffle options every test</label>
       <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
-    </div>
-        <div class="startrow" id="tmRow">
-      <label><input type="checkbox" id="optTimer"> ⏱ Timer test (countdown)</label>
-      <select id="optTimerMins" aria-label="Timer duration" style="min-height:38px;min-width:104px;padding:4px 8px;border-radius:9px;border:1px solid var(--line,#C9D3DA);background:#fff;font:600 14px sans-serif;color:#13222D">
-        <option value="auto" selected>Auto (by number of MCQs)</option>
-        <option value="30">30 minutes</option>
-        <option value="45">45 minutes</option>
-        <option value="60">60 minutes</option>
-        <option value="90">90 minutes</option>
-        <option value="120">120 minutes</option>
-      </select>
     </div>
     <div class="contacts" id="contactBox"></div>
     <div class="sheet-head" hidden style="display:none">
@@ -1124,7 +1112,19 @@ window.APP_CONFIG={
         <div class="stat"><div class="label">Attempted</div><div class="n" id="stAtt">0/0</div></div>
       </div>
       <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
-      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button><button class="btn" id="btnSnd" type="button" aria-label="Sound on or off" title="Sound on/off">🔊</button><button class="btn" id="btnAutoTop" type="button"></button><button class="btn" id="btnTmrTop" type="button"></button></div>
+      <div class="startrow" id="tmRow" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0;color:#fff">
+        <label style="color:#fff"><input type="checkbox" id="optShuf" checked> Shuffle options</label>
+        <label style="color:#fff"><input type="checkbox" id="optTimer"> ⏱ Timer</label>
+        <select id="optTimerMins" aria-label="Timer duration" style="min-height:38px;min-width:104px;padding:4px 8px;border-radius:9px;border:1px solid var(--line,#C9D3DA);background:#fff;font:600 14px sans-serif;color:#13222D">
+          <option value="auto" selected>Auto (by MCQs)</option>
+          <option value="30">30 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="60">60 minutes</option>
+          <option value="90">90 minutes</option>
+          <option value="120">120 minutes</option>
+        </select>
+      </div>
+      <div class="barbtns"><button class="btn" id="btnBack" type="button">← Back</button><button class="btn" id="btnPause" type="button" disabled>Pause</button><button class="btn" id="btnFinish" type="button">Finish</button><button class="btn" id="btnSnd" type="button" aria-label="Sound on or off" title="Sound on/off">🔊</button><button class="btn" id="btnAutoTop" type="button"></button></div>
     </div>
 
     <div id="pausedBox" class="card paused" hidden>
@@ -1891,7 +1891,7 @@ window.APP_CONFIG={
   function resume(){
     var s=readSave();if(!s)return;
     applyPerm(s.perm);
-    order=s.order;sel=s.sel||[];TOTAL=s.tot;ans=s.ans||{};started=!!s.started;startTs=s.startTs||0;paused=!!s.paused&&started;pausedAt=s.pausedAt||0;pos=Math.min(s.pos||0,order.length-1);TTITLE=s.ti||"";TMOFF=(+s.tmo||0);
+    order=s.order;sel=s.sel||[];TOTAL=s.tot;ans=s.ans||{};started=!!s.started;startTs=s.startTs||0;paused=!!s.paused&&started;pausedAt=s.pausedAt||0;pos=Math.min(s.pos||0,order.length-1);TTITLE=s.ti||"";TMOFF=(+s.tmo||0);try{var _t2=$("#optTimer"),_m2=$("#optTimerMins");if(_t2){_t2.checked=TMOFF>0;if(_m2)_m2.disabled=!(TMOFF>0)}}catch(e){}
     cancelAuto();finished=false;filter="all";wrongLog=[];clearInterval(tick);$("#confirm").hidden=true;
     for(var k in ans){
       if(!Q[k]){delete ans[k];continue}
@@ -1943,6 +1943,7 @@ window.APP_CONFIG={
     var _tv=($("#optTimerMins")||{}).value,_au=function(){return Math.max(5,Math.ceil(order.length*0.9))*60};
     TMOFF=window.__autoTm?_au():(($("#optTimer")||{}).checked?(_tv==="auto"?_au():(Math.max(0,Math.floor(+_tv||0))*60)):0);
     window.__autoTm=false;
+    try{var _tc=$("#optTimer"),_tm=$("#optTimerMins");if(_tc){_tc.checked=TMOFF>0;if(_tm)_tm.disabled=!(TMOFF>0)}}catch(e){}
     {for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t}}
     applyPerm($("#optShuf").checked?makePerm():{});
     cancelAuto();pos=0;ans={};started=false;finished=false;paused=false;pausedAt=0;wrongLog=[];filter="all";
@@ -2822,6 +2823,33 @@ window.APP_CONFIG={
   buildPick();
   try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
   (function(){var ub=$("#qUr");if(ub)ub.addEventListener("click",urClick)})();
+  /* test settings now live inside the MCQ screen: remembered on this phone, and they work during the test */
+  (function(){
+    var sh=$("#optShuf"),tc=$("#optTimer"),tm=$("#optTimerMins");if(!sh||!tc||!tm)return;
+    try{var st=JSON.parse(localStorage.getItem("eg23set")||"null");if(st){sh.checked=st.shuf!==false;tc.checked=!!st.tmr;if(st.mins)tm.value=st.mins}}catch(e){}
+    function keep(){try{localStorage.setItem("eg23set",JSON.stringify({shuf:sh.checked,tmr:tc.checked,mins:tm.value}))}catch(e){}}
+    function secs(){return tm.value==="auto"?Math.max(5,Math.ceil(order.length*0.9))*60:Math.max(0,Math.floor(+tm.value||0))*60}
+    function liveTimer(){
+      keep();tm.disabled=!tc.checked;
+      if(!order.length||finished)return;
+      TMOFF=tc.checked?secs():0;
+      try{save()}catch(e){}
+      updateTimer();
+    }
+    tc.addEventListener("change",liveTimer);tm.addEventListener("change",liveTimer);
+    sh.addEventListener("change",function(){
+      keep();
+      if(!order.length||finished)return;
+      /* only questions you have NOT answered yet are re-shuffled (answered ones keep their order) */
+      var np=makePerm(),P={},k;
+      for(k in perm)P[k]=perm[k];
+      order.forEach(function(id){if(ans[id])return;if(sh.checked&&np[id])P[id]=np[id];else delete P[id]});
+      applyPerm(P);
+      try{save()}catch(e){}
+      renderQ();
+    });
+    tm.disabled=!tc.checked;
+  })();
   (function(){
     function flip(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()}
     ["#qAuto","#btnAutoTop"].forEach(function(id){var b=$(id);if(b)b.addEventListener("click",flip)});
