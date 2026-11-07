@@ -2961,7 +2961,17 @@ window.APP_CONFIG={
     if(started&&!finished&&!paused)doPause();
     save();showResume();buildPick(pickedSubs());show("start");
   }
-  window.__goHome=function(){try{document.querySelectorAll(".ov").forEach(function(o){if(o.id!=="gate")o.hidden=true});goHome();window.scrollTo(0,0)}catch(e){}};
+  window.__goHome=function(){try{
+    var cached={adm:1,qe:1,rp:1,lib:1,aip:1,ws:1,viewer:1,jobsp:1,chatp:1},keep={userbar:1,annc:1,gate:1,bktoast:1,grc:1,mtstatbar:1};
+    Array.prototype.slice.call(document.body.children).forEach(function(n){
+      if(!n.tagName||/^(SCRIPT|STYLE|LINK|SECTION|MAIN|HEADER)$/.test(n.tagName)||keep[n.id])return;
+      if(cached[n.id]){n.hidden=true;return}
+      var cs=getComputedStyle(n);
+      if(cs.position==="fixed"||cs.position==="absolute"){if(n.id==="start"||n.querySelector&&n.querySelector("#start"))return;n.remove()}
+    });
+    document.querySelectorAll(".ov").forEach(function(o){if(o.id!=="gate")o.hidden=true});
+    goHome();window.scrollTo(0,0);
+  }catch(e){try{goHome();window.scrollTo(0,0)}catch(_){}}};
   $("#btnBack").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");if(history.state&&history.state.t===1)history.back();else goHome()});
   window.addEventListener("popstate",function(){
     if(!$("#test").hidden)goHome();
