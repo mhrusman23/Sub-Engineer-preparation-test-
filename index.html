@@ -2910,7 +2910,17 @@ window.APP_CONFIG={
         jk.hidden=false}
       /* sirf Roman Urdu jokes (English live joke band) -- roz naya joke */
       try{localStorage.removeItem("eg23jk")}catch(_){}
+      var J0=J.slice();
+      function pick(d){
+        var cu=((d&&d.list)||[]).filter(function(x){return x&&x.en&&x.ur}).map(function(x){return [x.en,x.ur]}).reverse();
+        var all=(d&&d.hideBuiltin&&cu.length?[]:J0).concat(cu);
+        if(cu.length)all=cu.concat(d&&d.hideBuiltin?[]:J0); /* newest shared jokes first */
+        J=all.length?all:J0;
+        paint(J[day%J.length]||J[0],false);
+      }
       paint(J[day%J.length]||J[0],false);
+      window.__jkRepaint=function(){if(window.__jk)window.__jk.get().then(pick).catch(function(){})};
+      window.__jkRepaint();
     })()}catch(_){}
     if(window.renderContacts)window.renderContacts($("#contactBox"));
   })();
@@ -3368,6 +3378,7 @@ function mtStatus(txt,pct,done){
 }
 
 /* ---------------- AI helper (Gemini API key, direct) ---------------- */
+let AI_SYS_OVR="";
 const AI_SYS="You are the friendly civil engineering tutor of Engrgroup23. Students are preparing for the Pakistani Sub Engineer (PPSC) and DAE Civil exams. "+
  "Reply in clear, simple English unless the message asks for Urdu: then write Urdu in Urdu script and keep technical terms, formulas and units in English. If the student writes in Urdu or Roman Urdu, reply in Urdu. "+
  "Keep answers short and clear (at most 150 words per language) unless the student asks for detail. Use bullet points, and write formulas and units in plain text. "+
@@ -3423,11 +3434,11 @@ function aiPlans(cfg){
 }
 function aiBody(plan,contents,noThink){
   if(plan.kind==="o"){
-    const msgs=[{role:"system",content:AI_SYS}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
+    const msgs=[{role:"system",content:(AI_SYS_OVR||AI_SYS)}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
     return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
   }
   const gc={temperature:0.4,maxOutputTokens:1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
-  return {systemInstruction:{parts:[{text:AI_SYS}]},contents,generationConfig:gc};
+  return {systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS)}]},contents,generationConfig:gc};
 }
 function aiPiece(plan,j){
   if(plan.kind==="o"){const ch=j.choices&&j.choices[0];return (ch&&ch.delta&&ch.delta.content)||""}
@@ -3903,6 +3914,7 @@ function openMenu(){
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if((IS_ADMIN||IS_OWNER)&&!PV)mi("\u{1F441}\uFE0F User mode (student ki tarah app dekhein)",function(){try{localStorage.setItem("eg23pv","1")}catch(_){}location.reload()});
   if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
+  if(IS_ADMIN&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
@@ -3913,6 +3925,116 @@ function openMenu(){
   bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
   dl.appendChild(bx);
   document.body.appendChild(dl);
+}
+/* ===== Jokes: shared list in sitedata/jokes (admin/manager edit; AI can add new ones every day) ===== */
+const JK_BAD=/[ऀ-ॿ]/;
+window.__jk={
+  get:async()=>{const d=await getDoc(doc(db,"sitedata","jokes"));return d.exists()?d.data():{}},
+  set:async o=>{await setDoc(doc(db,"sitedata","jokes"),Object.assign({},o,{updatedAt:Date.now()}))}
+};
+async function jkGenerate(n,have){
+  if(!window.__aiStart)throw new Error("AI is not available");
+  AI_SYS_OVR="You write short, clean, family-friendly classroom humor for Pakistani civil engineering diploma students (exams, studying, construction site life). No politics, religion, or insults. Follow the requested output format exactly and write nothing else.";
+  try{
+    const sx=await window.__aiStart("Write jokes.");
+    const avoid=(have||[]).slice(-25).map(j=>String(j.en||"").slice(0,50)).join(" | ");
+    const full=await sx.send("Write "+n+" NEW short jokes (1-2 sentences each). Do not repeat these: "+avoid+"\nFor each joke write exactly two lines:\nEN: <joke in English>\nUR: <the same joke in Urdu script (Arabic letters only, never Hindi); technical terms in English>\nBlank line between jokes. Nothing else.",null);
+    if(!full||JK_BAD.test(full))throw new Error("AI answered in the wrong format, try again");
+    const out=[];let cur=null,m;
+    String(full).split(/\n/).forEach(l=>{
+      l=l.replace(/^[\s*_#>-]+/,"").trim();
+      if(m=/^EN\s*[:：]\s*(.+)$/i.exec(l)){cur={en:m[1].replace(/[*_]+/g,"").trim(),ur:"",ai:1,at:Date.now()};return}
+      if(cur&&(m=/^UR\s*[:：]\s*(.+)$/i.exec(l))){cur.ur=m[1].replace(/[*_]+/g,"").trim();if(cur.en&&cur.ur&&/[؀-ۿ]/.test(cur.ur))out.push(cur);cur=null}
+    });
+    if(!out.length)throw new Error("AI did not return jokes in the expected format");
+    return out.slice(0,n);
+  }finally{AI_SYS_OVR=""}
+}
+async function jkAutoUpdate(){
+  try{
+    if(!IS_ADMIN||PV||!window.__aiStart)return;
+    const d=await window.__jk.get();
+    if(d.auto===false)return;
+    if(Date.now()-(d.autoAt||0)<20*3600*1000)return;
+    const add=await jkGenerate(5,d.list||[]);
+    const list=((d.list||[]).concat(add)).slice(-60);
+    await window.__jk.set({list,hideBuiltin:!!d.hideBuiltin,auto:d.auto!==false,autoAt:Date.now()});
+    if(window.__jkRepaint)window.__jkRepaint();
+  }catch(e){}
+}
+let jkTry=0;(function jkLoop(){setTimeout(()=>{if(IS_ADMIN&&!PV)jkAutoUpdate();else if(++jkTry<24)jkLoop()},15000)})();
+async function openJokes(){
+  if(!IS_ADMIN||PV)return;
+  const old=document.getElementById("jkw");if(old)old.remove();
+  const dl=el("div");dl.id="jkw";
+  dl.style.cssText="position:fixed;inset:0;z-index:1170;background:rgba(8,12,26,.6);display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow:auto";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);color:var(--ink,#13222D);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:20px 0";
+  dl.appendChild(box);document.body.appendChild(dl);
+  const head=el("div");head.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px";
+  head.appendChild(el("h2","","\u{1F604} Jokes"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>dl.remove();head.appendChild(cl);box.appendChild(head);
+  const st=el("div","label st");box.appendChild(st);
+  let D={list:[],hideBuiltin:false,auto:true,autoAt:0},editAt=-1;
+  const row=(t)=>{const l=el("label");l.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";const c=el("input");c.type="checkbox";l.append(c,el("span","",t));box.appendChild(l);return c};
+  const cAuto=row("AI auto-adds 5 new jokes every day (when admin or manager opens the app)");
+  const cHide=row("Hide the 30 built-in jokes (show only my / AI jokes)");
+  const bar=el("div");bar.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px";box.appendChild(bar);
+  const bAi=el("button","btn primary","\u{1F916} AI se 5 naye jokes banao");bAi.type="button";bar.appendChild(bAi);
+  box.appendChild(el("div","label","Add / edit a joke · English"));
+  const en=document.createElement("textarea");en.rows=2;en.style.cssText="width:100%";box.appendChild(en);
+  box.appendChild(el("div","label","Urdu (leave empty = AI will translate)"));
+  const ur=document.createElement("textarea");ur.rows=2;ur.dir="rtl";ur.style.cssText="width:100%";box.appendChild(ur);
+  const bSave=el("button","btn primary","Add joke");bSave.type="button";bSave.style.marginTop="8px";box.appendChild(bSave);
+  const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:12px";box.appendChild(list);
+  async function save(msg){
+    try{await window.__jk.set(D);if(window.__jkRepaint)window.__jkRepaint();st.textContent=msg||"Saved · sab users ko nazar aayega.";draw()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)+" (rules: sitedata write admin/manager ke liye khuli honi chahiye)"}
+  }
+  function draw(){
+    cAuto.checked=D.auto!==false;cHide.checked=!!D.hideBuiltin;
+    list.textContent="";
+    list.appendChild(el("div","label","My / AI jokes: "+(D.list||[]).length+" (built-in: 30)"));
+    (D.list||[]).map((j,i)=>({j,i})).reverse().forEach(({j,i})=>{
+      const r=el("div");r.style.cssText="border:1px solid var(--line,#C9D3DA);border-radius:12px;padding:10px";
+      r.appendChild(el("div","",j.en));const u=el("div","",j.ur);u.dir="rtl";u.style.cssText="margin-top:6px;text-align:right";r.appendChild(u);
+      const a=el("div");a.style.cssText="display:flex;gap:8px;margin-top:8px;align-items:center";
+      if(j.ai)a.appendChild(el("small","","\u{1F916} AI"));
+      const be=el("button","btn","Edit");be.type="button";be.onclick=()=>{en.value=j.en;ur.value=j.ur;editAt=i;bSave.textContent="Save changes";en.focus()};
+      const bd=el("button","btn danger","Delete");bd.type="button";let arm=false;
+      bd.onclick=()=>{if(!arm){arm=true;bd.textContent="Confirm?";setTimeout(()=>{arm=false;bd.textContent="Delete"},3000);return}D.list.splice(i,1);save("Joke deleted.")};
+      a.append(be,bd);r.appendChild(a);list.appendChild(r);
+    });
+  }
+  cAuto.onchange=()=>{D.auto=cAuto.checked;save()};
+  cHide.onchange=()=>{D.hideBuiltin=cHide.checked;save()};
+  bAi.onclick=async()=>{
+    bAi.disabled=true;st.textContent="AI jokes bana raha hai...";
+    try{const add=await jkGenerate(5,D.list||[]);D.list=((D.list||[]).concat(add)).slice(-60);D.autoAt=Date.now();await save(add.length+" naye jokes add ho gaye.")}
+    catch(e){st.textContent=(window.__aiErr?window.__aiErr(e):String(e.message||e))}
+    bAi.disabled=false;
+  };
+  bSave.onclick=async()=>{
+    const e1=en.value.trim();let u1=ur.value.trim();
+    if(e1.length<5){st.textContent="English joke likhein.";return}
+    bSave.disabled=true;
+    try{
+      if(!u1){
+        st.textContent="Urdu translation ho rahi hai...";
+        AI_SYS_OVR="You translate short jokes into Urdu script (Arabic letters only, never Hindi). Keep technical terms in English. Reply with only the Urdu text.";
+        try{const sx=await window.__aiStart("Translate.");u1=String(await sx.send("Translate into Urdu:\n"+e1,null)||"").replace(/\n[ \t]*[*_]*FOLLOW-?UPS?[*_]*[ \t]*:[\s\S]*$/i,"").trim()}finally{AI_SYS_OVR=""}
+        if(!u1||JK_BAD.test(u1))throw new Error("Urdu translation failed, type Urdu yourself");
+      }
+      D.list=D.list||[];
+      if(editAt>=0&&D.list[editAt]){D.list[editAt]=Object.assign({},D.list[editAt],{en:e1,ur:u1})}
+      else D.list.push({en:e1,ur:u1,at:Date.now()});
+      editAt=-1;en.value="";ur.value="";bSave.textContent="Add joke";
+      await save("Joke saved.");
+    }catch(e){st.textContent=String(e.message||e)}
+    bSave.disabled=false;
+  };
+  try{D=Object.assign(D,await window.__jk.get())}catch(e){st.textContent="Error: "+(e.code||e.message)}
+  draw();
 }
 async function openBin(){
   if(!IS_ADMIN||PV)return;
