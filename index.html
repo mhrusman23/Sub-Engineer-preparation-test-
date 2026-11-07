@@ -2970,6 +2970,7 @@ window.APP_CONFIG={
       if(cs.position==="fixed"||cs.position==="absolute"){if(n.id==="start"||n.querySelector&&n.querySelector("#start"))return;n.remove()}
     });
     document.querySelectorAll(".ov").forEach(function(o){if(o.id!=="gate")o.hidden=true});
+    try{if(curYear)closeYear()}catch(_){}
     goHome();window.scrollTo(0,0);
   }catch(e){try{goHome();window.scrollTo(0,0)}catch(_){}}};
   $("#btnBack").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");if(history.state&&history.state.t===1)history.back();else goHome()});
