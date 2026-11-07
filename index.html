@@ -372,10 +372,10 @@ input.pk,input.cpk{width:22px;height:22px;flex:none}
 .hcard{position:relative;overflow:visible}
 .kebab{margin-left:auto;flex:none;width:40px;height:40px;border-radius:50%;border:1px solid rgba(201,162,39,.6);background:linear-gradient(180deg,#fff 0%,#f6edcf 100%);color:#7A5A06;font:900 22px/1 sans-serif;box-shadow:0 6px 14px rgba(10,20,50,.16),inset 0 1px 0 #fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
 .kebab:active{transform:scale(.94)}
-.kmenu{position:absolute;right:12px;top:58px;z-index:70;min-width:210px;padding:6px;border-radius:16px;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(201,162,39,.45);box-shadow:0 22px 48px rgba(10,20,50,.30),0 2px 0 rgba(255,255,255,.8) inset}
-.kmenu button{display:flex;gap:12px;align-items:center;width:100%;min-height:46px;padding:10px 12px;border:0;background:transparent;border-radius:11px;font:700 15px sans-serif;color:#13222D;text-align:left;cursor:pointer}
-.kmenu button:active{background:#EEF2FA}
-.kmenu .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(180deg,#F4ECD0,#E8D9A2);color:#7A5A06;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
+.kmenu,.mdch{position:absolute;right:12px;top:58px;z-index:70;min-width:210px;padding:6px;border-radius:16px;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(201,162,39,.45);box-shadow:0 22px 48px rgba(10,20,50,.30),0 2px 0 rgba(255,255,255,.8) inset}
+.kmenu button,.mdch button{display:flex;gap:12px;align-items:center;width:100%;min-height:46px;padding:10px 12px;border:0;background:transparent;border-radius:11px;font:700 15px sans-serif;color:#13222D;text-align:left;cursor:pointer}
+.kmenu button:active,.mdch button:active{background:#EEF2FA}
+.kmenu .ic,.mdch .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(180deg,#F4ECD0,#E8D9A2);color:#7A5A06;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
 .kmenu .dg{color:#B3261E}.kmenu .dg .ic{background:#FBE3E1;color:#B3261E}
 .kmenu hr{border:0;border-top:1px solid #E3E8EE;margin:4px 8px}
 .hadm{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 4%,transparent)}
@@ -3974,7 +3974,7 @@ function openModeChooser(){
   const cur=PV?"user":(PM?"manager":(REAL_OWNER?"admin":"manager"));
   const dl=el("div");dl.id="modech";dl.style.cssText="position:fixed;inset:0;z-index:100002;background:rgba(8,12,26,.45)";
   dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
-  const bx=el("div","kmenu");bx.style.cssText="position:fixed;right:12px;top:58px;min-width:260px";
+  const bx=el("div","mdch");bx.style.cssText="position:fixed;right:12px;top:58px;min-width:260px";
   const opts=[];
   if(REAL_OWNER)opts.push(["admin","\u{1F6E0}\uFE0F","Admin mode","Sab kuch: Website settings, Managers, Bin, Jokes"]);
   opts.push(["manager","\u{1F9D1}\u200D\u{1F4BC}","Manager mode","Jo manager ko nazar aata hai (owner settings nahi)"]);
