@@ -1149,7 +1149,8 @@ window.APP_CONFIG={
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div id="qUrBox" hidden dir="rtl" lang="ur" style="margin-top:10px;padding:12px 14px;border-radius:14px;background:#EEF6EF;border:1px solid #9CC9A6;color:#13222D;font-size:17px;line-height:2;text-align:right"></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
             <button class="btn" id="nextUn" type="button">Next unanswered</button>
@@ -1638,6 +1639,54 @@ window.APP_CONFIG={
     if(inUl)out.push("</ul>");
     return out.join("").replace(/(<br>){2,}/g,"<br>").replace(/(<br>)+$/,"");
   }
+  /* ===== Urdu meaning of the question + options (AI, cached on this phone) ===== */
+  var urOpen={},urBusy=false;
+  function urKey(id){var t=Q[id].text+"|"+QO[id].join("|"),h=5381,k;for(k=0;k<t.length;k++)h=((h<<5)+h+t.charCodeAt(k))|0;return "eg23ur:"+(h>>>0).toString(36)}
+  function urGet(id){try{var v=localStorage.getItem(urKey(id));return v?JSON.parse(v):null}catch(e){return null}}
+  function urSet(id,o){try{localStorage.setItem(urKey(id),JSON.stringify(o))}catch(e){}}
+  function urShow(id,tr){
+    var b=$("#qUrBox"),q=Q[id],p=perm[id],h="";
+    b.textContent="";
+    var d1=document.createElement("div");d1.style.cssText="font-weight:700";d1.textContent=tr.q||"";b.appendChild(d1);
+    q.opts.forEach(function(o,j){
+      var oi=(p&&p.length===QO[id].length)?p[j]:j,d=document.createElement("div");
+      d.textContent=LET[j]+". "+(tr.o[oi]||"");b.appendChild(d);
+    });
+    b.hidden=false;
+  }
+  function urRefresh(id){
+    var b=$("#qUrBox"),bt=$("#qUr");if(!b)return;
+    if(urOpen[id]){var tr=urGet(id);if(tr){urShow(id,tr);if(bt)bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}}
+    b.hidden=true;b.textContent="";
+    if(bt)bt.textContent="\u{1F310} \u0627\u0631\u062f\u0648 \u00b7 Urdu";
+  }
+  function urParse(full,n){
+    var body=aiSplit(full).body,r={q:"",o:[]},m;
+    body.split(/\n/).forEach(function(l){
+      l=l.replace(/^[\s*_#>-]+/,"").trim();
+      if(m=/^Q\s*[:\uFF1A.)]\s*(.+)$/i.exec(l)){r.q=m[1].trim();return}
+      if(m=/^(\d{1,2})\s*[:\uFF1A.)]\s*(.+)$/.exec(l)){r.o[+m[1]-1]=m[2].replace(/^[*_\s]+/,"").replace(/[*_]+$/,"").trim()}
+    });
+    for(var k=0;k<n;k++)if(!r.o[k])r.o[k]="";
+    return (r.q&&r.o.filter(Boolean).length>=Math.min(2,n))?r:null;
+  }
+  function urClick(){
+    if(finished&&!order.length)return;
+    var id=order[pos],b=$("#qUrBox"),bt=$("#qUr");
+    if(urOpen[id]&&!b.hidden){urOpen[id]=false;urRefresh(id);return}
+    urOpen[id]=true;
+    var tr=urGet(id);
+    if(tr){urShow(id,tr);bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}
+    if(!window.__aiStart){b.hidden=false;b.textContent="AI is not available right now. / اے آئی ابھی دستیاب نہیں۔";return}
+    if(urBusy)return;urBusy=true;b.hidden=false;b.textContent="\u0627\u0631\u062f\u0648 \u0645\u06cc\u06ba \u062a\u0631\u062c\u0645\u06c1 \u06c1\u0648 \u0631\u06c1\u0627 \u06c1\u06d2... / Translating...";
+    var n=QO[id].length,msg="Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+QO[id].map(function(x,j){return (j+1)+": <option "+(j+1)+" in Urdu>"}).join("\n")+"\n\nQuestion: "+Q[id].text+"\nOptions:\n"+QO[id].map(function(x,j){return (j+1)+". "+x}).join("\n");
+    window.__aiStart("Translate MCQs into Urdu script.").then(function(sx){return sx.send(msg,null)}).then(function(full){
+      var r=urParse(full||"",n);
+      if(!r){b.textContent="Translation failed, please try again. / ترجمہ نہیں ہو سکا، دوبارہ کوشش کریں۔";return}
+      urSet(id,r);if(order[pos]===id&&urOpen[id])urShow(id,r);bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";
+    }).catch(function(e){b.hidden=false;b.textContent=window.__aiErr?window.__aiErr(e):("AI error: "+((e&&e.message)||e))})
+      .then(function(){urBusy=false});
+  }
   function aiCtx(id){
     var q=Q[id],a=ans[id];
     var s="Here is an MCQ ("+SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].name+"):\n\n"+q.text+"\n\n";
@@ -1971,6 +2020,7 @@ window.APP_CONFIG={
 
   function renderQ(){
     var id=order[pos],q=Q[id],a=ans[id];
+    try{urRefresh(id)}catch(e){}
     $("#qno").textContent="Question "+(pos+1)+" of "+order.length;
     $("#qmeta").textContent=S[q.sec].code+" · "+q.test;
     $("#qtext").textContent=q.text;
@@ -2766,6 +2816,7 @@ window.APP_CONFIG={
   recalcT();
   buildPick();
   try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
+  (function(){var ub=$("#qUr");if(ub)ub.addEventListener("click",urClick)})();
   (function(){
     function flip(){var o=!autoOn();try{localStorage.setItem("eg23auto",o?"1":"0")}catch(e){}if(!o)cancelAuto();paintAuto()}
     ["#qAuto","#btnAutoTop"].forEach(function(id){var b=$(id);if(b)b.addEventListener("click",flip)});
