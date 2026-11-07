@@ -923,6 +923,22 @@ body.pv .qedit{display:none!important}
 .px-aurora{position:fixed;top:-22vh;left:-20vw;right:-20vw;height:72vh;z-index:-1;pointer-events:none;background:conic-gradient(from 0deg at 50% 60%,rgba(201,162,39,.16),rgba(31,79,216,.12),rgba(124,58,237,.12),rgba(14,159,110,.1),rgba(201,162,39,.16));filter:blur(46px);opacity:.65;animation:aurspin 18s linear infinite}
 @keyframes aurspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.px-aurora{animation:none}}
+
+/* compact test bar (v-compact) */
+.bar{padding:8px 10px 10px!important;gap:4px 10px!important}
+.bar .timer{display:flex;align-items:baseline;gap:8px;font-size:24px!important;flex-wrap:wrap}
+.bar .timer small{display:inline;margin:0!important;font-size:10.5px!important;line-height:1.2}
+.bar .stats{gap:5px!important}
+.bar .stat{padding:2px 5px!important;border-radius:10px!important}
+.bar .stat .label{font-size:8.5px!important;letter-spacing:.04em!important}
+.bar .stat .n{font-size:14px!important;line-height:1.2}
+.bar .prog{margin:4px 0 0!important}
+#tmRow{margin:2px 0!important;gap:2px 10px!important}
+#tmRow label{min-height:30px!important;font-size:13px;gap:5px!important}
+#tmRow input[type=checkbox]{width:16px!important;height:16px!important}
+#tmRow select{min-height:30px!important;min-width:0!important;padding:2px 6px!important;font-size:13px!important}
+.bar .barbtns{flex-wrap:wrap;gap:5px!important}
+.bar .btn{min-height:32px!important;padding:3px 9px!important;font-size:12.5px!important}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -2945,6 +2961,7 @@ window.APP_CONFIG={
     if(started&&!finished&&!paused)doPause();
     save();showResume();buildPick(pickedSubs());show("start");
   }
+  window.__goHome=function(){try{document.querySelectorAll(".ov").forEach(function(o){if(o.id!=="gate")o.hidden=true});goHome();window.scrollTo(0,0)}catch(e){}};
   $("#btnBack").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");if(history.state&&history.state.t===1)history.back();else goHome()});
   window.addEventListener("popstate",function(){
     if(!$("#test").hidden)goHome();
@@ -3036,8 +3053,8 @@ const app=initializeApp(CFG.firebase),auth=getAuth(app),db=initializeFirestore(a
 const ADMINS=(CFG.admins||[]).map(e=>String(e).toLowerCase());
 let started=false,busy=false,BANK_JSON="",BANK_META=null,ME="",IS_ADMIN=false,IS_OWNER=false;
 /* ---- Student view (v3.4.0): admin/manager apni site user ki tarah dekh sakta hai ---- */
-let PV=false;
-try{PV=localStorage.getItem("eg23pv")==="1"}catch(_){}
+let PV=false,PM=false,REAL_OWNER=false;
+try{PV=localStorage.getItem("eg23pv")==="1";PM=localStorage.getItem("eg23pv")==="m"}catch(_){}
 /* ---- Language: English / اردو (v3.3.0) — walker-based UI translation ---- */
 let LUR=false;
 try{LUR=(localStorage.getItem("eg23lang")||"")==="ur"}catch(_){}
@@ -3857,8 +3874,8 @@ async function check(user){
   const email=idOf(user);
   if(user.email&&!user.emailVerified&&!user.phoneNumber)return needVerify(user,email);
   if(!email)return deny("","This account cannot sign in.");
-  IS_OWNER=ADMINS.includes(email);IS_ADMIN=IS_OWNER;ME=email;
-  if(PV&&!IS_ADMIN){try{localStorage.removeItem("eg23pv")}catch(_){}PV=false}
+  IS_OWNER=ADMINS.includes(email);REAL_OWNER=IS_OWNER;IS_ADMIN=IS_OWNER;ME=email;
+  if((PV||PM)&&!IS_ADMIN){try{localStorage.removeItem("eg23pv")}catch(_){}PV=false;PM=false}
   if(PV){try{document.body.classList.add("pv")}catch(_){}}
   let EXP=null,TRIAL=false;
   try{
@@ -3869,6 +3886,7 @@ async function check(user){
     const mgP=IS_OWNER?Promise.resolve(false):getDoc(doc(db,"managers",email)).then(m=>m.exists(),()=>false);
     const alP=IS_OWNER?null:getDoc(doc(db,"allowed",email)).then(r=>({r}),e=>({e}));
     if(!IS_OWNER){if(await mgP)IS_ADMIN=true}
+    if(IS_OWNER&&PM)IS_OWNER=false; /* Manager mode preview: owner sees exactly what a manager sees */
     if(!IS_ADMIN){
       const ar=await alP;if(ar.e)throw ar.e;const a=ar.r;
       if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);
@@ -3930,14 +3948,15 @@ function userbar(){
   avb.onclick=()=>openMenu();
   const cols=el("div");cols.style.cssText="display:flex;flex-direction:column;min-width:0";
   const br=el("div","ubrand");br.appendChild(el("i","shield"));br.appendChild(document.createTextNode("Engrgroup"));br.appendChild(el("b","","23"));
+  br.style.cursor="pointer";br.title="Home / Dashboard";br.onclick=()=>{if(window.__goHome)window.__goHome()};
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
   const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center";
-  if(IS_ADMIN||IS_OWNER){
-    /* admin / manager: one tap between User mode (see the app like a student) and Admin mode (make changes) */
-    const md=el("button","btn",PV?"\u{1F6E0}\uFE0F Admin mode":"\u{1F441}\uFE0F User mode");md.type="button";
-    md.title=PV?"Wapas Admin mode (changes karne ke liye)":"User mode: app student ki tarah dekhein";
-    md.onclick=()=>{try{if(PV)localStorage.removeItem("eg23pv");else localStorage.setItem("eg23pv","1")}catch(_){}location.reload()};
+  if(IS_ADMIN||REAL_OWNER){
+    const cur=PV?"user":(PM?"manager":(REAL_OWNER?"admin":"manager"));
+    const lab={admin:"\u{1F6E0}\uFE0F Admin",manager:"\u{1F9D1}\u200D\u{1F4BC} Manager",user:"\u{1F441}\uFE0F User"};
+    const md=el("button","btn",lab[cur]+" \u25BE");md.type="button";md.title="Mode badlein: Admin / Manager / User";
+    md.onclick=()=>openModeChooser();
     r.appendChild(md);
   }
   const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();r.appendChild(mb);
@@ -3949,6 +3968,25 @@ function _menuAv(P,big){
   if(P.photo){const im=el("img");im.src=P.photo;im.alt=P.name||"";av.appendChild(im)}
   else av.appendChild(el("span","",String(P.name||"?").charAt(0).toUpperCase()));
   return av;
+}
+function openModeChooser(){
+  const old=document.getElementById("modech");if(old){old.remove();return}
+  const cur=PV?"user":(PM?"manager":(REAL_OWNER?"admin":"manager"));
+  const dl=el("div");dl.id="modech";dl.style.cssText="position:fixed;inset:0;z-index:100002;background:rgba(8,12,26,.45)";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const bx=el("div","kmenu");bx.style.cssText="position:fixed;right:12px;top:58px;min-width:260px";
+  const opts=[];
+  if(REAL_OWNER)opts.push(["admin","\u{1F6E0}\uFE0F","Admin mode","Sab kuch: Website settings, Managers, Bin, Jokes"]);
+  opts.push(["manager","\u{1F9D1}\u200D\u{1F4BC}","Manager mode","Jo manager ko nazar aata hai (owner settings nahi)"]);
+  opts.push(["user","\u{1F441}\uFE0F","User mode","Bilkul student ki tarah"]);
+  opts.forEach(o=>{
+    const b=el("button",""),ic=el("span","ic",o[1]),tx=el("span","");
+    const t1=el("b","",o[2]+(o[0]===cur?"  \u2714":"")),t2=el("small","",o[3]);t2.style.cssText="display:block;font-weight:500;opacity:.7;font-size:12px";
+    tx.append(t1,t2);b.type="button";b.append(ic,tx);
+    b.onclick=()=>{try{if(o[0]==="user")localStorage.setItem("eg23pv","1");else if(o[0]==="manager"&&REAL_OWNER)localStorage.setItem("eg23pv","m");else localStorage.removeItem("eg23pv")}catch(_){}location.reload()};
+    bx.appendChild(b);
+  });
+  dl.appendChild(bx);document.body.appendChild(dl);
 }
 function openMenu(){
   const old=document.getElementById("appmenu");if(old)old.remove();
@@ -3975,11 +4013,12 @@ function openMenu(){
     b.onclick=()=>{dl.remove();if(fn)fn()};
     bx.appendChild(b);
   }
+  mi("\u{1F3E0} Dashboard (Home)",()=>{if(window.__goHome)window.__goHome()});
   mi("\u{1F464} Account settings + membership",()=>openAcct());
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
-  if((IS_ADMIN||IS_OWNER)&&!PV)mi("\u{1F441}\uFE0F User mode (student ki tarah app dekhein)",function(){try{localStorage.setItem("eg23pv","1")}catch(_){}location.reload()});
+  if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   if(IS_ADMIN&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
   mi("\u{1F4BC} Jobs",()=>openJobs());
@@ -3987,7 +4026,7 @@ function openMenu(){
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
   mi("\u{1F4E4} WhatsApp par site share karein",()=>shareSite());
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
-  if(PV)mi("\u{1F6E0}\uFE0F Admin mode (wapas changes ke liye)",function(){try{localStorage.removeItem("eg23pv")}catch(_){}location.reload()});
+
   mi("\u21A9 Sign out",()=>{try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}signOut(auth).then(()=>location.reload())});
   bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
   dl.appendChild(bx);
