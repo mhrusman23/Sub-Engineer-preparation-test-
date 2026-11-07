@@ -369,6 +369,15 @@ input.pk,input.cpk{width:22px;height:22px;flex:none}
 .yadm .yrow .btn{min-height:38px;padding:6px 12px;font-size:14px}
 .yadm select{flex:1;min-width:180px;font:inherit;font-size:15px;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
 .yadm .st{margin-top:8px;min-height:18px}
+.hcard{position:relative;overflow:visible}
+.kebab{margin-left:auto;flex:none;width:40px;height:40px;border-radius:50%;border:1px solid rgba(201,162,39,.6);background:linear-gradient(180deg,#fff 0%,#f6edcf 100%);color:#7A5A06;font:900 22px/1 sans-serif;box-shadow:0 6px 14px rgba(10,20,50,.16),inset 0 1px 0 #fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.kebab:active{transform:scale(.94)}
+.kmenu{position:absolute;right:12px;top:58px;z-index:70;min-width:210px;padding:6px;border-radius:16px;background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(201,162,39,.45);box-shadow:0 22px 48px rgba(10,20,50,.30),0 2px 0 rgba(255,255,255,.8) inset}
+.kmenu button{display:flex;gap:12px;align-items:center;width:100%;min-height:46px;padding:10px 12px;border:0;background:transparent;border-radius:11px;font:700 15px sans-serif;color:#13222D;text-align:left;cursor:pointer}
+.kmenu button:active{background:#EEF2FA}
+.kmenu .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(180deg,#F4ECD0,#E8D9A2);color:#7A5A06;display:inline-flex;align-items:center;justify-content:center;font-size:16px}
+.kmenu .dg{color:#B3261E}.kmenu .dg .ic{background:#FBE3E1;color:#B3261E}
+.kmenu hr{border:0;border-top:1px solid #E3E8EE;margin:4px 8px}
 .hadm{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px dashed var(--line);background:color-mix(in srgb,var(--accent) 4%,transparent)}
 .hadm .btn{min-height:34px;padding:4px 12px;font-size:13px}
 .qedit{min-height:34px;padding:4px 12px;font-size:13px}
@@ -1444,13 +1453,22 @@ window.APP_CONFIG={
       var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n;go.addEventListener("click",function(){start([i])});hd.appendChild(go);
       card.appendChild(hd);if(pn)card.appendChild(pn);
       if(ADM){
-        var ha=el("div","hadm");
-        var bc=el("button","btn","+ Chapter");bc.type="button";bc.addEventListener("click",function(){addChapter(i)});
-        var br=el("button","btn","\u270e Rename");br.type="button";br.addEventListener("click",function(){renameSub(i)});
-        var bd=el("button","btn danger","\ud83d\uddd1 Delete chapter");bd.type="button";bd.addEventListener("click",function(){delChapterPanel(i,card)});
-        ha.appendChild(bc);ha.appendChild(br);ha.appendChild(bd);
-        if(!n)ha.appendChild(el("span","label","0 MCQs \u00b7 add questions with Edit MCQs"));
-        card.appendChild(ha);
+        /* admin / manager tools in one premium 3-dot menu */
+        var kb=el("button","kebab","\u22EE");kb.type="button";kb.setAttribute("aria-label","Subject options");kb.setAttribute("aria-haspopup","menu");
+        kb.addEventListener("click",function(ev){
+          ev.stopPropagation();
+          var ex=card.querySelector(".kmenu");if(ex){ex.remove();return}
+          document.querySelectorAll(".kmenu").forEach(function(m){m.remove()});
+          var km=el("div","kmenu");km.setAttribute("role","menu");
+          function item(ic,tx,cls,fn){var b=el("button",cls||"",""),a=el("span","ic",ic),t=el("span","",tx);b.type="button";b.setAttribute("role","menuitem");b.appendChild(a);b.appendChild(t);b.addEventListener("click",function(e2){e2.stopPropagation();km.remove();fn()});km.appendChild(b)}
+          item("\uFF0B","Add chapter","",function(){addChapter(i)});
+          item("\u270E","Rename subject","",function(){renameSub(i)});
+          km.appendChild(document.createElement("hr"));
+          item("\u{1F5D1}","Delete chapter","dg",function(){delChapterPanel(i,card)});
+          card.appendChild(km);
+        });
+        hd.appendChild(kb);
+        if(!n)card.appendChild(el("div","label","0 MCQs \u00b7 add questions with Edit MCQs"));
       }
     list.appendChild(card);
     });
@@ -2924,6 +2942,7 @@ window.APP_CONFIG={
     })()}catch(_){}
     if(window.renderContacts)window.renderContacts($("#contactBox"));
   })();
+  document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".kmenu")))document.querySelectorAll(".kmenu").forEach(function(m){m.remove()})});
   $("#retake").addEventListener("click",function(){showResume();buildPick(sel.length?sel:null);show("start")});
   $("#btnResume").addEventListener("click",resume);
   showResume();
