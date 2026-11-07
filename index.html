@@ -1606,7 +1606,7 @@ window.APP_CONFIG={
   var aiLang="both";try{var _l=localStorage.getItem("eg23ail");if(_l==="en"||_l==="ur"||_l==="both")aiLang=_l}catch(e){}
   /* language instruction added to every question (not shown to the student) */
   function aiLangNote(){
-    if(aiLang==="en")return "";
+    if(aiLang==="en")return "\n\n[Reply in English only. No Hindi/Devanagari.]";
     if(aiLang==="ur")return "\n\n[Reply fully in Urdu script (Arabic/Urdu letters only, never Hindi/Devanagari). Keep technical terms, formulas, units and option letters in English.]";
     return "\n\n[Reply in English first, then a line with — اردو — and the same answer in Urdu script (Arabic/Urdu letters only, never Hindi/Devanagari). Keep technical terms, formulas, units and option letters in English.]";
   }
@@ -1681,7 +1681,7 @@ window.APP_CONFIG={
     if(urBusy)return;urBusy=true;b.hidden=false;b.textContent="\u0627\u0631\u062f\u0648 \u0645\u06cc\u06ba \u062a\u0631\u062c\u0645\u06c1 \u06c1\u0648 \u0631\u06c1\u0627 \u06c1\u06d2... / Translating...";
     var n=QO[id].length,msg="Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+QO[id].map(function(x,j){return (j+1)+": <option "+(j+1)+" in Urdu>"}).join("\n")+"\n\nQuestion: "+Q[id].text+"\nOptions:\n"+QO[id].map(function(x,j){return (j+1)+". "+x}).join("\n");
     window.__aiStart("Translate MCQs into Urdu script.").then(function(sx){return sx.send(msg,null)}).then(function(full){
-      var r=urParse(full||"",n);
+      var r=/[\u0900-\u097F]/.test(full||"")?null:urParse(full||"",n);
       if(!r){b.textContent="Translation failed, please try again. / ترجمہ نہیں ہو سکا، دوبارہ کوشش کریں۔";return}
       urSet(id,r);if(order[pos]===id&&urOpen[id])urShow(id,r);bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";
     }).catch(function(e){b.hidden=false;b.textContent=window.__aiErr?window.__aiErr(e):("AI error: "+((e&&e.message)||e))})
@@ -1689,7 +1689,7 @@ window.APP_CONFIG={
   }
   function aiCtx(id){
     var q=Q[id],a=ans[id];
-    var s="Here is an MCQ ("+SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].name+"):\n\n"+q.text+"\n\n";
+    var s="LANGUAGE RULE (always): answer only in English and/or Urdu written in Urdu script (Arabic letters). NEVER use Hindi / Devanagari letters, and never write Urdu in Roman letters. Technical terms, formulas, units and option letters stay in English.\n\nHere is an MCQ ("+SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].name+"):\n\n"+q.text+"\n\n";
     q.opts.forEach(function(x,j){s+=LET[j]+". "+x+"\n"});
     var reveal=!!a||finished||$("#test").hidden;
     if(reveal){
@@ -1764,7 +1764,12 @@ window.APP_CONFIG={
     function paint(){raf=0;b.innerHTML=aiMd(aiSplit(last).body);aiScroll()}
     function stop(){if(raf){cancelAnimationFrame(raf);raf=0}}
     var p=aiSess?Promise.resolve(aiSess):window.__aiStart(aiCtx(id)).then(function(s){if(aiCur===id)aiSess=s;return s});
-    p.then(function(s){return s.send(text+aiLangNote(),function(full){last=full;if(!raf)raf=requestAnimationFrame(paint)})})
+    var HINDI=/[\u0900-\u097F]/;
+    p.then(function(s){return s.send(text+aiLangNote(),function(full){last=full;if(!raf)raf=requestAnimationFrame(paint)}).then(function(full){
+        /* the model slipped into Hindi: ask once for the same answer in Urdu script / English only */
+        if(full&&HINDI.test(full)){last="";b.innerHTML='<span class="aidots"><i></i><i></i><i></i></span>';
+          return s.send("Your last answer used Hindi (Devanagari) letters. Rewrite the SAME answer again using only "+(aiLang==="en"?"English":"Urdu script (Arabic letters) with technical terms in English")+". No Hindi letters, no Roman Urdu. Keep the FOLLOWUPS line.",function(f2){last=f2;if(!raf)raf=requestAnimationFrame(paint)})}
+        return full})})
      .then(function(full){
        stop();
        if(!full){b.textContent="Empty reply, please try again.";return}
