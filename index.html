@@ -1465,6 +1465,7 @@ window.APP_CONFIG={
           item("\u270E","Rename subject","",function(){renameSub(i)});
           km.appendChild(document.createElement("hr"));
           item("\u{1F5D1}","Delete chapter","dg",function(){delChapterPanel(i,card)});
+          item("\u{1F5D1}","Delete whole subject","dg",function(){delSubject(i)});
           card.appendChild(km);
         });
         hd.appendChild(kb);
@@ -1578,17 +1579,64 @@ window.APP_CONFIG={
     if(!any)box.appendChild(el("div","label","No chapters in this subject."));
     card.appendChild(box);
   }
+  function snapQs(pred){var r=[];Q.forEach(function(q,i){if(pred(q))r.push({text:q.text,opts:(QO[i]||q.opts).slice(),ans:(QA[i]!=null?QA[i]:q.ans),test:q.test||"Custom"})});return r}
+  /* every delete first saves a copy in the Bin (Menu > Bin); if that fails you are asked before deleting for good */
+  function toBin(snap,go,what){
+    var big=false;try{big=JSON.stringify(snap).length>900000}catch(e){}
+    var p=(window.__binSave&&!big)?window.__binSave(snap):Promise.reject(new Error(big?"too big":"Bin not ready"));
+    p.then(go,function(e){if(confirm("Bin mein copy save nahi hui ("+((e&&(e.code||e.message))||e)+").\n\nPhir bhi '"+what+"' hamesha ke liye delete karein?"))go()});
+  }
+  function afterDel(note){
+    perm={};applyPerm({});bv=Date.now();clearSave();showResume();
+    afterStruct(note);
+  }
   function delChapter(ci){
     if(!S[ci])return;
-    var n=0;Q.forEach(function(q){if(q.sec===ci)n++});
-    if(!confirm("Delete chapter '"+S[ci].name+"'?"+(n?"\n\nIts "+n+" MCQ(s) will also be deleted for everyone. This cannot be undone.":"")))return;
-    for(var k=Q.length-1;k>=0;k--){if(Q[k].sec===ci)Q.splice(k,1)}
-    Q.forEach(function(q){if(q.sec>ci)q.sec--});
-    S.splice(ci,1);
-    QO=Q.map(function(q){return q.opts.slice()});QA=Q.map(function(q){return q.ans});perm={};
-    bv=Date.now();clearSave();showResume();
-    afterStruct("Chapter deleted");
+    var c=S[ci],n=0;Q.forEach(function(q){if(q.sec===ci)n++});
+    if(!confirm("Delete chapter '"+c.name+"'?"+(n?"\n\nIts "+n+" MCQ(s) will go to the Bin (Menu \u2192 Bin), you can restore them from there.":"")))return;
+    var snap={kind:"chapter",title:c.name,subName:SUB[c.sub].name,subCode:SUB[c.sub].code,ch:{name:c.name,code:c.code},qs:snapQs(function(q){return q.sec===ci}),n:n};
+    toBin(snap,function(){
+      for(var k=Q.length-1;k>=0;k--){if(Q[k].sec===ci){Q.splice(k,1);QO.splice(k,1);QA.splice(k,1)}}
+      Q.forEach(function(q){if(q.sec>ci)q.sec--});
+      S.splice(ci,1);
+      afterDel("Chapter moved to Bin");
+    },c.name);
   }
+  function delSubject(si){
+    if(!SUB[si])return;
+    var chIdx=[];S.forEach(function(c,ci){if(c.sub===si)chIdx.push(ci)});
+    var n=0;Q.forEach(function(q){if(chIdx.indexOf(q.sec)>=0)n++});
+    if(!confirm("Delete the whole subject '"+SUB[si].name+"'?\n\n"+chIdx.length+" chapter(s) and "+n+" MCQ(s) will go to the Bin (Menu \u2192 Bin), you can restore them from there."))return;
+    var snap={kind:"subject",title:SUB[si].name,sub:JSON.parse(JSON.stringify(SUB[si])),chs:chIdx.map(function(ci){return {name:S[ci].name,code:S[ci].code,qs:snapQs(function(q){return q.sec===ci})}}),n:n};
+    toBin(snap,function(){
+      for(var k=Q.length-1;k>=0;k--){if(chIdx.indexOf(Q[k].sec)>=0){Q.splice(k,1);QO.splice(k,1);QA.splice(k,1)}}
+      var map={},ns=[];S.forEach(function(c,ci){if(c.sub===si)return;map[ci]=ns.length;ns.push(c)});
+      Q.forEach(function(q){q.sec=map[q.sec]});
+      S.length=0;ns.forEach(function(c){if(c.sub>si)c.sub--;S.push(c)});
+      SUB.splice(si,1);
+      afterDel("Subject moved to Bin");
+    },SUB[si].name);
+  }
+  function pushQs(list,sec){list.forEach(function(x){Q.push({text:x.text,opts:x.opts.slice(),ans:x.ans,sec:sec,test:x.test||"Custom"});QO.push(x.opts.slice());QA.push(x.ans)})}
+  window.__restoreBin=function(it){
+    return new Promise(function(res,rej){
+      try{
+        if(it.kind==="chapter"){
+          var si=-1;SUB.forEach(function(s,i){if(si<0&&s.name===it.subName&&(s.code===it.subCode||true))si=i});
+          if(si<0)throw new Error("Subject '"+it.subName+"' nahi mila. Pehle subject restore karein.");
+          S.push({sub:si,name:it.ch.name,code:it.ch.code});pushQs(it.qs||[],S.length-1);
+        }else if(it.kind==="subject"){
+          var sb=JSON.parse(JSON.stringify(it.sub));
+          if(!YEARS.some(function(x){return x.k===sb.cat}))sb.cat="y2";
+          var ns=SUB.length;SUB.push(sb);
+          (it.chs||[]).forEach(function(c){S.push({sub:ns,name:c.name,code:c.code});pushQs(c.qs||[],S.length-1)});
+          if(!(it.chs||[]).length)S.push({sub:ns,name:"Chapter 1",code:sb.code+" \u00b7 Ch 1"});
+        }else throw new Error("unknown item");
+        perm={};applyPerm({});bv=Date.now();clearSave();showResume();
+        afterStruct("Restored from Bin").then(res,rej);
+      }catch(e){rej(e)}
+    });
+  };
   function renameSub(si){
     var nm=prompt("Name:",SUB[si].name);if(nm===null||!nm.trim())return;
     SUB[si].name=nm.trim().slice(0,80);SUB[si].short=SUB[si].name.length>22?SUB[si].name.slice(0,22)+"\u2026":SUB[si].name;
@@ -3947,6 +3995,8 @@ function openMenu(){
 }
 /* ===== Jokes: shared list in sitedata/jokes (admin/manager edit; AI can add new ones every day) ===== */
 const JK_BAD=/[ऀ-ॿ]/;
+window.__binSave=async o=>{const r=doc(collection(db,MT_FOLDERS));await setDoc(r,Object.assign({},o,{deleted:true,deletedAt:Date.now(),deletedBy:ME||"",order:0}));return r.id};
+window.__binDrop=async id=>{await deleteDoc(doc(db,MT_FOLDERS,id))};
 window.__jk={
   get:async()=>{const d=await getDoc(doc(db,"sitedata","jokes"));return d.exists()?d.data():{}},
   set:async o=>{await setDoc(doc(db,"sitedata","jokes"),Object.assign({},o,{updatedAt:Date.now()}))}
@@ -4090,13 +4140,17 @@ async function openBin(){
       list.appendChild(ea);
     }
     del.forEach(it=>{
-      const r=el("div","mtrow"),ic=el("div","mt-ic",it.kind==="folder"?"FOLDER":(MT_TAG[it.type]||"FILE"));
+      const isCS=(it.kind==="chapter"||it.kind==="subject");
+      const r=el("div","mtrow"),ic=el("div","mt-ic",it.kind==="folder"?"FOLDER":isCS?(it.kind==="chapter"?"CHAPTER":"SUBJECT"):(MT_TAG[it.type]||"FILE"));
       const info=el("div","mt-info");info.appendChild(el("b","",it.kind==="folder"?(it.name||"Folder"):(it.title||"(no title)")));
       let when="";try{when=it.deletedAt?new Date(it.deletedAt).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):""}catch(_){}
-      info.appendChild(el("small","",(it.kind==="folder"?"Folder":(it.type||"file").toUpperCase()+(it.size?" \u00b7 "+fmtSize(it.size):""))+(when?" \u00b7 deleted "+when:"")));
+      info.appendChild(el("small","",(it.kind==="folder"?"Folder":isCS?((it.n||0)+" MCQs"+(it.kind==="chapter"?" \u00b7 from "+(it.subName||""):"")):(it.type||"file").toUpperCase()+(it.size?" \u00b7 "+fmtSize(it.size):""))+(when?" \u00b7 deleted "+when:"")));
       const acts=el("div","mt-actions");
       acts.appendChild(mtBtn("Restore","btn primary",async()=>{
-        try{await updateDoc(doc(db,MT_FOLDERS,it.id),{deleted:false,deletedAt:null});await load();try{mtRender()}catch(_){}}catch(e){st.textContent="Error: "+(e.code||e.message)}
+        try{
+          if(isCS){st.textContent="Restoring...";await window.__restoreBin(it);await deleteDoc(doc(db,MT_FOLDERS,it.id));st.textContent="Restored.";await load();return}
+          await updateDoc(doc(db,MT_FOLDERS,it.id),{deleted:false,deletedAt:null});await load();try{mtRender()}catch(_){}
+        }catch(e){st.textContent="Error: "+((e&&(e.code||e.message))||e)}
       }));
       const fb=mtBtn("Delete forever","btn danger",async()=>{
         if(!fb._a){fb._a=true;fb.textContent="Confirm?";setTimeout(()=>{fb._a=false;fb.textContent="Delete forever"},3000);return}
