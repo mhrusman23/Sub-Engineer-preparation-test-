@@ -2,24 +2,74 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "sub-engineer-23.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "sub-engineer-23.vercel.app"
+        }
+      ],
       "destination": "https://ppscengr.com/$1",
       "permanent": true
     }
   ],
   "rewrites": [
-    { "source": "/papers", "destination": "/papers-hub.html" },
-    { "source": "/papers/", "destination": "/papers-hub.html" },
-    { "source": "/papers/:file", "destination": "/:file" }
+    {
+      "source": "/papers",
+      "destination": "/papers-hub.html"
+    },
+    {
+      "source": "/papers/",
+      "destination": "/papers-hub.html"
+    },
+    {
+      "source": "/papers/:file",
+      "destination": "/:file"
+    }
   ],
   "headers": [
     {
       "source": "/sitemap.xml",
-      "headers": [{ "key": "Content-Type", "value": "application/xml; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        }
+      ]
     },
     {
       "source": "/robots.txt",
-      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
     }
   ]
 }

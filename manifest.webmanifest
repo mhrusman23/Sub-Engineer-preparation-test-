@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Engrgroup23 – PPSC Civil Past Papers & MCQs",
+  "short_name": "Engrgroup23",
+  "description": "PPSC Sub Engineer Civil & Building Inspector past papers, solved MCQs and mock tests.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1530",
+  "theme_color": "#0B1530",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
