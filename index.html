@@ -1041,13 +1041,13 @@ window.APP_CONFIG={
     </div>
     <div id="grc"></div>
   </div>
-  <p class="ghint" style="margin-top:14px">Google, Email and Phone login: approved users only.</p>
+  <p class="ghint" id="ghint" hidden style="margin-top:14px">Google, Email and Phone login: approved users only.</p>
   <div class="gor">new here?</div>
-  <button type="button" class="gsec" id="gguest">Continue as Guest &middot; 12 hours free</button>
+  <button type="button" class="gsec" id="gguest">Continue as Guest</button>
 </div>
 <div id="gverbox" hidden><button type="button" id="gvok">I have verified</button><button type="button" class="gsec" id="gvres">Resend verification email</button></div>
 <button type="button" id="gout" class="gsec" hidden>Use another account</button>
-<button type="button" id="gtrial" hidden>Start 12-hour free trial</button>
+<button type="button" id="gtrial" hidden>Start free trial</button>
 
 <button type="button" id="gshare" class="gsec" style="margin-top:6px">📤 Share</button>
 <div id="gcontacts"></div>
@@ -3360,7 +3360,9 @@ function renderContacts(host){
 window.renderContacts=renderContacts;
 
 /* ---------------- Website look (owner edits; every visitor's browser applies it) ---------------- */
-let SITE=null,ACC_H=12,ACC_END="";
+let SITE=null,ACC_H=12,ACC_END="",OPEN_ACC=false,SHOW_HRS=false,SHOW_NOTE=false;
+function gLabel(){return SHOW_HRS&&!OPEN_ACC?"Continue as Guest \u00b7 "+ACC_H+" hours free":"Continue as Guest"}
+function gtLabel(){return SHOW_HRS&&!OPEN_ACC?"Start "+ACC_H+"-hour free trial":"Start free trial"}
 function siteInk(a){
   try{const h=String(a).replace("#","");const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b2=parseInt(h.substr(4,2),16);
     return (0.299*r+0.587*g+0.114*b2)>170?"#0B1530":"#FFFFFF"}catch(_){return "#FFFFFF"}
@@ -3410,11 +3412,13 @@ function applySite(x){
   }catch(_){}
   try{
     const gg=document.getElementById("gguest");
-    if(gg)gg.textContent="Continue as Guest \u00b7 "+ACC_H+" hours free";
+    if(gg)gg.textContent=gLabel();
     const gt=document.getElementById("gtrial");
-    if(gt)gt.textContent="Start "+ACC_H+"-hour free trial";
+    if(gt)gt.textContent=gtLabel();
   }catch(_){}
 }
+window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(gg)gg.textContent=gLabel();const gt=document.getElementById("gtrial");if(gt)gt.textContent=gtLabel();const gh=document.getElementById("ghint");if(gh)gh.hidden=!SHOW_NOTE}catch(_){}};
+try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
 
 let wsEl=null,wsAccent="",wsMode="",wsPic="";
@@ -4004,7 +4008,12 @@ async function check(user){
     const alP=IS_OWNER?null:getDoc(doc(db,"allowed",email)).then(r=>({r}),e=>({e}));
     if(!IS_OWNER){if(await mgP)IS_ADMIN=true}
     if(IS_OWNER&&PM)IS_OWNER=false; /* Manager mode preview: owner sees exactly what a manager sees */
-    if(!IS_ADMIN){
+    /* Open access (Admin > Settings): Google / Email / Guest enter free, no approval, no expiry. Admin can still turn a person OFF. */
+    let OPEN=false;
+    if(!IS_ADMIN){try{const ac=await getDoc(doc(db,"sitedata","access"));OPEN=!!(ac.exists()&&ac.data().open===true)}catch(_){}}
+    if(!IS_ADMIN&&OPEN){
+      try{const ar=await alP;if(ar&&!ar.e&&ar.r.exists()){const d0=ar.r.data();if(d0.enabled!==true&&d0.pending!==true)return deny(email,"Your access is turned off.")}}catch(_){}
+    }else if(!IS_ADMIN){
       const ar=await alP;if(ar.e)throw ar.e;const a=ar.r;
       if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);
         /* User mode = Admin approval: a new user is saved as a waiting request instead of being turned away */
@@ -4858,6 +4867,12 @@ function buildSettings(host){
   const lb6=el("label","",null);lb6.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb6.append(cb6,el("span","","AI backup (free, no key) if main AI is busy/quota over - question text goes to a 3rd-party service"));
   const gm=el("select");gm.id="cfgGuestMode";gm.setAttribute("aria-label","User mode");gm.style.cssText="width:100%;margin-top:8px";
   [["auto","User mode: Normal \u2014 guest starts instantly, other users are added by admin"],["approve","User mode: Admin approval \u2014 every new guest / user waits for admin or manager to approve"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];gm.appendChild(op)});
+  const cbO=el("input");cbO.type="checkbox";cbO.id="cfgOpen";
+  const lbO=el("label","",null);lbO.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px;border:1px solid var(--line,#ccc);border-radius:10px";lbO.append(cbO,el("span","","OPEN ACCESS: Google login, Email and Guest free for everyone (no approval, no time limit). Switch OFF to go back to approved users + 12-hour guest."));
+  const cbH=el("input");cbH.type="checkbox";cbH.id="cfgShowHrs";
+  const lbH=el("label","",null);lbH.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lbH.append(cbH,el("span","","Show '12 hours free' text on the Guest button (OFF = just 'Continue as Guest')"));
+  const cbN=el("input");cbN.type="checkbox";cbN.id="cfgShowNote";
+  const lbN=el("label","",null);lbN.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lbN.append(cbN,el("span","","Show the note 'Google, Email and Phone login: approved users only' on the login screen (OFF = hidden)"));
   const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
   const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
@@ -4880,17 +4895,18 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lbO,lbH,lbN,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true}catch(_){}
       if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
     try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
+      await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;if(window.__applyOpen)window.__applyOpen();
       if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
