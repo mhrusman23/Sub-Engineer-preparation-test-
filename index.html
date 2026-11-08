@@ -3073,7 +3073,9 @@ window.APP_CONFIG={
     /* ---- ads: shown in the Joke card's place, one after another ---- */
     try{(function(){
       var card=$("#adCard"),body=$("#adBody"),dots=$("#adDots"),jk=$("#jokeCard");if(!card||!body)return;
-      var timer=null,idx=0,list=[],cfg={},curFrame=null,bad={},diag=null;
+      var timer=null,idx=0,list=[],cfg={},curFrame=null,bad={},trusted={},diag=null;
+      /* accept ANY pasted ad code: full script/ins/iframe html, a bare script URL, or a bare atOptions snippet */
+      function adPrep(h){h=String(h||"").trim();if(!h)return "";if(/^https?:\/\/\S+$/i.test(h)||/^\/\/\S+$/.test(h))return '<script async src="'+h.replace(/"/g,"")+'"><\/script>';if(!/<\s*(script|ins|iframe|div|a|img|embed|object)\b/i.test(h)&&/atOptions|\bkey\b\s*:/.test(h))return "<script>"+h+"<\/script>";return h}
       function adKey(a){return (a.title||"")+"|"+(a.html||"").length+"|"+(a.html||"").slice(0,50)}
       function isAdm(){return !!(window.__PROFILE&&/admin|manager/i.test(window.__PROFILE.role||""))}
       function setDiag(t){
@@ -3082,7 +3084,9 @@ window.APP_CONFIG={
       }
       window.addEventListener("message",function(e){
         var d=e.data;if(!d||d.adrep!==1||!curFrame||e.source!==curFrame.contentWindow)return;
-        if(d.ok){delete bad[d.k];if(isAdm())setDiag("");return}
+        if(d.ok){delete bad[d.k];if(isAdm())setDiag("");if(d.h>30&&d.h<900&&curFrame)curFrame.style.height=(d.h+4)+"px";return}
+        if(!d.fin)return;
+        if(!trusted[d.k]){trusted[d.k]=1;draw();return}   /* auto retry: some networks (Adsterra etc.) refuse to run in a locked frame */
         bad[d.k]=1;
         if(isAdm()){setDiag("\u26a0 Admin only: this network ad is BLANK (nothing received after 5 seconds)."+(d.e&&d.e.length?" Error: "+d.e.join(" | ")+".":"")+" Usual reasons: the ad network has not approved this website yet, wrong code, an ad-blocker, or the network does not run inside a protected frame. Students never see blank ads (they are skipped).");return}
         var rest=list.filter(function(x){return !bad[adKey(x)]});
@@ -3093,7 +3097,7 @@ window.APP_CONFIG={
       function active(d){var t=today();return ((d&&d.list)||[]).filter(function(a){return a&&a.on!==false&&(a.img||a.html||a.title||a.text)&&(!a.from||a.from<=t)&&(!a.to||a.to>=t)})}
       function draw(){
         var a=list[idx%list.length];body.textContent="";body.style.animation="none";void body.offsetWidth;body.style.animation="";
-        if(a.html){var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");f.style.height=(a.h||120)+"px";f.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;justify-content:center;background:transparent"><script>window.__er=[];addEventListener("error",function(e){__er.push(String(e.message||e).slice(0,100))})<\/script>'+a.html+'<script>(function(){setTimeout(function(){var er=window.__er||[];var ok=!!(document.querySelector("iframe,img,video,canvas,svg")||(document.body.innerText||"").trim().length>15);try{parent.postMessage({adrep:1,k:'+JSON.stringify(adKey(a))+',ok:ok,e:er.slice(0,3)},"*")}catch(_){}},5000)})()<\/script>';curFrame=f;body.appendChild(f)}
+if(a.html){var k=adKey(a),tr=!!trusted[k];var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"+(tr?" allow-same-origin":""));f.style.height=(a.h||120)+"px";f.style.width="100%";f.style.border="0";f.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;justify-content:center;background:transparent"><script>window.__er=[];addEventListener("error",function(e){__er.push(String(e.message||e).slice(0,100))})<\/script>'+adPrep(a.html)+'<script>(function(){var n=0;function rep(fin){var er=window.__er||[];var ok=!!(document.querySelector("iframe,img,video,canvas,svg,ins")||(document.body.innerText||"").trim().length>15);var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)||0;try{parent.postMessage({adrep:1,k:'+JSON.stringify(k)+',ok:ok,fin:fin,h:h,e:er.slice(0,3)},"*")}catch(_){}}var t=setInterval(function(){n++;var ok=!!(document.querySelector("iframe,img,video,canvas,svg,ins")||(document.body.innerText||"").trim().length>15);if(ok){rep(false);if(n>=6)clearInterval(t)}else if(n>=9){clearInterval(t);rep(true)}},1000)})()<\/script>';curFrame=f;body.appendChild(f)}
         else{
           var w=document.createElement(a.link?"a":"div");
           if(a.link){w.href=a.link;w.target="_blank";w.rel="noopener noreferrer sponsored"}
