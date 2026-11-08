@@ -939,6 +939,48 @@ body.pv .qedit{display:none!important}
 #tmRow select{min-height:30px!important;min-width:0!important;padding:2px 6px!important;font-size:13px!important}
 .bar .barbtns{flex-wrap:wrap;gap:5px!important}
 .bar .btn{min-height:32px!important;padding:3px 9px!important;font-size:12.5px!important}
+
+/* ===== 3D look pack (v-3d): raised buttons, layered cards, depth ===== */
+:root{--e3:color-mix(in srgb,var(--ink) 22%,transparent);--e3d:color-mix(in srgb,var(--accent) 55%,#000);--hi3:rgba(255,255,255,.55)}
+.btn{position:relative;transform:translateY(0);border-bottom-width:1px;
+  box-shadow:0 1px 0 var(--hi3) inset,0 -4px 0 rgba(11,21,48,.18) inset,0 5px 0 var(--e3),0 12px 18px -8px rgba(11,21,48,.45)!important;
+  transition:transform .12s ease,box-shadow .12s ease!important}
+.btn:active:not(:disabled){transform:translateY(4px);
+  box-shadow:0 1px 0 var(--hi3) inset,0 -1px 0 rgba(11,21,48,.18) inset,0 1px 0 var(--e3),0 3px 6px -3px rgba(11,21,48,.4)!important}
+.btn.primary{box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 -4px 0 rgba(0,0,0,.22) inset,0 5px 0 var(--e3d),0 14px 22px -8px color-mix(in srgb,var(--accent) 60%,transparent)!important}
+.btn.primary:active:not(:disabled){box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -1px 0 rgba(0,0,0,.2) inset,0 1px 0 var(--e3d),0 4px 8px -4px color-mix(in srgb,var(--accent) 60%,transparent)!important}
+.bar .btn,.ov .top .btn,#adm .top .btn{box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -3px 0 rgba(0,0,0,.25) inset,0 4px 0 rgba(0,0,0,.35),0 8px 12px -6px rgba(0,0,0,.5)!important}
+.bar .btn:active:not(:disabled),.ov .top .btn:active,#adm .top .btn:active{box-shadow:0 1px 0 rgba(0,0,0,.35),0 2px 4px -2px rgba(0,0,0,.5)!important}
+.opt{box-shadow:0 1px 0 var(--hi3) inset,0 5px 0 var(--e3),0 14px 20px -12px rgba(11,21,48,.5)!important;transform:translateY(0);transition:transform .12s ease,box-shadow .12s ease,border-color .15s!important}
+.opt:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--hi3) inset,0 1px 0 var(--e3),0 3px 6px -3px rgba(11,21,48,.4)!important}
+.card,.hcard,.sheet,.mfolder{box-shadow:0 1px 0 var(--hi3) inset,0 2px 0 color-mix(in srgb,var(--line) 90%,#000),0 8px 0 -3px var(--e3),0 26px 40px -22px rgba(11,21,48,.55)!important}
+.ycard{transform:translateZ(0) rotateX(0) rotateY(0);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s!important;
+  box-shadow:0 1px 0 var(--hi3) inset,0 6px 0 var(--e3),0 22px 34px -14px rgba(11,21,48,.55)!important}
+.ycard:hover{transform:perspective(900px) translateY(-4px) rotateX(3deg) rotateY(-3deg)}
+.ycard:active{transform:translateY(3px) scale(.985);box-shadow:0 1px 0 var(--hi3) inset,0 1px 0 var(--e3),0 6px 10px -6px rgba(11,21,48,.5)!important}
+.ycard .yic{box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 -3px 0 rgba(0,0,0,.2) inset,0 5px 0 rgba(0,0,0,.22),0 10px 14px -6px rgba(0,0,0,.45)}
+.hero{box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 10px 0 rgba(8,16,48,.55),0 34px 50px -20px rgba(8,16,48,.7)!important;transform:perspective(1200px) rotateX(2deg);transform-origin:50% 100%}
+.hstat,.stat{box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 3px 0 rgba(0,0,0,.28),0 6px 10px -4px rgba(0,0,0,.4)}
+.bar{box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 8px 0 rgba(8,16,48,.5),0 26px 36px -16px rgba(8,16,48,.65)!important}
+#userbar{box-shadow:0 6px 0 rgba(8,16,48,.55),0 18px 28px -12px rgba(8,16,48,.6)!important}
+.kmenu,.mdch{box-shadow:0 1px 0 var(--hi3) inset,0 6px 0 var(--e3),0 26px 44px -14px rgba(11,21,48,.6)!important}
+input[type=text],input[type=search],input[type=password],textarea,select{box-shadow:0 3px 6px -2px rgba(11,21,48,.28) inset,0 1px 0 var(--hi3)}
+@media (prefers-reduced-motion:reduce){.ycard:hover,.hero{transform:none}}
+@media (hover:none){.ycard:hover{transform:none}}
+
+/* ===== Ads slot (sits where the Joke card is) ===== */
+.adcard{margin:14px 0;padding:12px 14px 14px;border-radius:20px;border:1.5px solid color-mix(in srgb,#C9A227 70%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,#C9A227),var(--panel));box-shadow:0 1px 0 var(--hi3,rgba(255,255,255,.5)) inset,0 6px 0 var(--e3,rgba(11,21,48,.2)),0 22px 34px -16px rgba(11,21,48,.5)}
+.adcard[hidden]{display:none}
+.adhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.adchip{font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 10px;border-radius:999px;background:#F4ECD0;color:#7A5A06}
+.addots{display:flex;gap:6px}.addots i{width:8px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--ink) 25%,transparent);cursor:pointer}.addots i.on{background:#C9A227;width:18px;border-radius:6px}
+.adbody{animation:sfade .35s both}
+.adbody a{display:block;color:inherit;text-decoration:none}
+.adbody img{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:14px}
+.adbody .adt{font-weight:800;font-size:17px;margin-top:8px}
+.adbody .adx{margin-top:4px;line-height:1.6;opacity:.85}
+.adbody .adgo{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;background:var(--accent);color:var(--accent-ink,#fff);font-weight:700;font-size:13px}
+.adbody iframe{width:100%;border:0;border-radius:12px;background:#fff}
 </style>
 <script>
 /* ===================== EDIT THIS BLOCK ===================== */
@@ -1021,6 +1063,10 @@ window.APP_CONFIG={
       <div class="jkhead"><span class="jkic">😂</span><b>Joke of the Day</b><span class="vipchip">✦ VIP</span></div>
       <div class="jktx" id="jkTx"></div>
       <div class="jkfoot" id="jkDay"></div>
+    </div>
+    <div class="adcard" id="adCard" hidden>
+      <div class="adhead"><span class="adchip">Sponsored \u00b7 \u0627\u0634\u062a\u06c1\u0627\u0631</span><span class="addots" id="adDots"></span></div>
+      <div class="adbody" id="adBody"></div>
     </div>
     <div class="profile" id="profile"><div class="avatar" id="pfAv">U</div><div class="pfinfo"><div class="pfname" id="pfName"></div><div class="pfmail" id="pfMail"></div><div class="pfmeta" id="pfMeta"></div></div></div>
     <div class="resumebox" id="resumeBox"><button class="btn primary" id="btnResume" type="button" hidden="">Resume saved attempt</button><span id="resumeInfo" class="label"></span></div>
@@ -3001,7 +3047,7 @@ window.APP_CONFIG={
         e2.style.cssText="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(122,90,6,.45);font-size:16px;line-height:1.9;text-align:right";
         tx.appendChild(e1);tx.appendChild(e2);
         if(dy)dy.textContent="Joke #"+((day%J.length)+1)+" \u00b7 new every day \ud83d\udd04 \u00b7 \u0631\u0648\u0632 \u0646\u06cc\u0627 \u0645\u0630\u0627\u0642";
-        jk.hidden=false}
+        jk.hidden=!!window.__adsLive}
       /* sirf Roman Urdu jokes (English live joke band) -- roz naya joke */
       try{localStorage.removeItem("eg23jk")}catch(_){}
       var J0=J.slice();
@@ -3015,6 +3061,38 @@ window.APP_CONFIG={
       paint(J[day%J.length]||J[0],false);
       window.__jkRepaint=function(){if(window.__jk)window.__jk.get().then(pick).catch(function(){})};
       window.__jkRepaint();
+    })()}catch(_){}
+    /* ---- ads: shown in the Joke card's place, one after another ---- */
+    try{(function(){
+      var card=$("#adCard"),body=$("#adBody"),dots=$("#adDots"),jk=$("#jokeCard");if(!card||!body)return;
+      var timer=null,idx=0,list=[],cfg={};
+      function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+      function active(d){var t=today();return ((d&&d.list)||[]).filter(function(a){return a&&a.on!==false&&(a.img||a.html||a.title||a.text)&&(!a.from||a.from<=t)&&(!a.to||a.to>=t)})}
+      function draw(){
+        var a=list[idx%list.length];body.textContent="";body.style.animation="none";void body.offsetWidth;body.style.animation="";
+        if(a.html){var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");f.style.height=(a.h||120)+"px";f.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;justify-content:center;background:transparent">'+a.html;body.appendChild(f)}
+        else{
+          var w=document.createElement(a.link?"a":"div");
+          if(a.link){w.href=a.link;w.target="_blank";w.rel="noopener noreferrer sponsored"}
+          if(a.img){var im=document.createElement("img");im.src=a.img;im.alt=a.title||"Ad";im.loading="lazy";w.appendChild(im)}
+          if(a.title){var t=document.createElement("div");t.className="adt";t.textContent=a.title;w.appendChild(t)}
+          if(a.text){var x=document.createElement("div");x.className="adx";x.textContent=a.text;w.appendChild(x)}
+          if(a.link&&a.btn!==""){var g=document.createElement("span");g.className="adgo";g.textContent=a.btn||"Open \u2192";w.appendChild(g)}
+          body.appendChild(w);
+        }
+        dots.textContent="";
+        if(list.length>1)list.forEach(function(_,i){var d=document.createElement("i");if(i===idx%list.length)d.className="on";d.onclick=function(){idx=i;draw();arm()};dots.appendChild(d)});
+      }
+      function arm(){clearInterval(timer);if(list.length>1)timer=setInterval(function(){if(document.hidden||card.hidden)return;idx=(idx+1)%list.length;draw()},Math.max(3,+cfg.rotate||8)*1000)}
+      function apply(d){
+        cfg=d||{};list=active(d);
+        var vip=false;try{vip=!!(cfg.hideVip&&/vip|premium/i.test((document.getElementById("pfMeta")||{}).textContent||""))}catch(_){}
+        if(!list.length||vip){clearInterval(timer);window.__adsLive=false;card.hidden=true;if(jk)jk.hidden=false;return}
+        idx=0;draw();arm();card.hidden=false;
+        window.__adsLive=(cfg.keepJokes!==true);if(jk&&window.__adsLive)jk.hidden=true;   /* jokes khatam, ads aayen */
+      }
+      window.__adsRepaint=function(){if(window.__ads)window.__ads.get().then(apply).catch(function(){})};
+      window.__adsRepaint();
     })()}catch(_){}
     if(window.renderContacts)window.renderContacts($("#contactBox"));
   })();
@@ -3981,7 +4059,7 @@ function _menuAv(P,big){
   return av;
 }
 function goHomeHard(){
-  try{["appmenu","modech","jkw","binw","acct","shd","upw"].forEach(i=>{const e=document.getElementById(i);if(e)e.remove()});["adm","aip","ws","viewer","jobsp","chatp","lib","qe","rp"].forEach(i=>{const e=document.getElementById(i);if(e)e.hidden=true})}catch(_){}
+  try{["appmenu","modech","jkw","adw","binw","acct","shd","upw"].forEach(i=>{const e=document.getElementById(i);if(e)e.remove()});["adm","aip","ws","viewer","jobsp","chatp","lib","qe","rp"].forEach(i=>{const e=document.getElementById(i);if(e)e.hidden=true})}catch(_){}
   if(typeof window.__goHome==="function"){try{window.__goHome();window.scrollTo({top:0});return}catch(_){}}
   location.href=location.pathname; /* app screens not ready yet: simply open the home page again */
 }
@@ -4037,6 +4115,7 @@ function openMenu(){
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   if(IS_ADMIN&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
+  if(IS_ADMIN&&!PV)mi("\u{1F4E2} Ads (add / edit) \u00b7 admin only",()=>openAds());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
@@ -4087,6 +4166,79 @@ async function jkAutoUpdate(){
   }catch(e){}
 }
 let jkTry=0;(function jkLoop(){setTimeout(()=>{if(IS_ADMIN&&!PV)jkAutoUpdate();else if(++jkTry<24)jkLoop()},15000)})();
+window.__ads={
+  get:async()=>{const d=await getDoc(doc(db,"sitedata","ads"));return d.exists()?d.data():{}},
+  set:async o=>{await setDoc(doc(db,"sitedata","ads"),Object.assign({},o,{updatedAt:Date.now()}))}
+};
+async function openAds(){
+  if(!IS_ADMIN||PV)return;
+  const old=document.getElementById("adw");if(old)old.remove();
+  const dl=el("div");dl.id="adw";
+  dl.style.cssText="position:fixed;inset:0;z-index:1170;background:rgba(8,12,26,.6);display:flex;align-items:flex-start;justify-content:center;padding:14px;overflow:auto";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);color:var(--ink,#13222D);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:20px 0";
+  dl.appendChild(box);document.body.appendChild(dl);
+  const head=el("div");head.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px";
+  head.appendChild(el("h2","","\u{1F4E2} Ads"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>dl.remove();head.appendChild(cl);box.appendChild(head);
+  const st=el("div","label st");box.appendChild(st);
+  box.appendChild(el("div","label","Ads Joke card ki jagah aati hain, ek khatam ho to dusri. Koi ad na ho to jokes wapas."));
+  let D={list:[],rotate:8,keepJokes:false,hideVip:false},editAt=-1,img="";
+  const inp=(ph,type)=>{const i=document.createElement("input");i.type=type||"text";i.placeholder=ph;i.style.cssText="width:100%;margin-top:6px";box.appendChild(i);return i};
+  const row=(t)=>{const l=el("label");l.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";const c=el("input");c.type="checkbox";l.append(c,el("span","",t));box.appendChild(l);return c};
+  const cKeep=row("Jokes bhi saath dikhayen (band = sirf ads)");
+  const cVip=row("VIP / premium users ko ads na dikhayen");
+  const rw=el("div");rw.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";rw.append(el("span","","Har ad kitne second:"));
+  const rot=document.createElement("input");rot.type="number";rot.min=3;rot.max=60;rot.style.width="80px";rw.appendChild(rot);box.appendChild(rw);
+  box.appendChild(el("div","label","Naya ad / edit"));
+  const ti=inp("Title (e.g. Sub Engineer Notes 2026)");
+  const tx=document.createElement("textarea");tx.rows=2;tx.placeholder="Chhota text (optional)";tx.style.cssText="width:100%;margin-top:6px";box.appendChild(tx);
+  const lk=inp("Link (https://wa.me/... ya website)","url");
+  const bt=inp("Button ka text (e.g. WhatsApp karein)");
+  const iu=inp("Image link (https://...) ya neeche se photo chunein","url");
+  const fi=document.createElement("input");fi.type="file";fi.accept="image/*";fi.style.marginTop="6px";box.appendChild(fi);
+  const pv=document.createElement("img");pv.style.cssText="display:none;max-width:100%;max-height:140px;border-radius:10px;margin-top:6px";box.appendChild(pv);
+  fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=900,k=Math.min(1,m/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);img=c.toDataURL("image/jpeg",.78);iu.value="";pv.src=img;pv.style.display="block";st.textContent="Photo tayyar ("+Math.round(img.length/1024)+" KB)."};im.src=r.result};r.readAsDataURL(f)};
+  iu.oninput=()=>{img="";if(iu.value){pv.src=iu.value;pv.style.display="block"}else pv.style.display="none"};
+  box.appendChild(el("div","label","Ya network ka ad code (AdSense / Adsterra / Monetag) yahan paste karein"));
+  const hh=document.createElement("textarea");hh.rows=3;hh.placeholder="<script ...> ya <ins ...>";hh.style.cssText="width:100%;margin-top:6px;font-family:monospace;font-size:12px";box.appendChild(hh);
+  const hz=inp("Ad ki height px (khali = khud pata lagayen)","number");
+  const dr=el("div");dr.style.cssText="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap";
+  const fr=document.createElement("input");fr.type="date";const to=document.createElement("input");to.type="date";
+  dr.append(el("span","","Start:"),fr,el("span","","End:"),to);box.appendChild(dr);
+  const bs=el("button","btn primary","Add ad");bs.type="button";bs.style.marginTop="10px";box.appendChild(bs);
+  const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:12px";box.appendChild(list);
+  async function save(msg){
+    D.keepJokes=cKeep.checked;D.hideVip=cVip.checked;D.rotate=Math.max(3,+rot.value||8);
+    try{await window.__ads.set(D);if(window.__adsRepaint)window.__adsRepaint();st.textContent=msg||"Saved · sab users ko nazar aayega.";draw()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)+(String(e.code||"").includes("permission")?" (rules publish karein)":"")}
+  }
+  function clear(){editAt=-1;img="";[ti,lk,bt,iu,hh,hz,fr,to].forEach(x=>x.value="");tx.value="";fi.value="";pv.style.display="none";bs.textContent="Add ad"}
+  function draw(){
+    list.textContent="";rot.value=D.rotate||8;cKeep.checked=!!D.keepJokes;cVip.checked=!!D.hideVip;
+    if(!(D.list||[]).length)list.appendChild(el("div","label","Abhi koi ad nahi."));
+    (D.list||[]).forEach((a,i)=>{
+      const c=el("div");c.style.cssText="border:1px solid var(--line,#ccd);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center";
+      if(a.img){const m=document.createElement("img");m.src=a.img;m.style.cssText="width:56px;height:56px;object-fit:cover;border-radius:8px";c.appendChild(m)}
+      const t=el("div","",(a.title||(a.html?"Network code":"Ad"))+(a.on===false?"  (OFF)":"")+((a.from||a.to)?"  · "+(a.from||"..")+" → "+(a.to||".."):""));t.style.cssText="flex:1;min-width:0;word-break:break-word";c.appendChild(t);
+      const mk=(l,f)=>{const b=el("button","btn",l);b.type="button";b.style.minHeight="34px";b.onclick=f;c.appendChild(b)};
+      mk(a.on===false?"ON":"OFF",()=>{a.on=a.on===false;save()});
+      mk("✎",()=>{editAt=i;ti.value=a.title||"";tx.value=a.text||"";lk.value=a.link||"";bt.value=a.btn||"";hh.value=a.html||"";hz.value=a.h||"";fr.value=a.from||"";to.value=a.to||"";img=a.img&&a.img.startsWith("data:")?a.img:"";iu.value=a.img&&!img?a.img:"";if(a.img){pv.src=a.img;pv.style.display="block"}bs.textContent="Save changes";box.scrollIntoView({block:"start"})});
+      mk("\u{1F5D1}",()=>{if(confirm("Ye ad delete karein?")){D.list.splice(i,1);save("Deleted.")}});
+      list.appendChild(c);
+    });
+  }
+  bs.onclick=async()=>{
+    const a={title:ti.value.trim(),text:tx.value.trim(),link:lk.value.trim(),btn:bt.value.trim(),img:img||iu.value.trim(),html:hh.value.trim(),h:(+hz.value)||((hh.value.match(/['"]height['"]\s*:\s*(\d+)/)||[])[1]*1+6)||(/container-/.test(hh.value)?320:120),from:fr.value,to:to.value,on:true};
+    if(!(a.title||a.text||a.img||a.html)){st.textContent="Kam az kam title, photo ya ad code dein.";return}
+    if(a.link&&!/^https?:\/\//i.test(a.link)){st.textContent="Link https:// se shuru hona chahiye.";return}
+    D.list=D.list||[];if(editAt>=0){a.on=D.list[editAt].on!==false;D.list[editAt]=a}else D.list.push(a);
+    clear();await save(editAt>=0?"Updated.":"Ad add ho gaya · sab ko nazar aayega.");
+  };
+  [cKeep,cVip,rot].forEach(x=>x.onchange=()=>save());
+  try{D=Object.assign(D,await window.__ads.get())}catch(e){st.textContent="Error: "+(e.code||e.message)}
+  draw();
+}
 async function openJokes(){
   if(!IS_ADMIN||PV)return;
   const old=document.getElementById("jkw");if(old)old.remove();
