@@ -1,4 +1,9 @@
 {
+  "rewrites": [
+    { "source": "/papers", "destination": "/papers-hub.html" },
+    { "source": "/papers/", "destination": "/papers-hub.html" },
+    { "source": "/papers/:file", "destination": "/:file" }
+  ],
   "headers": [
     {
       "source": "/sitemap.xml",
