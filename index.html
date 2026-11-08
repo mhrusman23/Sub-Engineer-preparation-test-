@@ -3073,12 +3073,27 @@ window.APP_CONFIG={
     /* ---- ads: shown in the Joke card's place, one after another ---- */
     try{(function(){
       var card=$("#adCard"),body=$("#adBody"),dots=$("#adDots"),jk=$("#jokeCard");if(!card||!body)return;
-      var timer=null,idx=0,list=[],cfg={};
+      var timer=null,idx=0,list=[],cfg={},curFrame=null,bad={},diag=null;
+      function adKey(a){return (a.title||"")+"|"+(a.html||"").length+"|"+(a.html||"").slice(0,50)}
+      function isAdm(){return !!(window.__PROFILE&&/admin|manager/i.test(window.__PROFILE.role||""))}
+      function setDiag(t){
+        if(!diag){diag=document.createElement("div");diag.style.cssText="margin-top:8px;font-size:12px;line-height:1.5;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px";card.appendChild(diag)}
+        diag.textContent=t||"";diag.hidden=!t;
+      }
+      window.addEventListener("message",function(e){
+        var d=e.data;if(!d||d.adrep!==1||!curFrame||e.source!==curFrame.contentWindow)return;
+        if(d.ok){delete bad[d.k];if(isAdm())setDiag("");return}
+        bad[d.k]=1;
+        if(isAdm()){setDiag("\u26a0 Admin only: this network ad is BLANK (nothing received after 5 seconds)."+(d.e&&d.e.length?" Error: "+d.e.join(" | ")+".":"")+" Usual reasons: the ad network has not approved this website yet, wrong code, an ad-blocker, or the network does not run inside a protected frame. Students never see blank ads (they are skipped).");return}
+        var rest=list.filter(function(x){return !bad[adKey(x)]});
+        if(!rest.length){clearInterval(timer);window.__adsLive=false;card.hidden=true;if(jk)jk.hidden=false}
+        else{list=rest;idx=0;draw();arm()}
+      });
       function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
       function active(d){var t=today();return ((d&&d.list)||[]).filter(function(a){return a&&a.on!==false&&(a.img||a.html||a.title||a.text)&&(!a.from||a.from<=t)&&(!a.to||a.to>=t)})}
       function draw(){
         var a=list[idx%list.length];body.textContent="";body.style.animation="none";void body.offsetWidth;body.style.animation="";
-        if(a.html){var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");f.style.height=(a.h||120)+"px";f.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;justify-content:center;background:transparent">'+a.html;body.appendChild(f)}
+        if(a.html){var f=document.createElement("iframe");f.setAttribute("sandbox","allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms");f.style.height=(a.h||120)+"px";f.srcdoc='<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;display:flex;justify-content:center;background:transparent"><script>window.__er=[];addEventListener("error",function(e){__er.push(String(e.message||e).slice(0,100))})<\/script>'+a.html+'<script>(function(){setTimeout(function(){var er=window.__er||[];var ok=!!(document.querySelector("iframe,img,video,canvas,svg")||(document.body.innerText||"").trim().length>15);try{parent.postMessage({adrep:1,k:'+JSON.stringify(adKey(a))+',ok:ok,e:er.slice(0,3)},"*")}catch(_){}},5000)})()<\/script>';curFrame=f;body.appendChild(f)}
         else{
           var w=document.createElement(a.link?"a":"div");
           if(a.link){w.href=a.link;w.target="_blank";w.rel="noopener noreferrer sponsored"}
@@ -3091,16 +3106,17 @@ window.APP_CONFIG={
         dots.textContent="";
         if(list.length>1)list.forEach(function(_,i){var d=document.createElement("i");if(i===idx%list.length)d.className="on";d.onclick=function(){idx=i;draw();arm()};dots.appendChild(d)});
       }
-      function arm(){clearInterval(timer);if(list.length>1)timer=setInterval(function(){if(document.hidden||card.hidden)return;idx=(idx+1)%list.length;draw()},Math.max(3,+cfg.rotate||8)*1000)}
+      function arm(){clearInterval(timer);if(list.length>1)timer=setInterval(function(){if(document.hidden||card.hidden)return;idx=(idx+1)%list.length;draw()},Math.max(list.some(function(x){return x.html})?6:3,+cfg.rotate||8)*1000)}
       function apply(d){
-        cfg=d||{};list=active(d);
+        cfg=d||{};list=active(d);if(!isAdm())list=list.filter(function(x){return !bad[adKey(x)]});if(isAdm())setDiag("");
         var vip=false;try{vip=!!(cfg.hideVip&&/vip|premium/i.test((document.getElementById("pfMeta")||{}).textContent||""))}catch(_){}
         if(!list.length||vip){clearInterval(timer);window.__adsLive=false;card.hidden=true;if(jk)jk.hidden=false;return}
         idx=0;draw();arm();card.hidden=false;
         window.__adsLive=(cfg.keepJokes!==true);if(jk&&window.__adsLive)jk.hidden=true;   /* jokes khatam, ads aayen */
       }
       window.__adsRepaint=function(){if(window.__ads)window.__ads.get().then(apply).catch(function(){})};
-      window.__adsRepaint();
+      /* live: any change the admin saves reaches every open phone at once */
+      if(window.__ads&&window.__ads.watch){try{window.__ads.watch(apply)}catch(_){window.__adsRepaint()}}else window.__adsRepaint();
     })()}catch(_){}
     if(window.renderContacts)window.renderContacts($("#contactBox"));
   })();
@@ -4176,7 +4192,8 @@ async function jkAutoUpdate(){
 let jkTry=0;(function jkLoop(){setTimeout(()=>{if(IS_ADMIN&&!PV)jkAutoUpdate();else if(++jkTry<24)jkLoop()},15000)})();
 window.__ads={
   get:async()=>{const d=await getDoc(doc(db,"sitedata","ads"));return d.exists()?d.data():{}},
-  set:async o=>{await setDoc(doc(db,"sitedata","ads"),Object.assign({},o,{updatedAt:Date.now()}))}
+  set:async o=>{await setDoc(doc(db,"sitedata","ads"),Object.assign({},o,{updatedAt:Date.now()}))},
+  watch:cb=>onSnapshot(doc(db,"sitedata","ads"),s=>cb(s.exists()?s.data():{}),()=>{})
 };
 async function openAds(){
   if(!IS_ADMIN||PV)return;
