@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sub-engineer-23.vercel.app/sitemap.xml
+Sitemap: https://ppscengr.com/sitemap.xml

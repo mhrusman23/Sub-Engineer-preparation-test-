@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "sub-engineer-23.vercel.app" }],
+      "destination": "https://ppscengr.com/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/papers", "destination": "/papers-hub.html" },
     { "source": "/papers/", "destination": "/papers-hub.html" },
