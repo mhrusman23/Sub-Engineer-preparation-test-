@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Ad test</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;margin:0;padding:16px;background:#f4f6fb;color:#13222d}textarea{width:100%;min-height:200px;box-sizing:border-box;font:13px monospace;padding:10px;border-radius:10px;border:1px solid #99a}button{margin-top:10px;padding:12px 20px;border:0;border-radius:12px;background:#1d4ed8;color:#fff;font-weight:700;font-size:16px}small{color:#566}</style></head>
+<body>
+<h2>Ad test page</h2>
+<p><small>Paste the full ad code from Adsterra (Banner / Native) and press Run. The ad should appear here. If it does NOT appear here either, the problem is on the Adsterra side (still activating, ad blocker, or Private DNS), not in the app.</small></p>
+<textarea id="c" placeholder="Paste Adsterra ad code here (<script>...</script>)"></textarea><br>
+<button onclick="run()">Run ad</button>
+<script>
+function run(){
+  var code=document.getElementById('c').value.trim();
+  if(!code){alert('Paste the ad code first');return}
+  if(/^https?:\/\/\S+$/i.test(code)||/^\/\/\S+$/.test(code))code='<script async src="'+code+'"><\/script>';
+  document.open();
+  document.write('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;padding:16px;background:#fff"><p style="font:14px system-ui">Ad should appear below (wait up to 30 seconds). <a href="/adtest.html">Back</a></p><hr>'+code+'<hr><p style="font:13px system-ui;color:#566">If the area above stays empty, Adsterra is not serving yet.</p>');
+  document.close();
+}
+</script>
+</body></html>
