@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Engrgroup23 – PPSC Civil Past Papers & MCQs",
-  "short_name": "Engrgroup23",
+  "name": "PPSC PAST PAPERS",
+  "short_name": "PPSC Papers",
   "description": "PPSC Sub Engineer Civil & Building Inspector past papers, solved MCQs and mock tests.",
   "start_url": "/",
   "scope": "/",
@@ -29,5 +29,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }
