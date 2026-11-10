@@ -1037,7 +1037,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     <button type="button" class="glink" id="gfp">Forgot password?</button>
   </div>
   <div class="gform" id="gphone" hidden>
-    <p class="ghint">Your number must be approved by the admin first - contact the admin before asking for the SMS code. Then enter your mobile number to get a 6-digit code by SMS.</p>
+    <p class="ghint" id="gphint">Your number must be approved by the admin first - contact the admin before asking for the SMS code. Then enter your mobile number to get a 6-digit code by SMS.</p>
     <input id="gph" type="tel" placeholder="03xx xxxxxxx" autocomplete="tel" inputmode="tel">
     <button type="button" id="gsend">Send OTP code</button>
     <div id="gotpbox" hidden>
@@ -1235,7 +1235,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn ai" id="qHint" type="button" hidden>💡 Hint</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div id="qUrBox" hidden dir="rtl" lang="ur" style="margin-top:10px;padding:12px 14px;border-radius:14px;background:#EEF6EF;border:1px solid #9CC9A6;color:#13222D;font-size:17px;line-height:2;text-align:right"></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
@@ -1744,7 +1744,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
 
   /* ===== AI helper (Gemini via Firebase AI Logic) ===== */
   var aiEl=null,aiOpen=false,aiCur=-1,aiSess=null,aiBusy=false;
-  var AI_CHIPS=[["Explain this question","سوال سمجھائیں"],["Correct answer and why","صحیح جواب اور وجہ"],["Explain each option","ہر آپشن کی وضاحت"],["Short trick / formula","مختصر ٹرک / فارمولا"],["Explain in simple words","آسان الفاظ میں سمجھائیں"]];
+  var AI_CHIPS=[["Give me a hint (do not reveal the answer)","اشارہ دیں (جواب نہ بتائیں)"],["Explain this question","سوال سمجھائیں"],["Correct answer and why","صحیح جواب اور وجہ"],["Explain each option","ہر آپشن کی وضاحت"],["Short trick / formula","مختصر ٹرک / فارمولا"],["Explain in simple words","آسان الفاظ میں سمجھائیں"]];
   var AI_FU_DEF=[["Give an example","مثال دیں"],["More detail","مزید تفصیل"],["Why are the other options wrong?","باقی آپشنز غلط کیوں ہیں؟"]];
   var aiLang="both";try{var _l=localStorage.getItem("eg23ail");if(_l==="en"||_l==="ur"||_l==="both")aiLang=_l}catch(e){}
   /* language instruction added to every question (not shown to the student) */
@@ -1770,14 +1770,17 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function aiMd(t){
     function inl(x){return x.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>")}
     function ur(x){return /[\u0600-\u06ff]/.test(x)?' class="ur"':""}
+    /* glitch fix: inside Urdu lines every English/number run ("1-3", "Routine maintenance") is its own left-to-right island */
+    var LTR=/[A-Za-z0-9&][A-Za-z0-9&;#\s.,\/\-+=\u00d7\u00f7^\u00b2\u00b3\u00b0%'"_]*[A-Za-z0-9&;\u00b2\u00b3\u00b0%]|[A-Za-z0-9]/g;
+    function isl(x){return /[\u0600-\u06ff]/.test(x)?x.replace(LTR,function(m){return '<bdi dir="ltr">'+m+'</bdi>'}):x}
     var out=[],inUl=false;
     aiEsc(t).split(/\n/).forEach(function(l){
       var m=/^\s*(?:[-*\u2022]|\d+[.)])\s+(.*)$/.exec(l);
-      if(m){if(!inUl){out.push("<ul>");inUl=true}out.push('<li dir="auto"'+ur(m[1])+">"+inl(m[1])+"</li>");return}
+      if(m){if(!inUl){out.push("<ul>");inUl=true}out.push('<li dir="auto"'+ur(m[1])+">"+inl(isl(m[1]))+"</li>");return}
       if(inUl){out.push("</ul>");inUl=false}
       var h=/^\s*#{1,6}\s+(.*)$/.exec(l);
-      if(h){out.push('<div dir="auto"'+ur(h[1])+"><b>"+inl(h[1])+"</b></div>");return}
-      out.push(l.trim()?'<div dir="auto"'+ur(l)+">"+inl(l)+"</div>":"<br>");
+      if(h){out.push('<div dir="auto"'+ur(h[1])+"><b>"+inl(isl(h[1]))+"</b></div>");return}
+      out.push(l.trim()?'<div dir="auto"'+ur(l)+">"+inl(isl(l))+"</div>":"<br>");
     });
     if(inUl)out.push("</ul>");
     return out.join("").replace(/(<br>){2,}/g,"<br>").replace(/(<br>)+$/,"");
@@ -1795,7 +1798,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var oi=(p&&p.length===QO[id].length)?p[j]:j,d=document.createElement("div");
       d.textContent=LET[j]+". "+(tr.o[oi]||"");b.appendChild(d);
     });
-    b.hidden=false;
+    b.hidden=false;try{b.dir="auto";Array.prototype.forEach.call(b.children,function(c){c.dir="auto"})}catch(e){}
   }
   function urRefresh(id){
     var b=$("#qUrBox"),bt=$("#qUr");if(!b)return;
@@ -3019,7 +3022,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var qbk=$("#qBkm");qbk.addEventListener("click",function(){cancelAuto();bkmToggle(order[pos]);renderQ();try{paintRev()}catch(e){}});
   $("#btnRev").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");start("bkm")});
   $("#btnRevClear").addEventListener("click",function(){if(confirm("Remove all bookmarks from this device?")){saveBkm([]);paintRev()}});
-  if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])})}
+  if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])});var qh=$("#qHint");if(qh){qh.hidden=false;qh.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos]);setTimeout(function(){aiSend("Give me a hint (do not reveal the answer)")},60)})}}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
   if(canReport()){var qrp=$("#qRep");qrp.hidden=false;qrp.addEventListener("click",function(){cancelAuto();reportQ(order[pos])})}
   if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
@@ -3412,13 +3415,22 @@ function waitInstallEvent(ms){
     window.addEventListener("bipready",on);
   });
 }
+async function installWhy(){
+  const bad=[];
+  try{const r=await fetch("/manifest.webmanifest",{cache:"no-store"});if(!r.ok)bad.push("manifest file missing")}catch(_){bad.push("manifest not reachable")}
+  for(const f of ["/icon-192.png","/icon-512.png"]){try{const r=await fetch(f,{cache:"no-store"});if(!r.ok)bad.push(f+" missing")}catch(_){bad.push(f+" not reachable")}}
+  try{const g=await navigator.serviceWorker.getRegistration();if(!g)bad.push("service worker not active (refresh once)")}catch(_){bad.push("service worker not supported")}
+  return bad;
+}
 async function doInstall(){
   if(isStandalone()){alert("The app is already installed on this phone.");return}
   let ev=window.__bip;
   if(!ev){useStaticManifest();ev=await waitInstallEvent(3000)}   /* custom-name manifest can block install: fall back to the normal one */
   if(ev){try{ev.prompt();await ev.userChoice}catch(_){}window.__bip=null;updInstallUI();return}
+  const bad=await installWhy();
+  if(bad.length){alert("Install is not ready yet: "+bad.join(", ")+". (Admin: upload the app files to GitHub and open the site again.)");return}
   const ios=/iphone|ipad|ipod/i.test(navigator.userAgent||"");
-  alert(ios?"iPhone: tap the Share button (square with an arrow), then 'Add to Home Screen'.":"Open the browser menu (three dots), then tap 'Install app' or 'Add to Home screen'.");
+  alert(ios?"iPhone: tap the Share button (square with an arrow), then 'Add to Home Screen'.":"Open the browser menu (three dots), then tap 'Install app' or 'Add to Home screen'. If the app is already installed on this phone, Chrome will not show the install popup again: open it from your home screen.");
 }
 document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("[data-install]"):null;if(b){e.preventDefault();doInstall()}});
 function applyManifestName(nm){
@@ -3449,7 +3461,7 @@ function applySite(x){
   try{localStorage.setItem("eg23site",JSON.stringify({n:nm,d:String(x.desc||"").trim()}))}catch(_){}
   if(nm){
     document.title=nm+" · Sub Engineer past paper & book solved";
-    applyManifestName(nm);
+
     document.querySelectorAll(".gbrand,.hbrand").forEach(n=>{n.textContent=nm});
     document.querySelectorAll("#siteFoot .sfn").forEach(n=>{n.textContent=nm});
     const ub=document.querySelector("#userbar .ubrand");
@@ -3495,7 +3507,7 @@ function applySite(x){
     if(gt)gt.textContent=gtLabel();
   }catch(_){}
 }
-window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(gg)gg.textContent=gLabel();const gt=document.getElementById("gtrial");if(gt)gt.textContent=gtLabel();const gh=document.getElementById("ghint");if(gh)gh.hidden=!SHOW_NOTE;try{window.__updInstall&&window.__updInstall()}catch(_){}
+window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(gg)gg.textContent=gLabel();const gt=document.getElementById("gtrial");if(gt)gt.textContent=gtLabel();const gh=document.getElementById("ghint");if(gh)gh.hidden=!SHOW_NOTE;const pp=document.getElementById("gphint");if(pp)pp.textContent=OPEN_ACC?"Enter your mobile number to get a 6-digit code by SMS.":"Your number must be approved by the admin first - contact the admin before asking for the SMS code. Then enter your mobile number to get a 6-digit code by SMS.";try{window.__updInstall&&window.__updInstall()}catch(_){}
     const sc=document.getElementById("seoInfo");
     if(sc&&SEO_CFG){
       if(SEO_CFG.seoOn===false)sc.setAttribute("data-off","1");else sc.removeAttribute("data-off");
@@ -3962,6 +3974,7 @@ $("gpw").addEventListener("keydown",e=>{if(e.key==="Enter")$("gin").click()});
 /* true = approved by admin, false = not approved, null = could not check */
 async function isApproved(email){
   if(ADMINS.includes(email))return true;
+  if(OPEN_ACC)return true;   /* Open Access: everyone may continue */
   try{
     const a=await getDoc(doc(db,"allowed",email));
     if(a.exists()&&a.data().enabled===true)return true;
@@ -4082,7 +4095,6 @@ async function check(user){
   if(user.email&&!user.emailVerified&&!user.phoneNumber)return needVerify(user,email);
   if(!email)return deny("","This account cannot sign in.");
   IS_OWNER=ADMINS.includes(email);REAL_OWNER=IS_OWNER;IS_ADMIN=IS_OWNER;ME=email;
-  if((PV||PM)&&!IS_ADMIN){try{localStorage.removeItem("eg23pv")}catch(_){}PV=false;PM=false}
   if(PV){try{document.body.classList.add("pv")}catch(_){}}
   let EXP=null,TRIAL=false;
   try{
@@ -4093,6 +4105,7 @@ async function check(user){
     const mgP=IS_OWNER?Promise.resolve(false):getDoc(doc(db,"managers",email)).then(m=>m.exists(),()=>false);
     const alP=IS_OWNER?null:getDoc(doc(db,"allowed",email)).then(r=>({r}),e=>({e}));
     if(!IS_OWNER){if(await mgP)IS_ADMIN=true}
+    if((PV||PM)&&!IS_ADMIN){try{localStorage.removeItem("eg23pv")}catch(_){}PV=false;PM=false;try{document.body.classList.remove("pv")}catch(_){}}   /* only students lose a stale preview flag */
     if(IS_OWNER&&PM)IS_OWNER=false; /* Manager mode preview: owner sees exactly what a manager sees */
     /* Open access (Admin > Settings): Google / Email / Guest enter free, no approval, no expiry. Admin can still turn a person OFF. */
     let OPEN=false;
@@ -4236,9 +4249,9 @@ function openMenu(){
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
-  if(IS_ADMIN&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
-  if(IS_ADMIN&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
-  if(IS_ADMIN&&!PV)mi("\u{1F4E2} Ads (add / edit) \u00b7 admin only",()=>openAds());
+  if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
+  if(IS_OWNER&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
+  if(IS_OWNER&&!PV)mi("\u{1F4E2} Ads (add / edit) \u00b7 admin only",()=>openAds());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
@@ -4678,13 +4691,13 @@ function buildAdmin(){
   const top=el("div","top");top.appendChild(el("h2","","Admin panel"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
-  const names={users:"Users",guests:"Guests",reports:"Reports",bank:"Questions",library:"Library",settings:"Settings"};
-  if(IS_OWNER)names.managers="Managers";
+  const names={users:"Users",guests:"Guests",reports:"Reports",bank:"Questions",library:"Library"};
+  if(IS_OWNER){names.settings="Settings";names.managers="Managers"}   /* Settings + Managers: owner only, managers never see them */
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
-  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildSettings(tabs.settings.body);
+  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);if(tabs.settings)buildSettings(tabs.settings.body);
   if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
