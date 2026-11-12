@@ -1019,7 +1019,7 @@ window.APP_CONFIG={
 <div class="gbrand">Engrgroup<b>23</b></div>
 <p class="gdesc">Sub Engineer past paper &amp; book solved.</p>
 <script>(function(){var K="eg23site";
-function ap(n,d){try{if(n){document.title=n+" \u00b7 Sub Engineer past paper & book solved";document.querySelectorAll(".gbrand,.hbrand").forEach(function(x){x.textContent=n})}if(d){document.querySelectorAll(".gdesc,.htag").forEach(function(x){x.textContent=d})}}catch(e){}}
+function ap(n,d){try{if(n){document.title=n+" \u00b7 Sub Engineer past paper & book solved";document.querySelectorAll(".gbrand,.hbrand,[data-sn]").forEach(function(x){x.textContent=n})}if(d){document.querySelectorAll(".gdesc,.htag").forEach(function(x){x.textContent=d})}}catch(e){}}
 try{var c=JSON.parse(localStorage.getItem(K)||"null");if(c)ap(c.n,c.d)}catch(e){}
 try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(default)/documents/sitedata/style?key=AIzaSyCKBEzgDUfbvPODuCBzMoNaDIVTV6ryb8A",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!j.fields)return;var f=j.fields,n=((f.name&&f.name.stringValue)||"").trim(),d=((f.desc&&f.desc.stringValue)||"").trim(),em=((f.email&&f.email.stringValue)||"").trim();try{localStorage.setItem(K,JSON.stringify({n:n,d:d,e:em}))}catch(e){}ap(n,d)}).catch(function(){})}catch(e){}
 })();</script>
@@ -1235,7 +1235,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn ai" id="qHint" type="button" hidden>💡 Hint</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn ai" id="qHint" type="button" hidden style="margin-left:6px">💡 Hint</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div id="qUrBox" hidden dir="rtl" lang="ur" style="margin-top:10px;padding:12px 14px;border-radius:14px;background:#EEF6EF;border:1px solid #9CC9A6;color:#13222D;font-size:17px;line-height:2;text-align:right"></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
@@ -1744,7 +1744,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
 
   /* ===== AI helper (Gemini via Firebase AI Logic) ===== */
   var aiEl=null,aiOpen=false,aiCur=-1,aiSess=null,aiBusy=false;
-  var AI_CHIPS=[["Give me a hint (do not reveal the answer)","اشارہ دیں (جواب نہ بتائیں)"],["Explain this question","سوال سمجھائیں"],["Correct answer and why","صحیح جواب اور وجہ"],["Explain each option","ہر آپشن کی وضاحت"],["Short trick / formula","مختصر ٹرک / فارمولا"],["Explain in simple words","آسان الفاظ میں سمجھائیں"]];
+  var AI_CHIPS=[["Explain this question","سوال سمجھائیں"],["Correct answer and why","صحیح جواب اور وجہ"],["Explain each option","ہر آپشن کی وضاحت"],["Short trick / formula","مختصر ٹرک / فارمولا"],["Explain in simple words","آسان الفاظ میں سمجھائیں"]];
   var AI_FU_DEF=[["Give an example","مثال دیں"],["More detail","مزید تفصیل"],["Why are the other options wrong?","باقی آپشنز غلط کیوں ہیں؟"]];
   var aiLang="both";try{var _l=localStorage.getItem("eg23ail");if(_l==="en"||_l==="ur"||_l==="both")aiLang=_l}catch(e){}
   /* language instruction added to every question (not shown to the student) */
@@ -1802,6 +1802,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function urRefresh(id){
     var b=$("#qUrBox"),bt=$("#qUr");if(!b)return;
+    var hb=$("#qHintBox");if(hb&&hb.dataset.q!==String(id))hb.hidden=true;
     if(urOpen[id]){var tr=urGet(id);if(tr){urShow(id,tr);if(bt)bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}}
     b.hidden=true;b.textContent="";
     if(bt)bt.textContent="\u{1F310} \u0627\u0631\u062f\u0648 \u00b7 Urdu";
@@ -1816,22 +1817,90 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     for(var k=0;k<n;k++)if(!r.o[k])r.o[k]="";
     return (r.q&&r.o.filter(Boolean).length>=Math.min(2,n))?r:null;
   }
+  var urAuto=false,urUser=false;
+  var UR_HIDE="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";
+  function urMsg(id){
+    return "Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+QO[id].map(function(x,j){return (j+1)+": <option "+(j+1)+" in Urdu>"}).join("\n")+"\n\nQuestion: "+Q[id].text+"\nOptions:\n"+QO[id].map(function(x,j){return (j+1)+". "+x}).join("\n");
+  }
+  /* partial text while the answer is still arriving: show what is ready already */
+  function urPartial(full,n){
+    var body=aiSplit(full).body,r={q:"",o:[]},m;
+    body.split(/\n/).forEach(function(l){
+      l=l.replace(/^[\s*_#>-]+/,"").trim();
+      if(m=/^Q\s*[:\uFF1A.)]\s*(.+)$/i.exec(l)){r.q=m[1].trim();return}
+      if(m=/^(\d{1,2})\s*[:\uFF1A.)]\s*(.+)$/.exec(l)){r.o[+m[1]-1]=m[2].replace(/^[*_\s]+/,"").replace(/[*_]+$/,"").trim()}
+    });
+    for(var k=0;k<n;k++)if(!r.o[k])r.o[k]="";
+    return r.q?r:null;
+  }
+  function urTranslate(id,onPart){
+    var n=QO[id].length,key=urKey(id).slice(7);
+    var pre=window.__urGet?window.__urGet(key):Promise.resolve(null);
+    return pre.then(function(rem){
+      if(rem&&rem.q&&rem.o&&rem.o.length){var rr={q:rem.q,o:rem.o};urSet(id,rr);return rr}   /* already translated by the admin: instant */
+      return window.__aiStart("Translate MCQs into Urdu script.").then(function(sx){
+        return sx.send(urMsg(id),onPart?function(t){try{var p=urPartial(t||"",n);if(p)onPart(p)}catch(e){}}:null);
+      }).then(function(full){
+        var r=/[\u0900-\u097F]/.test(full||"")?null:urParse(full||"",n);
+        if(r){urSet(id,r);if(window.__urPut)window.__urPut(key,r)}
+        return r;
+      });
+    });
+  }
+  /* once a student uses Urdu, the next 2 questions are translated quietly in the background, so they open instantly */
+  function urPrefetch(){
+    if(!urAuto||urBusy||!window.__aiStart)return;
+    for(var k=1;k<=4;k++){
+      var nid=order[pos+k];if(nid==null)break;
+      if(urGet(nid)||ans[nid])continue;
+      urBusy=true;urTranslate(nid,null).catch(function(){}).then(function(){urBusy=false;urPrefetch()});return;
+    }
+  }
   function urClick(){
     if(finished&&!order.length)return;
     var id=order[pos],b=$("#qUrBox"),bt=$("#qUr");
     if(urOpen[id]&&!b.hidden){urOpen[id]=false;urRefresh(id);return}
-    urOpen[id]=true;
+    urOpen[id]=true;urAuto=true;
     var tr=urGet(id);
-    if(tr){urShow(id,tr);bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}
+    if(tr){urShow(id,tr);bt.textContent=UR_HIDE;urPrefetch();return}
     if(!window.__aiStart){b.hidden=false;b.textContent="AI is not available right now. / اے آئی ابھی دستیاب نہیں۔";return}
-    if(urBusy)return;urBusy=true;b.hidden=false;b.textContent="\u0627\u0631\u062f\u0648 \u0645\u06cc\u06ba \u062a\u0631\u062c\u0645\u06c1 \u06c1\u0648 \u0631\u06c1\u0627 \u06c1\u06d2... / Translating...";
-    var n=QO[id].length,msg="Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+QO[id].map(function(x,j){return (j+1)+": <option "+(j+1)+" in Urdu>"}).join("\n")+"\n\nQuestion: "+Q[id].text+"\nOptions:\n"+QO[id].map(function(x,j){return (j+1)+". "+x}).join("\n");
-    window.__aiStart("Translate MCQs into Urdu script.").then(function(sx){return sx.send(msg,null)}).then(function(full){
-      var r=/[\u0900-\u097F]/.test(full||"")?null:urParse(full||"",n);
+    if(urUser)return;urUser=true;b.hidden=false;b.textContent="\u0627\u0631\u062f\u0648 \u0645\u06cc\u06ba \u062a\u0631\u062c\u0645\u06c1 \u06c1\u0648 \u0631\u06c1\u0627 \u06c1\u06d2... / Translating...";
+    urTranslate(id,function(p){if(order[pos]===id&&urOpen[id])urShow(id,p)}).then(function(r){
       if(!r){b.textContent="Translation failed, please try again. / ترجمہ نہیں ہو سکا، دوبارہ کوشش کریں۔";return}
-      urSet(id,r);if(order[pos]===id&&urOpen[id])urShow(id,r);bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";
+      if(order[pos]===id&&urOpen[id]){urShow(id,r);bt.textContent=UR_HIDE}
+      urPrefetch();
     }).catch(function(e){b.hidden=false;b.textContent=window.__aiErr?window.__aiErr(e):("AI error: "+((e&&e.message)||e))})
-      .then(function(){urBusy=false});
+      .then(function(){urUser=false});
+  }
+  /* ===== Hint: separate from the AI chat. Own box under the question, own one-shot AI request, never reveals the answer ===== */
+  var hintCache={},hintBusy=false;
+  function hintClick(){
+    var id=order[pos];if(id==null)return;
+    var bt=$("#qHint"),tools=bt&&bt.parentNode,box=$("#qHintBox");
+    if(!box&&tools&&tools.parentNode){
+      box=el("div");box.id="qHintBox";box.hidden=true;box.setAttribute("dir","auto");
+      box.style.cssText="margin:8px 0;padding:10px 12px;border-radius:12px;background:#fff8e1;border:1px solid #e6c65c;color:#3a2c00;font-weight:600;line-height:1.7;white-space:pre-wrap";
+      tools.parentNode.insertBefore(box,tools.nextSibling);
+    }
+    if(!box)return;
+    box.dataset.q=String(id);
+    if(!box.hidden&&box.dataset.shown===String(id)&&!hintBusy){box.hidden=true;box.dataset.shown="";return}   /* tap again = hide */
+    box.hidden=false;box.dataset.shown=String(id);
+    if(ans[id]){box.textContent="Hints are for questions you have not answered yet. / اشارہ صرف ان سوالات کے لیے ہے جو ابھی حل نہیں کیے۔";return}
+    if(hintCache[id]){box.textContent=hintCache[id];return}
+    if(!window.__aiStart){box.textContent="AI is not available right now. / اے آئی ابھی دستیاب نہیں۔";return}
+    if(hintBusy)return;hintBusy=true;
+    box.textContent="\u{1F4A1} ... ";
+    var q=Q[id],ctx="LANGUAGE RULE: English and/or Urdu in Urdu script only (never Hindi letters). Technical terms and numbers stay in English.\n\nMCQ:\n"+q.text+"\n";
+    q.opts.forEach(function(x,j){ctx+=LET[j]+". "+x+"\n"});
+    ctx+="\nYOU ONLY GIVE A HINT. Never say or imply which option is correct, never quote the answer value. Point to the concept, formula or rule to think about, in at most 2 short sentences. Then write the same hint in Urdu. Use exactly this format:\nEN: <hint>\nUR: <hint in Urdu>\nNo follow-up questions.";
+    window.__aiStart(ctx).then(function(sx){
+      return sx.send("Give me the hint now.",function(t){try{if(box.dataset.shown===String(id))box.textContent=aiSplit(t||"").body.trim()}catch(e){}});
+    }).then(function(full){
+      var t=aiSplit(full||"").body.trim()||"No hint available.";
+      hintCache[id]=t;if(box.dataset.shown===String(id))box.textContent=t;
+    }).catch(function(e){box.textContent=window.__aiErr?window.__aiErr(e):("AI error: "+((e&&e.message)||e))})
+      .then(function(){hintBusy=false});
   }
   function aiCtx(id){
     var q=Q[id],a=ans[id];
@@ -3022,7 +3091,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var qbk=$("#qBkm");qbk.addEventListener("click",function(){cancelAuto();bkmToggle(order[pos]);renderQ();try{paintRev()}catch(e){}});
   $("#btnRev").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");start("bkm")});
   $("#btnRevClear").addEventListener("click",function(){if(confirm("Remove all bookmarks from this device?")){saveBkm([]);paintRev()}});
-  if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])});var qh=$("#qHint");if(qh){qh.hidden=false;qh.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos]);setTimeout(function(){aiSend("Give me a hint (do not reveal the answer)")},60)})}}
+  if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])});var qh=$("#qHint");if(qh){qh.hidden=false;qh.addEventListener("click",function(){cancelAuto();hintClick()})}}
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
   if(canReport()){var qrp=$("#qRep");qrp.hidden=false;qrp.addEventListener("click",function(){cancelAuto();reportQ(order[pos])})}
   if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
@@ -3176,7 +3245,7 @@ if(a.html){var k=adKey(a),tr=!!trusted[k];var f=document.createElement("iframe")
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,browserLocalPersistence,signInAnonymously,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,addDoc,collection,query,where,orderBy,limit,writeBatch,serverTimestamp,Timestamp,onSnapshot} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,addDoc,collection,query,where,orderBy,limit,writeBatch,serverTimestamp,Timestamp,onSnapshot,increment} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
@@ -3462,7 +3531,8 @@ function applySite(x){
   if(nm){
     document.title=nm+" · Sub Engineer past paper & book solved";
 
-    document.querySelectorAll(".gbrand,.hbrand").forEach(n=>{n.textContent=nm});
+    document.querySelectorAll(".gbrand,.hbrand,[data-sn]").forEach(n=>{n.textContent=nm});
+    try{const og=document.querySelector('meta[property="og:site_name"]');if(og)og.setAttribute("content",nm)}catch(_){}
     document.querySelectorAll("#siteFoot .sfn").forEach(n=>{n.textContent=nm});
     const ub=document.querySelector("#userbar .ubrand");
     if(ub){const ic=ub.querySelector("i");const keep=ic;ub.textContent="";if(keep)ub.appendChild(keep);ub.appendChild(document.createTextNode(nm))}
@@ -3741,11 +3811,11 @@ function aiPlans(cfg){
 }
 function aiBody(plan,contents,noThink){
   if(plan.kind==="o"){
-    const msgs=[{role:"system",content:(AI_SYS_OVR||AI_SYS)}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
+    const msgs=[{role:"system",content:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
     return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
   }
   const gc={temperature:0.4,maxOutputTokens:1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
-  return {systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS)}]},contents,generationConfig:gc};
+  return {systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}]},contents,generationConfig:gc};
 }
 function aiPiece(plan,j){
   if(plan.kind==="o"){const ch=j.choices&&j.choices[0];return (ch&&ch.delta&&ch.delta.content)||""}
@@ -3807,6 +3877,9 @@ async function aiCall(cfg,contents,on){
   const fe=httpErr||netErr||new Error("AI failed");try{fe.detail=tried.join(" | ")}catch(_){}
   throw fe;
 }
+/* shared Urdu cache: translated once (by admin / bulk tool), every student reads it instantly */
+window.__urGet=async function(key){try{const s=await getDoc(doc(db,"urdu",key));return s.exists()?s.data():null}catch(e){return null}};
+window.__urPut=async function(key,r){try{if(!IS_ADMIN)return;await setDoc(doc(db,"urdu",key),{q:String(r.q||"").slice(0,1500),o:(r.o||[]).map(function(x){return String(x||"").slice(0,600)}),at:serverTimestamp()})}catch(e){}};
 window.__aiStart=async ctx=>{
   const cfg=await aiKey();
   const hist=[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}];
@@ -4176,7 +4249,7 @@ function userbar(){
   else avb.appendChild(el("span","",String(P.name||"?").charAt(0).toUpperCase()));
   avb.onclick=()=>openMenu();
   const cols=el("div");cols.style.cssText="display:flex;flex-direction:column;min-width:0";
-  const br=el("div","ubrand");br.appendChild(el("i","shield"));br.appendChild(document.createTextNode("Engrgroup"));br.appendChild(el("b","","23"));
+  const br=el("div","ubrand");br.appendChild(el("i","shield"));{const nmx=(SITE&&String(SITE.name||"").trim());if(nmx){br.appendChild(document.createTextNode(nmx))}else{br.appendChild(document.createTextNode("Engrgroup"));br.appendChild(el("b","","23"))}}
   br.style.cursor="pointer";br.title="Home / Dashboard";br.onclick=()=>{goHomeHard()};
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
@@ -4607,6 +4680,7 @@ function startApp(bank){
   try{bankWatch()}catch(_){}
   try{buildMockTests()}catch(e){console.error("Mock tests init failed",e)}
   try{updInstallUI()}catch(_){}
+  recordVisit();
   try{
     let f=document.getElementById("siteFoot");
     if(!f){f=document.createElement("div");f.id="siteFoot";f.innerHTML='<div class="sfn"></div><div><a href="/about.html">About</a> \u00b7 <a href="/privacy-policy.html">Privacy Policy</a> \u00b7 <a href="/contact.html">Contact</a></div>'}
@@ -4695,13 +4769,13 @@ function buildAdmin(){
   const top=el("div","top");top.appendChild(el("h2","","Admin panel"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
-  const names={users:"Users",guests:"Guests",reports:"Reports",bank:"Questions",library:"Library"};
+  const names={users:"Users",guests:"Guests",visitors:"Visitors",reports:"Reports",bank:"Questions",library:"Library"};
   if(IS_OWNER){names.settings="Settings";names.managers="Managers"}   /* Settings + Managers: owner only, managers never see them */
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
-  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);if(tabs.settings)buildSettings(tabs.settings.body);
+  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildVisitors(tabs.visitors.body);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);if(tabs.settings)buildSettings(tabs.settings.body);
   if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
@@ -4710,6 +4784,55 @@ function showTab(k){
   if(tabs[k]&&tabs[k].load)tabs[k].load();
 }
 function dstr(ms){return new Date(ms).toLocaleDateString()}
+/* every person who signs in (Google / email / phone / guest) is recorded, so Admin > Visitors shows them even in Open Access */
+async function recordVisit(){
+  try{
+    const u=auth.currentUser;if(!u)return;
+    const id=idOf(u);if(!id)return;
+    try{if(sessionStorage.getItem("eg23vis")===id)return;sessionStorage.setItem("eg23vis",id)}catch(_){}
+    const ref=doc(db,"visitors",id),snap=await getDoc(ref);
+    const base={name:String(u.displayName||"").slice(0,60),email:String(u.email||"").slice(0,80),phone:String(u.phoneNumber||"").slice(0,20),provider:u.isAnonymous?"guest":String((u.providerData&&u.providerData[0]&&u.providerData[0].providerId)||"")};
+    if(snap.exists())await updateDoc(ref,Object.assign({},base,{lastSeen:serverTimestamp(),visits:increment(1)}));
+    else await setDoc(ref,Object.assign({},base,{firstSeen:serverTimestamp(),lastSeen:serverTimestamp(),visits:1}));
+  }catch(e){}
+}
+function buildVisitors(host){
+  const top=el("div");top.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0";
+  const sr=el("input");sr.type="search";sr.placeholder="Search name / email / phone";sr.style.cssText="flex:1;min-width:160px";
+  const rf=el("button","btn","\u21bb Refresh");rf.type="button";
+  const st=el("span","label");
+  top.append(sr,rf,st);host.appendChild(top);
+  const list=el("div");host.appendChild(list);
+  let rows=[];
+  const ms=x=>(x&&x.toMillis)?x.toMillis():0;
+  const fmt=t=>t?new Date(t).toLocaleString():"-";
+  function render(){
+    list.textContent="";
+    const q=sr.value.trim().toLowerCase();
+    const f=rows.filter(r=>!q||(r.name+" "+r.email+" "+r.phone+" "+r.id).toLowerCase().includes(q));
+    st.textContent="Total "+rows.length+(q?" \u00b7 showing "+f.length:"");
+    if(!f.length){list.appendChild(el("div","label","No visitors yet."));return}
+    f.slice(0,300).forEach(r=>{
+      const d=el("div");d.style.cssText="padding:10px 0;border-bottom:1px solid var(--line,#ddd)";
+      const who=r.name||r.email||r.phone||r.id;
+      d.appendChild(el("div","",who)).style.fontWeight="700";
+      const sub=[r.email,r.phone].filter(Boolean).join(" \u00b7 ")||r.id;
+      d.appendChild(el("div","label",sub+" \u00b7 "+(r.provider||"?").replace(".com","")+" \u00b7 visits "+(r.visits||1)));
+      d.appendChild(el("div","label","First: "+fmt(ms(r.firstSeen))+" \u00b7 Last: "+fmt(ms(r.lastSeen))));
+      list.appendChild(d);
+    });
+  }
+  async function load(){
+    st.textContent="Loading\u2026";
+    try{
+      const s=await getDocs(collection(db,"visitors"));
+      rows=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>ms(b.lastSeen)-ms(a.lastSeen));
+      render();
+    }catch(e){st.textContent=(e&&(e.code||e.message))||String(e);list.textContent="";list.appendChild(el("div","label","Rules: publish the new Firestore rules (visitors) first."))}
+  }
+  sr.oninput=render;rf.onclick=load;
+  tabs.visitors.load=load;
+}
 function ustat(d){
   const tr=d.trial?"Free trial · ":"";
   if(d.enabled!==true&&d.pending===true)return {t:"\u23F3 Waiting for approval",bad:true};
@@ -4978,6 +5101,75 @@ function buildBank(host){
   tabs.bank.load=refresh;
 }
 function buildSettings(host){
+  (function(){
+    const box=el("div");box.style.cssText="padding:12px;border:1px solid var(--line,#ccc);border-radius:12px;margin-bottom:14px";
+    box.appendChild(el("b","","\ud83c\udf10 Website name & contact email"));
+    box.appendChild(el("div","label","Naam badlein: login page, dashboard, browser tab, About / Contact / Privacy pages aur installed app sab par lagu hoga."));
+    const n=el("input");n.type="text";n.placeholder="Website name (e.g. PPSC PAST PAPERS)";n.style.cssText="width:100%;margin-top:6px";
+    const e=el("input");e.type="email";e.placeholder="Contact email";e.style.cssText="width:100%;margin-top:6px";
+    const b=el("button","btn primary","\u{1F4BE} Save name");b.type="button";b.style.marginTop="8px";
+    const st=el("span","label st");st.style.marginLeft="8px";
+    n.value=String((SITE&&SITE.name)||"");e.value=String((SITE&&SITE.email)||"");
+    b.onclick=async()=>{
+      if(!IS_OWNER){alert("Sirf owner naam badal sakta hai.");return}
+      b.disabled=true;st.textContent="Saving\u2026";
+      try{
+        const data={name:n.value.trim(),email:e.value.trim(),updatedAt:serverTimestamp()};
+        await setDoc(doc(db,"sitedata","style"),data,{merge:true});
+        applySite(Object.assign({},SITE||{},{name:data.name,email:data.email}));
+        st.textContent="Saved \u2713";
+      }catch(err){st.textContent="Error";alert("Save nahi hui: "+((err&&(err.message||err.code))||err))}
+      finally{b.disabled=false}
+    };
+    box.append(n,e,b,st);host.appendChild(box);
+  })();
+  (function(){
+    const box=el("div");box.style.cssText="padding:12px;border:1px solid var(--line,#ccc);border-radius:12px;margin-bottom:14px";
+    box.appendChild(el("b","","\u26a1 Urdu translation (saved for everyone)"));
+    box.appendChild(el("div","label","Paper ya subject chunein aur Start dabayein: AI saare sawalon ka Urdu bana kar save kar deta hai. Phir students ko Urdu foran milta hai. Jab tak chale, ye page khula rakhein. Pehle se bane hue sawal skip ho jate hain."));
+    const sel=el("select");sel.style.cssText="width:100%;margin-top:6px";
+    ((typeof bank!=="undefined"&&bank&&bank.SUB)||[]).forEach((x,i)=>{const o=el("option","",x.name);o.value=String(i);sel.appendChild(o)});
+    const go=el("button","btn primary","\u25b6 Start");go.type="button";go.style.marginTop="8px";
+    const stop=el("button","btn","\u23f9 Stop");stop.type="button";stop.style.cssText="margin-top:8px;margin-left:8px";
+    const st=el("div","label");st.style.marginTop="6px";
+    let halt=false,busy=false;
+    stop.onclick=()=>{halt=true};
+    const hk=(t,o)=>{const x=t+"|"+o.join("|");let h=5381;for(let k=0;k<x.length;k++)h=((h<<5)+h+x.charCodeAt(k))|0;return (h>>>0).toString(36)};
+    async function one(q){
+      const nn=q.opts.length;
+      const msg="Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+q.opts.map((x,j)=>(j+1)+": <option "+(j+1)+" in Urdu>").join("\n")+"\n\nQuestion: "+q.text+"\nOptions:\n"+q.opts.map((x,j)=>(j+1)+". "+x).join("\n");
+      const sx=await window.__aiStart("Translate MCQs into Urdu script.");
+      const full=String(await sx.send(msg,null)||"");
+      if(/[\u0900-\u097F]/.test(full))return null;
+      const r={q:"",o:[]};let m;
+      full.split(/\n/).forEach(l=>{l=l.replace(/^[\s*_#>-]+/,"").trim();if(m=/^Q\s*[:\uFF1A.)]\s*(.+)$/i.exec(l)){r.q=m[1].trim();return}if(m=/^(\d{1,2})\s*[:\uFF1A.)]\s*(.+)$/.exec(l)){r.o[+m[1]-1]=m[2].replace(/^[*_\s]+/,"").replace(/[*_]+$/,"").trim()}});
+      for(let k=0;k<nn;k++)if(!r.o[k])r.o[k]="";
+      return (r.q&&r.o.filter(Boolean).length>=Math.min(2,nn))?r:null;
+    }
+    go.onclick=async()=>{
+      if(busy)return;
+      if(!IS_OWNER){alert("Sirf owner chala sakta hai.");return}
+      if(!window.__aiStart){alert("AI abhi dastiyab nahi.");return}
+      busy=true;halt=false;go.disabled=true;
+      const si=parseInt(sel.value,10),items=[];
+      (bank.Q0||[]).forEach(q=>{const sc=bank.S[q.sec];if(sc&&sc.sub===si)items.push(q)});
+      let done=0,skip=0,fail=0;
+      const upd=()=>{st.textContent="Total "+items.length+" \u00b7 done "+done+" \u00b7 already "+skip+" \u00b7 failed "+fail};
+      upd();
+      for(const q of items){
+        if(halt)break;
+        const key=hk(q.text,q.opts);
+        const ex=await window.__urGet(key);
+        if(ex&&ex.q){skip++;upd();continue}
+        try{const r=await one(q);if(r){await setDoc(doc(db,"urdu",key),{q:r.q,o:r.o,at:serverTimestamp()});done++}else fail++}
+        catch(e){fail++;if(fail>10){st.textContent="Bahut errors: "+((e&&(e.code||e.message))||e)+" \u2014 Rules (urdu) publish kiye? AI chal raha hai?";break}}
+        upd();
+      }
+      st.textContent=(halt?"Stopped. ":"Finished. ")+st.textContent;
+      busy=false;go.disabled=false;
+    };
+    box.append(sel,go,stop,st);host.appendChild(box);
+  })();
   const cb=el("input");cb.type="checkbox";cb.id="cfgOn";
   const lb=el("label","",null);lb.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";
   lb.append(cb,el("span","","App is ON for all users"));
@@ -6169,4 +6361,4 @@ function buildManagers(host){
     }catch(e){}
   };
 })();
-</script><script src="vip-addon.js" defer></script><section id="seoInfo" style="max-width:720px;margin:24px auto;padding:16px;font:13px/1.7 sans-serif;color:#456"><h2 id="seoT" style="font-size:16px;margin:0 0 8px">PPSC Civil Past Papers &amp; Solved MCQs</h2><div id="seoB"><p>Engrgroup23 gives free online practice for Punjab Public Service Commission (PPSC) and other Punjab jobs tests, for <strong>Civil</strong>: <strong>Sub Engineer Civil past papers</strong>, <strong>Building Inspector past papers</strong> and Civil Diploma 1st, 2nd and 3rd year subject MCQs. Every paper has solved MCQs with the correct answer, so you can practise subject-wise, take mock tests, and resume where you stopped.</p><p><strong>Coming soon:</strong> Assistant Engineer, Technician, Electrical and Mechanical past papers.</p></div><div id="seoL"><p><a href="/papers/"><strong>All PPSC Sub Engineer &amp; Building Inspector past papers</strong></a></p><p><strong>Important past papers:</strong> <a href="/papers/sub-engineer-civil-clubbed-test-c-and-w-rda-wasa-gda-2025.html">Sub Engineer Civil-Clubbed Test-C&amp;W+RDA+ WASA GDA-2025</a> · <a href="/papers/sub-engineer-civil-clubbed-test-pid-psc-sda-gda-2024.html">Sub Engineer Civil – Clubbed Test - PID+PSC+SDA+GDA - 2024</a> · <a href="/papers/sub-engineer-civil-clubbed-test-mda-mtn-fda-fsd-2023.html">Sub Engineer Civil – Clubbed Test MDA Mtn + FDA Fsd-2023</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2023.html">Sub Engineer Civil – Punjab Irrigation Department - 2023</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2023.html">Sub Engineer Civil – BDA Bahawalpur - 2023</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2022.html">Sub Engineer Civil – HUD &amp; PHED - 2022</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2021.html">Sub Engineer Civil - C&amp;W Department - 2021</a> · <a href="/papers/building-inspector-lg-and-cd-2020.html">Building Inspector – LG &amp; CD-2020</a></p><details><summary><strong>More past papers</strong></summary><p><a href="/papers/sub-engineer-civil-gda-gujranwala-2018.html">Sub Engineer Civil – GDA Gujranwala - 2018</a> · <a href="/papers/sub-engineer-civil-wasa-lda-lahore-2019.html">Sub Engineer Civil - WASA-LDA Lahore-2019</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2019.html">Sub Engineer Civil - C&amp;W Department-2019</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2019.html">Sub Engineer Civil - HUD &amp; PHED-2019</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2020.html">Sub Engineer Civil - Punjab Irrigation Department-2020</a> · <a href="/papers/sub-engineer-civil-rda-rawalpindi-2021.html">Sub Engineer Civil – RDA Rawalpindi - 2021</a> · <a href="/papers/sub-engineer-civil-fda-faisalabad-2021.html">Sub Engineer Civil – FDA Faisalabad - 2021</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2021.html">Sub Engineer Civil – BDA Bahawalpur - 2021</a> · <a href="/papers/sub-engineer-civil-parks-and-horticulture-authority-faisalabad-2023.html">Sub Engineer Civil - Parks &amp; Horticulture Authority Faisalabad-2023</a> · <a href="/papers/documentation-officer-punjab-seed-corporation-2023.html">Documentation Officer - Punjab Seed Corporation - 2023</a></p></details><details><summary><strong>Civil Diploma subject MCQs</strong></summary><p><a href="/papers/advanced-civil-engineering-surveying-mcqs.html">Advanced Civil Engineering Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/engineering-mechanics-mcqs.html">Engineering Mechanics (Diploma Civil 2nd Year)</a> · <a href="/papers/advanced-construction-techniques-mcqs.html">Advanced Construction Techniques (Diploma Civil 2nd Year)</a> · <a href="/papers/quantity-surveying-mcqs.html">Quantity Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/civil-engineering-drawing-and-autocad-mcqs.html">Civil Engineering Drawing and AutoCAD (Diploma Civil 2nd Year)</a> · <a href="/papers/public-health-technology-mcqs.html">Public Health Technology (Diploma Civil 2nd Year)</a> · <a href="/papers/basic-surveying-1st-year-mcqs.html">Basic Surveying (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/engineering-materials-and-construction-1st-year-mcqs.html">Engineering Materials &amp; Construction (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/basic-civil-drawing-1st-year-mcqs.html">Basic Civil Drawing (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/advance-quantity-surveying-mcqs.html">Advance Quantity Surveying (Diploma Civil 3rd Year)</a> · <a href="/papers/construction-project-planning-and-management-mcqs.html">Construction Project Planning and Management (Diploma Civil 3rd Year)</a> · <a href="/papers/environment-health-and-safety-3rd-year-mcqs.html">Environment, Health &amp; Safety (3rd Year) (Diploma Civil 3rd Year)</a> · <a href="/papers/hydraulics-and-irrigation-engineering-mcqs.html">Hydraulics and Irrigation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/transportation-engineering-mcqs.html">Transportation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/concrete-technology-and-r-c-c-design-mcqs.html">Concrete Technology and R.C.C. Design (Diploma Civil 3rd Year)</a> · <a href="/papers/soil-mechanics-and-bridge-engineering-mcqs.html">Soil Mechanics and Bridge Engineering (Diploma Civil 3rd Year)</a></p></details></div></section><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("/sw.js").catch(function(){})}catch(e){}})}</script></body></html>
+</script><script src="vip-addon.js" defer></script><section id="seoInfo" style="max-width:720px;margin:24px auto;padding:16px;font:13px/1.7 sans-serif;color:#456"><h2 id="seoT" style="font-size:16px;margin:0 0 8px">PPSC Civil Past Papers &amp; Solved MCQs</h2><div id="seoB"><p><span data-sn>Engrgroup23</span> gives free online practice for Punjab Public Service Commission (PPSC) and other Punjab jobs tests, for <strong>Civil</strong>: <strong>Sub Engineer Civil past papers</strong>, <strong>Building Inspector past papers</strong> and Civil Diploma 1st, 2nd and 3rd year subject MCQs. Every paper has solved MCQs with the correct answer, so you can practise subject-wise, take mock tests, and resume where you stopped.</p><p><strong>Coming soon:</strong> Assistant Engineer, Technician, Electrical and Mechanical past papers.</p></div><div id="seoL"><p><a href="/papers/"><strong>All PPSC Sub Engineer &amp; Building Inspector past papers</strong></a></p><p><strong>Important past papers:</strong> <a href="/papers/sub-engineer-civil-clubbed-test-c-and-w-rda-wasa-gda-2025.html">Sub Engineer Civil-Clubbed Test-C&amp;W+RDA+ WASA GDA-2025</a> · <a href="/papers/sub-engineer-civil-clubbed-test-pid-psc-sda-gda-2024.html">Sub Engineer Civil – Clubbed Test - PID+PSC+SDA+GDA - 2024</a> · <a href="/papers/sub-engineer-civil-clubbed-test-mda-mtn-fda-fsd-2023.html">Sub Engineer Civil – Clubbed Test MDA Mtn + FDA Fsd-2023</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2023.html">Sub Engineer Civil – Punjab Irrigation Department - 2023</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2023.html">Sub Engineer Civil – BDA Bahawalpur - 2023</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2022.html">Sub Engineer Civil – HUD &amp; PHED - 2022</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2021.html">Sub Engineer Civil - C&amp;W Department - 2021</a> · <a href="/papers/building-inspector-lg-and-cd-2020.html">Building Inspector – LG &amp; CD-2020</a></p><details><summary><strong>More past papers</strong></summary><p><a href="/papers/sub-engineer-civil-gda-gujranwala-2018.html">Sub Engineer Civil – GDA Gujranwala - 2018</a> · <a href="/papers/sub-engineer-civil-wasa-lda-lahore-2019.html">Sub Engineer Civil - WASA-LDA Lahore-2019</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2019.html">Sub Engineer Civil - C&amp;W Department-2019</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2019.html">Sub Engineer Civil - HUD &amp; PHED-2019</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2020.html">Sub Engineer Civil - Punjab Irrigation Department-2020</a> · <a href="/papers/sub-engineer-civil-rda-rawalpindi-2021.html">Sub Engineer Civil – RDA Rawalpindi - 2021</a> · <a href="/papers/sub-engineer-civil-fda-faisalabad-2021.html">Sub Engineer Civil – FDA Faisalabad - 2021</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2021.html">Sub Engineer Civil – BDA Bahawalpur - 2021</a> · <a href="/papers/sub-engineer-civil-parks-and-horticulture-authority-faisalabad-2023.html">Sub Engineer Civil - Parks &amp; Horticulture Authority Faisalabad-2023</a> · <a href="/papers/documentation-officer-punjab-seed-corporation-2023.html">Documentation Officer - Punjab Seed Corporation - 2023</a></p></details><details><summary><strong>Civil Diploma subject MCQs</strong></summary><p><a href="/papers/advanced-civil-engineering-surveying-mcqs.html">Advanced Civil Engineering Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/engineering-mechanics-mcqs.html">Engineering Mechanics (Diploma Civil 2nd Year)</a> · <a href="/papers/advanced-construction-techniques-mcqs.html">Advanced Construction Techniques (Diploma Civil 2nd Year)</a> · <a href="/papers/quantity-surveying-mcqs.html">Quantity Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/civil-engineering-drawing-and-autocad-mcqs.html">Civil Engineering Drawing and AutoCAD (Diploma Civil 2nd Year)</a> · <a href="/papers/public-health-technology-mcqs.html">Public Health Technology (Diploma Civil 2nd Year)</a> · <a href="/papers/basic-surveying-1st-year-mcqs.html">Basic Surveying (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/engineering-materials-and-construction-1st-year-mcqs.html">Engineering Materials &amp; Construction (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/basic-civil-drawing-1st-year-mcqs.html">Basic Civil Drawing (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/advance-quantity-surveying-mcqs.html">Advance Quantity Surveying (Diploma Civil 3rd Year)</a> · <a href="/papers/construction-project-planning-and-management-mcqs.html">Construction Project Planning and Management (Diploma Civil 3rd Year)</a> · <a href="/papers/environment-health-and-safety-3rd-year-mcqs.html">Environment, Health &amp; Safety (3rd Year) (Diploma Civil 3rd Year)</a> · <a href="/papers/hydraulics-and-irrigation-engineering-mcqs.html">Hydraulics and Irrigation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/transportation-engineering-mcqs.html">Transportation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/concrete-technology-and-r-c-c-design-mcqs.html">Concrete Technology and R.C.C. Design (Diploma Civil 3rd Year)</a> · <a href="/papers/soil-mechanics-and-bridge-engineering-mcqs.html">Soil Mechanics and Bridge Engineering (Diploma Civil 3rd Year)</a></p></details></div></section><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("/sw.js").catch(function(){})}catch(e){}})}</script></body></html>
