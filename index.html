@@ -1050,7 +1050,7 @@ window.APP_CONFIG={
 /* =========================================================== */
 </script>
 <div id="lgWait" hidden role="status" aria-live="polite"><div class="lgbox"><div class="lgring"><div class="shield lgshield"></div></div><div class="lgname" data-sn>Engrgroup23</div><div class="lgmsg" id="lgMsg">Signing you in...</div><div class="lgbar"><i id="lgFill"></i></div><div class="lgpct" id="lgPct">0%</div><div class="lgnote" id="lgNote"></div></div></div>
-<script>try{if(localStorage.getItem("eg23in")==="1")document.getElementById("lgWait").hidden=false}catch(e){}</script>
+<script>try{var _in=localStorage.getItem("eg23in")==="1",_nb=sessionStorage.getItem("eg23nobrowse")==="1",_br=localStorage.getItem("eg23browse")!=="0";if(_in||(!_nb&&_br))document.getElementById("lgWait").hidden=false}catch(e){}</script>
 <div id="browse" hidden><div class="bw">
 <div class="bwtop"><div class="bwbrand"><i class="shield"></i><span data-sn>Engrgroup23</span></div><button type="button" class="bwbtn" onclick="__bwLogin()">Login</button></div>
 <div class="bwhero"><div class="shield bwshield"></div><h1 data-sn>Engrgroup23</h1><p>Sub Engineer &middot; PPSC &middot; Civil Diploma</p>
@@ -2227,6 +2227,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
 
   function start(ch){
+    if(window.__VISITOR){if(window.__needLogin)window.__needLogin(ch);return}
     TTITLE="";
     if(ch==="bkm"){
       sel=[];order=bkmIds().filter(function(id){return Q[id]});
@@ -4071,6 +4072,45 @@ function lgHide(){
   setTimeout(()=>{lgW.hidden=true;lgPct=0;lgF.style.width="0%";lgP.textContent="0%";lgN.textContent=""},250);
 }
 if(lgW&&!lgW.hidden)lgShow("Signing you in...",8);
+/* ===== browse without login: the dashboard opens at once, login is asked only when MCQs are opened ===== */
+async function browseOn(){
+  if(DEEP)return false;   /* came from a paper link: go straight to login, then open that paper */
+  try{if(sessionStorage.getItem("eg23nobrowse")==="1")return false}catch(_){}
+  try{const c=await getDoc(doc(db,"sitedata","access"));const on=!(c.exists()&&c.data().browse===false);try{localStorage.setItem("eg23browse",on?"1":"0")}catch(_){}return on}
+  catch(e){try{return localStorage.getItem("eg23browse")!=="0"}catch(_){return true}}
+}
+async function goLogin(){
+  try{sessionStorage.setItem("eg23nobrowse","1")}catch(_){}
+  try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}
+  try{await signOut(auth)}catch(_){}
+  location.reload();
+}
+async function startBrowse(){
+  try{localStorage.removeItem("eg23g")}catch(_){}
+  try{await setPersistence(auth,browserLocalPersistence)}catch(_){}
+  try{await signInAnonymously(auth)}
+  catch(e){lgHide();showMethods(true);msg("")}   /* anonymous sign-in not available: normal login screen */
+}
+async function browseEnter(user){
+  lgShow("Opening the app...",25);busy=true;
+  try{
+    IS_OWNER=false;REAL_OWNER=false;IS_ADMIN=false;ME="visitor";
+    window.__VISITOR=true;window.__AI_ON=false;window.__LIB_ON=true;window.__CHATNOTE=false;
+    const b=await loadBank();
+    if(!b)throw new Error("no bank");
+    lgStep("Preparing your dashboard...",85);
+    BANK_JSON=b.json;BANK_META=b.meta;
+    try{window.__BANKV=+((BANK_META&&BANK_META.version)||0)}catch(_){window.__BANKV=0}
+    window.__PROFILE={name:"Visitor",email:"Login to open MCQs",role:"Visitor",expires:null,trial:false,photo:""};
+    window.__RAWNAME="Visitor";
+    startApp(JSON.parse(b.json));
+    lgHide();
+  }catch(e){
+    window.__VISITOR=false;busy=false;lgHide();
+    try{await signOut(auth)}catch(_){}
+    showMethods(true);msg("");
+  }
+}
 let GFLAG=false;try{GFLAG=localStorage.getItem("eg23g")==="1"}catch(e){}
 /* stay signed in on this phone: after the first login the user opens straight into the app (access is still re-checked on every open) */
 try{await setPersistence(auth,browserLocalPersistence)}catch(e){}
@@ -4078,7 +4118,14 @@ try{if(localStorage.getItem("eg23in")==="1"){showMethods(false);msg("Signing you
 onAuthStateChanged(auth,user=>{
   if(started||busy)return;
   if(user)check(user);
-  else{lgHide();try{localStorage.removeItem("eg23in")}catch(_){}showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";msg("")}
+  else{
+    try{localStorage.removeItem("eg23in")}catch(_){}
+    browseOn().then(ok=>{
+      if(ok){startBrowse();return}
+      lgHide();showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";
+      try{if(sessionStorage.getItem("eg23nobrowse")==="1")msg("Login karein ya Guest chunein taake MCQs khol sakein.");else msg("")}catch(_){msg("")}
+    });
+  }
 });
 /* Google */
 gbtn.onclick=async()=>{
@@ -4272,6 +4319,14 @@ async function loadBank(){
 }
 
 async function check(user){
+  if(user.isAnonymous){
+    let chosen=false;try{chosen=localStorage.getItem("eg23g")==="1"}catch(_){}
+    if(!chosen){
+      if(await browseOn())return browseEnter(user);
+      try{await signOut(auth)}catch(_){}
+      return;   /* browsing was switched off: the listener shows the login screen */
+    }
+  }
   lgShow("Signing you in...",12);
   busy=true;showMethods(false);gout.hidden=true;gverbox.hidden=true;msg("Checking access...");
   const email=idOf(user);
@@ -4365,6 +4420,7 @@ function userbar(){
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
   const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center";
+  if(window.__VISITOR){const lb=el("button","btn primary","\u{1F510} Login");lb.type="button";lb.onclick=()=>goLogin();r.appendChild(lb)}
   if(IS_ADMIN||REAL_OWNER){
     const cur=PV?"user":(PM?"manager":(REAL_OWNER?"admin":"manager"));
     const lab={admin:"\u{1F6E0}\uFE0F Admin",manager:"\u{1F9D1}\u200D\u{1F4BC} Manager",user:"\u{1F441}\uFE0F User"};
@@ -4772,6 +4828,11 @@ function openAcct(focus){
 }
 
 function startApp(bank){
+  window.__needLogin=function(ch){
+    try{const i=Array.isArray(ch)&&ch.length?+ch[0]:-1;const sub=bank&&bank.SUB&&bank.SUB[i];
+      if(sub){const sl=deepSlug(sub.name);try{sessionStorage.setItem("eg23deep",sl)}catch(_){}try{localStorage.setItem("eg23deep",JSON.stringify({s:sl,t:Date.now()}))}catch(_){}}}catch(_){}
+    goLogin();
+  };
   started=true;$("gate").remove();userbar();
   document.body.appendChild($("app-tpl").content.cloneNode(true));
   if(!IS_ADMIN||PV){const e=$("btnEdit");if(e)e.style.display="none"}
@@ -5307,6 +5368,8 @@ function buildSettings(host){
   const tB=el("textarea");tB.id="cfgSeoBody";tB.rows=6;tB.placeholder="Home page text. Leave a blank line between paragraphs.";tB.style.cssText="width:100%;margin-top:6px";
   const cbI=el("input");cbI.type="checkbox";cbI.id="cfgInstall";
   const lbI=el("label","",null);lbI.style.cssText="display:flex;gap:8px;align-items:center;margin-top:10px";lbI.append(cbI,el("span","","Show the 'Download app' button (login screen + dashboard) so users can install the app"));
+  const cbB=el("input");cbB.type="checkbox";cbB.id="cfgBrowse";
+  const lbB=el("label","",null);lbB.style.cssText="display:flex;gap:8px;align-items:center;margin-top:10px";lbB.append(cbB,el("span","","Browse without login: app opens straight to the dashboard, login is asked only when someone opens MCQs"));
   const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
   const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
   const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
@@ -5329,18 +5392,18 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lbO,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);cbB.checked=!(ac.exists()&&ac.data().browse===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
       if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
     try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
-      await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,showInstall:cbI.checked,seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim(),updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;SHOW_INST=cbI.checked;SEO_CFG={seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim()};if(window.__applyOpen)window.__applyOpen();
+      await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,showInstall:cbI.checked,browse:cbB.checked,seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim(),updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;SHOW_INST=cbI.checked;SEO_CFG={seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim()};if(window.__applyOpen)window.__applyOpen();
       if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
