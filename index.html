@@ -2227,7 +2227,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
 
   function start(ch){
-    if(window.__VISITOR){if(window.__needLogin)window.__needLogin(ch);return}
+    if(window.__VISITOR&&window.__vWall&&window.__vWall())return;   /* free limit reached: login first */
     TTITLE="";
     if(ch==="bkm"){
       sel=[];order=bkmIds().filter(function(id){return Q[id]});
@@ -2298,12 +2298,14 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     if(TMOFF>0&&started&&elapsed()>=TMOFF){finish("\u23F0 Waqat khatam! Test khud finish ho gaya.");return}
     var id=order[pos];
     if(ans[id])return; /* one attempt per MCQ */
+    if(window.__VISITOR&&window.__vWall&&window.__vWall())return;
     if(!started){started=true;startTs=Date.now();tick=setInterval(onTick,250);$("#btnPause").disabled=false}
     var used=elapsed(),q=Q[id],ok=(i===q.ans);
     if(window.__sfx)window.__sfx(ok?"good":"sad");
     ans[id]={sel:i,ok:ok,used:used,w:ok?[]:[{sel:i,used:used}]};
     if(!ok)wrongLog.push({n:pos+1,id:id,used:used,sel:i});
     save();justAns=id;
+    if(window.__VISITOR&&window.__vCount)window.__vCount();
     updateStats();updateTimer();paintMap();renderQ();renderLog();
     /* auto-next: 1.2 s after a right answer, 4 s after a wrong one */
     cancelAuto();
@@ -4079,6 +4081,25 @@ async function browseOn(){
   try{const c=await getDoc(doc(db,"sitedata","access"));const on=!(c.exists()&&c.data().browse===false);try{localStorage.setItem("eg23browse",on?"1":"0")}catch(_){}return on}
   catch(e){try{return localStorage.getItem("eg23browse")!=="0"}catch(_){return true}}
 }
+const V_LIMIT=10;
+function vCnt(){try{return parseInt(localStorage.getItem("eg23vcnt")||"0",10)||0}catch(_){return 0}}
+function showWall(){
+  if(document.getElementById("vWall"))return;
+  const w=document.createElement("div");w.id="vWall";
+  w.style.cssText="position:fixed;inset:0;z-index:100001;background:rgba(7,12,28,.72);display:flex;align-items:center;justify-content:center;padding:20px;font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif";
+  const c=document.createElement("div");
+  c.style.cssText="width:min(340px,100%);background:#fff;color:#13222d;border-radius:22px;padding:24px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.45)";
+  c.innerHTML='<div style="font-size:42px">\ud83d\udd12</div><div style="font-weight:800;font-size:20px;margin:6px 0">Aap ne '+V_LIMIT+' MCQs kar liye!</div><div style="opacity:.8;margin-bottom:16px">Free practice jaari rakhne ke liye login karein. Aap ka ab tak ka test save rahega aur wahin se aage barh sakenge.</div>';
+  const b1=document.createElement("button");b1.type="button";b1.textContent="\ud83d\udd10 Login / Sign up";
+  b1.style.cssText="display:block;width:100%;border:0;border-radius:14px;padding:14px;background:#1d4ed8;color:#fff;font:800 16px system-ui,sans-serif";
+  b1.onclick=()=>{try{sessionStorage.setItem("eg23resume","1")}catch(_){}goLogin()};
+  const b2=document.createElement("button");b2.type="button";b2.textContent="Abhi nahi";
+  b2.style.cssText="display:block;width:100%;border:0;background:none;margin-top:8px;padding:10px;color:#566;font:600 14px system-ui,sans-serif";
+  b2.onclick=()=>w.remove();
+  c.append(b1,b2);w.appendChild(c);document.body.appendChild(w);
+}
+window.__vWall=function(){if(vCnt()>=V_LIMIT){showWall();return true}return false};
+window.__vCount=function(){const n=vCnt()+1;try{localStorage.setItem("eg23vcnt",String(n))}catch(_){}if(n>=V_LIMIT)setTimeout(showWall,1500)};
 async function goLogin(){
   try{sessionStorage.setItem("eg23nobrowse","1")}catch(_){}
   try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}
@@ -4101,7 +4122,7 @@ async function browseEnter(user){
     lgStep("Preparing your dashboard...",85);
     BANK_JSON=b.json;BANK_META=b.meta;
     try{window.__BANKV=+((BANK_META&&BANK_META.version)||0)}catch(_){window.__BANKV=0}
-    window.__PROFILE={name:"Visitor",email:"Login to open MCQs",role:"Visitor",expires:null,trial:false,photo:""};
+    window.__PROFILE={name:"Visitor",email:"Free: "+V_LIMIT+" MCQs, phir login",role:"Visitor",expires:null,trial:false,photo:""};
     window.__RAWNAME="Visitor";
     startApp(JSON.parse(b.json));
     lgHide();
@@ -4123,7 +4144,7 @@ onAuthStateChanged(auth,user=>{
     browseOn().then(ok=>{
       if(ok){startBrowse();return}
       lgHide();showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";
-      try{if(sessionStorage.getItem("eg23nobrowse")==="1")msg("Login karein ya Guest chunein taake MCQs khol sakein.");else msg("")}catch(_){msg("")}
+      try{if(sessionStorage.getItem("eg23nobrowse")==="1")msg("Login karein ya Guest chunein taake aap aage MCQs hal kar sakein.");else msg("")}catch(_){msg("")}
     });
   }
 });
@@ -4322,9 +4343,8 @@ async function check(user){
   if(user.isAnonymous){
     let chosen=false;try{chosen=localStorage.getItem("eg23g")==="1"}catch(_){}
     if(!chosen){
-      if(await browseOn())return browseEnter(user);
-      try{await signOut(auth)}catch(_){}
-      return;   /* browsing was switched off: the listener shows the login screen */
+      if(await browseOn()){window.__VISITOR=true}
+      else{try{await signOut(auth)}catch(_){}return}   /* browsing was switched off: the listener shows the login screen */
     }
   }
   lgShow("Signing you in...",12);
@@ -4350,6 +4370,7 @@ async function check(user){
     let OPEN=false;
     lgStep("Checking your account...",30);
     if(!IS_ADMIN){try{const ac=await accP;OPEN=!!(ac&&ac.exists()&&ac.data().open===true)}catch(_){}}
+    if(window.__VISITOR)OPEN=true;   /* free browsing: no approval needed */
     if(!IS_ADMIN&&OPEN){
       try{const ar=await alP;if(ar&&!ar.e&&ar.r.exists()){const d0=ar.r.data();if(d0.enabled!==true&&d0.pending!==true)return deny(email,"Your access is turned off.")}}catch(_){}
     }else if(!IS_ADMIN){
@@ -4367,7 +4388,7 @@ async function check(user){
     let cfg={enabled:true,message:""};
     try{const c=await cfgP;if(c&&c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
-    window.__AI_ON=cfg.ai!==false;
+    window.__AI_ON=cfg.ai!==false&&!window.__VISITOR;
     window.__LIB_ON=cfg.library!==false;
     window.__CHATNOTE=cfg.chatNote===true;
     lgStep("Loading questions...",55);
@@ -4393,7 +4414,8 @@ async function check(user){
     }
     window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:user.photoURL||"",phone:user.phoneNumber||""};
     try{window.__RAWNAME=user.isAnonymous?"Guest":(user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email))}catch(_){window.__RAWNAME="Guest"}
-    try{localStorage.setItem("eg23in","1")}catch(_){}
+    if(window.__VISITOR){window.__PROFILE.name="Visitor";window.__PROFILE.email="Free: "+V_LIMIT+" MCQs, phir login";window.__PROFILE.role="Visitor";window.__RAWNAME="Visitor"}
+    else{try{localStorage.setItem("eg23in","1")}catch(_){}}
     startApp(JSON.parse(b.json));
     lgHide();
   }catch(e){
@@ -4828,11 +4850,6 @@ function openAcct(focus){
 }
 
 function startApp(bank){
-  window.__needLogin=function(ch){
-    try{const i=Array.isArray(ch)&&ch.length?+ch[0]:-1;const sub=bank&&bank.SUB&&bank.SUB[i];
-      if(sub){const sl=deepSlug(sub.name);try{sessionStorage.setItem("eg23deep",sl)}catch(_){}try{localStorage.setItem("eg23deep",JSON.stringify({s:sl,t:Date.now()}))}catch(_){}}}catch(_){}
-    goLogin();
-  };
   started=true;$("gate").remove();userbar();
   document.body.appendChild($("app-tpl").content.cloneNode(true));
   if(!IS_ADMIN||PV){const e=$("btnEdit");if(e)e.style.display="none"}
@@ -4858,6 +4875,12 @@ function startApp(bank){
     if(!f){f=document.createElement("div");f.id="siteFoot";f.innerHTML='<div class="sfn"></div><div><a href="/about.html">About</a> \u00b7 <a href="/privacy-policy.html">Privacy Policy</a> \u00b7 <a href="/contact.html">Contact</a></div>'}
     f.querySelector(".sfn").textContent=siteName();
     document.body.appendChild(f);   /* always the very last thing on the page */
+  }catch(_){}
+  try{
+    if(!window.__VISITOR&&sessionStorage.getItem("eg23resume")==="1"){
+      sessionStorage.removeItem("eg23resume");
+      setTimeout(()=>{const rb=document.getElementById("btnResume");if(rb&&!rb.hidden)rb.click()},500);   /* continue the test the visitor was doing */
+    }
   }catch(_){}
   if(DEEP){
     const want=DEEP;DEEP="";
@@ -4958,6 +4981,7 @@ function showTab(k){
 function dstr(ms){return new Date(ms).toLocaleDateString()}
 /* every person who signs in (Google / email / phone / guest) is recorded, so Admin > Visitors shows them even in Open Access */
 async function recordVisit(){
+  if(window.__VISITOR)return;
   try{
     const u=auth.currentUser;if(!u)return;
     const id=idOf(u);if(!id)return;
