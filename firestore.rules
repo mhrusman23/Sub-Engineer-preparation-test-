@@ -1,0 +1,190 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Engrgroup23 - complete Firestore rules (v3.8, only // comments)
+    // Owner  : maherusman1947@gmail.com
+    // Admins : owner + managers (Admin panel > Managers)
+    // guest / phone logins have no "email" in the token, so all token reads use .get()
+
+    function tok() {
+      return request.auth.token;
+    }
+    function signed() {
+      return request.auth != null;
+    }
+    function isGuest() {
+      return signed() && tok().firebase.sign_in_provider == 'anonymous';
+    }
+    // verified email, lowercase, else empty
+    function myEmail() {
+      return (signed() && tok().get('email', null) is string && tok().get('email_verified', false) == true)
+        ? tok().email.lower() : '';
+    }
+    function myPhone() {
+      return (signed() && tok().get('phone_number', null) is string) ? tok().phone_number : '';
+    }
+    // same id as the site code idOf(user)
+    function myId() {
+      return isGuest() ? ('guest_' + request.auth.uid)
+        : (myEmail() != '' ? myEmail() : myPhone());
+    }
+    function isOwner() {
+      return myEmail() in ['maherusman1947@gmail.com'];
+    }
+    function isManager() {
+      return (myEmail() != '' && exists(/databases/$(database)/documents/managers/$(myEmail())))
+        || (myPhone() != '' && exists(/databases/$(database)/documents/managers/$(myPhone())));
+    }
+    function isAdmin() {
+      return isOwner() || isManager();
+    }
+
+    // site look + ads + jokes: everyone reads (login screen), admins write
+    match /sitedata/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // settings, bank meta; meta/ai = API key (admins only)
+    match /meta/{id} {
+      allow read: if isAdmin() || (id != 'ai' && signed());
+      allow write: if isAdmin();
+    }
+
+    match /bank/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+
+    // Settings > User mode = Admin approval (meta/config.guestApprove)
+    function guestApprove() {
+      return exists(/databases/$(database)/documents/meta/config)
+        && get(/databases/$(database)/documents/meta/config).data.get('guestApprove', false) == true;
+    }
+
+    // approved users / guests
+    match /allowed/{id} {
+      allow get: if signed() && (isAdmin() || myId() == id);
+      allow list: if isAdmin();
+      allow create: if isAdmin() ||
+        (isGuest() && myId() == id &&
+         request.resource.data.trial == true &&
+         request.resource.data.enabled == !guestApprove() &&
+         request.resource.data.get('pending', false) == guestApprove() &&
+         request.resource.data.expires is timestamp &&
+         request.resource.data.expires <= request.time + duration.value(168, 'h')) ||
+        // (third option) User mode = Admin approval: a signed-in user may only create a WAITING request for himself
+        (signed() && !isGuest() && myId() == id && guestApprove() &&
+         request.resource.data.keys().hasOnly(['email', 'enabled', 'trial', 'pending', 'createdAt']) &&
+         request.resource.data.enabled == false &&
+         request.resource.data.trial == false &&
+         request.resource.data.pending == true);
+      allow update, delete: if isAdmin();
+    }
+
+    // guest trial: one network (IP) once
+    match /trialips/{id} {
+      allow read: if isAdmin();
+      allow create: if isGuest();
+      allow update, delete: if isAdmin();
+    }
+
+    // managers: only owner writes; a person can read own doc
+    match /managers/{id} {
+      allow get, list: if isOwner() || (signed() && myId() == id);
+      allow write: if isOwner();
+    }
+
+    match /reports/{id} {
+      allow create: if signed() && request.resource.data.by is string
+        && request.resource.data.by == myId();
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /mocktests/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+    match /mockdata/{id}/parts/{pid} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+
+    match /lib/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+    match /libdata/{id}/parts/{pid} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+
+    // jobs
+    match /jobs/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+
+    // friendly chat: everyone writes own message, admins can delete
+    match /chat/{id} {
+      allow read: if signed();
+      allow create: if signed() &&
+        request.resource.data.uid is string &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.txt is string &&
+        request.resource.data.txt.size() > 0 &&
+        request.resource.data.txt.size() <= 300 &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 24 &&
+        request.resource.data.ts == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // every person who signs in is recorded here (Admin panel > Visitors). A person writes only his own doc, admins read.
+    match /visitors/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if signed() && myId() == id &&
+        request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'provider', 'firstSeen', 'lastSeen', 'visits']) &&
+        request.resource.data.visits == 1 &&
+        request.resource.data.firstSeen == request.time &&
+        request.resource.data.lastSeen == request.time;
+      allow update: if signed() && myId() == id &&
+        request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'provider', 'firstSeen', 'lastSeen', 'visits']) &&
+        request.resource.data.lastSeen == request.time &&
+        request.resource.data.visits == resource.data.get('visits', 0) + 1;
+    }
+
+    // Urdu translations of MCQs: everyone signed in reads, only admins write (so nobody can fill it with fake text)
+    match /urdu/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+
+    // username: each user writes only own doc
+    match /pubusers/{uid} {
+      allow read: if signed();
+      allow create, update: if signed() && request.auth.uid == uid &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() <= 24 &&
+        request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // AI MCQs: the AI writes them from Admin panel > AI MCQs. Only admins see the waiting ones; signed-in users read the approved ones.
+    match /pending_mcqs/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /mcqs/{id} {
+      allow read: if signed();
+      allow write: if isAdmin();
+    }
+    // mcq_views: any signed-in user may add one small doc, only admins read
+    match /mcq_views/{id} {
+      allow create: if signed() && request.resource.data.size() <= 5;
+      allow read: if isAdmin();
+    }
+  }
+}

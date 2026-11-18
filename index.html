@@ -3838,7 +3838,7 @@ function mtStatus(txt,pct,done){
 }
 
 /* ---------------- AI helper (Gemini API key, direct) ---------------- */
-let AI_SYS_OVR="";
+let AI_SYS_OVR="";let AI_MAXOUT=0;
 const AI_SYS="You are the friendly civil engineering tutor of Engrgroup23. Students are preparing for the Pakistani Sub Engineer (PPSC) and DAE Civil exams. "+
  "Reply in clear, simple English unless the message asks for Urdu: then write Urdu in Urdu script and keep technical terms, formulas and units in English. If the student writes in Urdu or Roman Urdu, reply in Urdu. "+
  "Keep answers short and clear (at most 150 words per language) unless the student asks for detail. Use bullet points, and write formulas and units in plain text. "+
@@ -3895,9 +3895,9 @@ function aiPlans(cfg){
 function aiBody(plan,contents,noThink){
   if(plan.kind==="o"){
     const msgs=[{role:"system",content:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}].concat(contents.map(c=>({role:c.role==="model"?"assistant":"user",content:c.parts.map(p=>p.text||"").join("")})));
-    return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:1024};
+    return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:AI_MAXOUT||1024};
   }
-  const gc={temperature:0.4,maxOutputTokens:1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
+  const gc={temperature:0.4,maxOutputTokens:AI_MAXOUT||1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
   return {systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}]},contents,generationConfig:gc};
 }
 function aiPiece(plan,j){
@@ -4964,13 +4964,13 @@ function buildAdmin(){
   const top=el("div","top");top.appendChild(el("h2","","Admin panel"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{adm.hidden=true};top.appendChild(cl);box.appendChild(top);
   const tb=el("div","tabs");box.appendChild(tb);
-  const names={users:"Users",guests:"Guests",visitors:"Visitors",reports:"Reports",bank:"Questions",library:"Library"};
+  const names={users:"Users",guests:"Guests",visitors:"Visitors",reports:"Reports",bank:"Questions",library:"Library",aimcq:"AI MCQs"};
   if(IS_OWNER){names.settings="Settings";names.managers="Managers"}   /* Settings + Managers: owner only, managers never see them */
   Object.keys(names).forEach(k=>{
     const b=el("button","btn",names[k]);b.type="button";b.onclick=()=>showTab(k);tb.appendChild(b);
     tabs[k]={btn:b,body:el("div")};box.appendChild(tabs[k].body);
   });
-  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildVisitors(tabs.visitors.body);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);if(tabs.settings)buildSettings(tabs.settings.body);
+  buildUsers(tabs.users.body);buildUsers(tabs.guests.body,true);buildVisitors(tabs.visitors.body);buildReports(tabs.reports.body);buildBank(tabs.bank.body);buildLibAdmin(tabs.library.body);buildAiMcq(tabs.aimcq.body);if(tabs.settings)buildSettings(tabs.settings.body);
   if(IS_OWNER)buildManagers(tabs.managers.body);
   document.body.appendChild(adm);
 }
@@ -5127,6 +5127,99 @@ function buildUsers(host,onlyG){
     add.disabled=false;
   };
   (onlyG?tabs.guests:tabs.users).load=load;
+}
+/* ---------------- AI MCQs: AI writes MCQs (English + Urdu) -> admin approves -> saved in "mcqs" ---------------- */
+const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"]];
+async function aimcqGenerate(subject,n,have){
+  const cfg=await aiKey();
+  AI_SYS_OVR="You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
+  AI_MAXOUT=4096;
+  try{
+    const avoid=(have||[]).slice(-20).map(x=>String(x).slice(0,60)).join(" | ");
+    const prompt="Write exactly "+n+" new multiple-choice questions for the subject: "+subject+".\n"+(avoid?"Do not repeat these: "+avoid+"\n":"")+
+      "Each array item must have exactly these keys: \"question\" (English), \"question_urdu\" (the same question in Urdu script, Arabic letters only, technical terms in English), \"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
+    const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
+    const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
+    if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format, try again");
+    let arr;try{arr=JSON.parse(t.slice(a,b+1))}catch(e){throw new Error("AI answer was broken or cut, try again")}
+    const cut=(x,k)=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,k);
+    const out=[];
+    (Array.isArray(arr)?arr:[]).forEach(m=>{
+      if(!m||!Array.isArray(m.options)||m.options.length!==4)return;
+      const o=m.options.map(x=>cut(x,200)),c=Number(m.correct),q=cut(m.question,500);
+      if(!q||o.some(x=>!x)||!Number.isInteger(c)||c<0||c>3)return;
+      out.push({question:q,question_urdu:cut(m.question_urdu,600),options:o,correct:c,explanation:cut(m.explanation,600)});
+    });
+    if(!out.length)throw new Error("AI did not return usable MCQs, try again");
+    return out.slice(0,n);
+  }finally{AI_SYS_OVR="";AI_MAXOUT=0}
+}
+function buildAiMcq(host){
+  const st=el("div","label st"),bar=el("div"),list=el("div");
+  bar.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0";
+  host.append(el("div","label","AI writes MCQs (English + Urdu). Nothing goes live until you approve it here."),bar,st,list);
+  let P=[],busy=false;
+  const say=t=>{st.textContent=t};
+  const lock=v=>{busy=v;bar.querySelectorAll("button").forEach(x=>{x.disabled=v})};
+  AIMCQ_SUBJECTS.forEach(([full,short])=>{
+    const b=el("button","btn primary","AI "+short+" MCQs");b.type="button";
+    b.onclick=async()=>{
+      if(busy)return;lock(true);say("Writing "+full+" MCQs\u2026 please wait.");
+      let rows;
+      try{rows=await aimcqGenerate(full,3,P.map(x=>x.d.question))}
+      catch(e){say(aiErrBase(e));lock(false);return}
+      try{
+        const bt=writeBatch(db);
+        rows.forEach(r=>bt.set(doc(collection(db,"pending_mcqs")),Object.assign({},r,{subject:full,status:"pending",source:"AI",by:ME,createdAt:serverTimestamp()})));
+        await bt.commit();say(rows.length+" MCQs are waiting for your approval.");await load();
+      }catch(e){say(admDeny(e))}
+      lock(false);
+    };
+    bar.appendChild(b);
+  });
+  function render(){
+    list.textContent="";
+    tabs.aimcq.btn.textContent="AI MCQs"+(P.length?" ("+P.length+")":"");
+    if(!P.length){list.appendChild(el("div","label","No MCQs waiting for approval."));return}
+    P.forEach(r=>{
+      const d=r.d,row=el("div","urow"),w=el("div","who");
+      w.appendChild(el("span","",d.question||""));
+      if(d.question_urdu){
+        const ur=el("small","",d.question_urdu);ur.dir="rtl";
+        ur.style.cssText="font:20px/2 'Noto Nastaliq Urdu','Jameel Noori Nastaleeq','Noto Naskh Arabic',system-ui,serif;text-align:right";
+        w.appendChild(ur);
+      }
+      (d.options||[]).forEach((o,i)=>{
+        const s=el("small","","ABCD".charAt(i)+") "+o+(i===d.correct?"  \u2713":""));
+        if(i===d.correct)s.style.fontWeight="700";w.appendChild(s);
+      });
+      if(d.explanation)w.appendChild(el("small","","Why: "+d.explanation));
+      w.appendChild(el("small","",(d.subject||"")+" \u00b7 "+(d.source||"")));
+      const ok=el("button","btn primary","Approve");ok.type="button";
+      ok.onclick=async()=>{
+        ok.disabled=true;
+        try{
+          const bt=writeBatch(db);
+          bt.set(doc(collection(db,"mcqs")),{question:d.question,question_urdu:d.question_urdu||"",options:d.options,correct:d.correct,explanation:d.explanation||"",subject:d.subject||"",source:d.source||"AI",status:"approved",approvedBy:ME,approvedAt:serverTimestamp()});
+          bt.delete(doc(db,"pending_mcqs",r.id));
+          await bt.commit();say("Approved and saved.");await load();
+        }catch(e){say(admDeny(e));ok.disabled=false}
+      };
+      const no=el("button","btn danger","Reject");no.type="button";let arm=false;
+      no.onclick=async()=>{
+        if(!arm){arm=true;no.textContent="Confirm?";setTimeout(()=>{arm=false;no.textContent="Reject"},3000);return}
+        try{await deleteDoc(doc(db,"pending_mcqs",r.id));say("Rejected.");await load()}catch(e){say(admDeny(e))}
+      };
+      row.append(w,ok,no);list.appendChild(row);
+    });
+  }
+  async function load(){
+    try{
+      const s=await getDocs(query(collection(db,"pending_mcqs"),where("status","==","pending"),limit(100)));
+      P=s.docs.map(x=>({id:x.id,d:x.data()}));render();
+    }catch(e){say(admDeny(e))}
+  }
+  tabs.aimcq.load=load;
 }
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
