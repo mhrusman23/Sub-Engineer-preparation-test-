@@ -2305,6 +2305,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     ans[id]={sel:i,ok:ok,used:used,w:ok?[]:[{sel:i,used:used}]};
     if(!ok)wrongLog.push({n:pos+1,id:id,used:used,sel:i});
     save();justAns=id;
+    if(TMP&&TMP.ai&&window.__aiqDone)try{window.__aiqDone(QO[id]?q.text:"")}catch(e){}
     if(window.__VISITOR&&window.__vCount)window.__vCount();
     updateStats();updateTimer();paintMap();renderQ();renderLog();
     /* auto-next: 1.2 s after a right answer, 4 s after a wrong one */
@@ -5271,7 +5272,7 @@ function buildAiMcq(host){
 }
 /* ---- AI MCQs for users: opens in the normal test screen; MCQs download quietly into a local buffer.
    Order: approved MCQs -> shared AI pool (ai_pool) -> live AI (saved to ai_pool so the pool grows) -> question bank ---- */
-const AIQ={buf:[],filling:false,bank:[],seen:null,cur:{}};
+const AIQ={buf:[],lent:[],filling:false,bank:[],seen:null,cur:{}};
 function aiqAllowed(){
   if(IS_ADMIN&&!PV)return true;
   const m=window.__AIQ_MODE||"all";
@@ -5291,8 +5292,8 @@ function aiqMark(list){
   if(s.length>1500)s.splice(0,s.length-1500);
   try{localStorage.setItem("eg23aiqSeen",JSON.stringify(s))}catch(_){}
 }
-function aiqHave(){const h=new Set(aiqSeen());AIQ.buf.forEach(m=>h.add(aiqKey(m)));return h}
-function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.buf.slice(0,60),cur:AIQ.cur}))}catch(_){}}
+function aiqHave(){const h=new Set(aiqSeen());AIQ.lent.concat(AIQ.buf).forEach(m=>h.add(aiqKey(m)));return h}
+function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,80),cur:AIQ.cur}))}catch(_){}}
 function aiqLoad(){
   try{
     const s=JSON.parse(localStorage.getItem("eg23aiq")||"null");
@@ -5377,12 +5378,19 @@ async function aiqFill(n){
 function aiqTake(k){
   if(AIQ.buf.length<k)AIQ.buf.push(...aiqFromBank(k-AIQ.buf.length));
   const out=AIQ.buf.splice(0,k);
-  aiqMark(out);aiqSave();
+  AIQ.lent.push(...out);aiqSave();
   if(AIQ.buf.length<10)aiqFill(20);
   return out.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||""}));
 }
+function aiqDone(text){
+  const k=aiqKey({question:text}),i=AIQ.lent.findIndex(m=>aiqKey(m)===k);
+  if(i<0)return;
+  aiqMark(AIQ.lent.splice(i,1));aiqSave();
+}
 function aiqStart(){
   if(!window.__playAi)return;
+  window.__aiqDone=aiqDone;
+  if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
   window.__aiqNext=()=>{const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
   window.__playAi("AI MCQs",aiqTake(10));
 }
