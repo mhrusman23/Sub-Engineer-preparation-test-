@@ -2363,6 +2363,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         d.appendChild(document.createTextNode(" used. Correct answer: "+LET[q.ans]+". "+q.opts[q.ans]+". This question is locked."));
       }
       fb.appendChild(d);
+      if(q.exp){var xp=el("div","fb");xp.textContent="Why: "+q.exp;fb.appendChild(xp)}
     }
     $("#prev").disabled=pos===0;
     $("#next").disabled=pos===order.length-1;
@@ -3078,6 +3079,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         if(!validQ(q))return;
         QO.push(q.opts.slice());QA.push(q.ans);Q.push(q);
         var id=Q.length-1;if(x.ur)urSet(id,{q:String(x.ur),o:QO[id].slice()});
+        if(x.exp)q.exp=String(x.exp).slice(0,600);
         n++;
       });
       return n;
@@ -5380,7 +5382,7 @@ function aiqTake(k){
   const out=AIQ.buf.splice(0,k);
   AIQ.lent.push(...out);aiqSave();
   if(AIQ.buf.length<10)aiqFill(20);
-  return out.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||""}));
+  return out.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""}));
 }
 function aiqDone(text){
   const k=aiqKey({question:text}),i=AIQ.lent.findIndex(m=>aiqKey(m)===k);
