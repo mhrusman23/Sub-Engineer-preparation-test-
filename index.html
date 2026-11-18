@@ -3898,7 +3898,9 @@ function aiBody(plan,contents,noThink){
     return plan.free?{model:plan.model,messages:msgs,stream:true}:{model:plan.model,messages:msgs,stream:true,temperature:0.4,max_tokens:AI_MAXOUT||1024};
   }
   const gc={temperature:0.4,maxOutputTokens:AI_MAXOUT||1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
-  return {systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}]},contents,generationConfig:gc};
+  const body={systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}]},contents,generationConfig:gc};
+  if(plan.proxy&&AI_MAXOUT)body.mode="mcq";
+  return body;
 }
 function aiPiece(plan,j){
   if(plan.kind==="o"){const ch=j.choices&&j.choices[0];return (ch&&ch.delta&&ch.delta.content)||""}

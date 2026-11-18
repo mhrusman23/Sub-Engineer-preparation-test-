@@ -18,6 +18,14 @@ const MAX_BODY = 60000;
 const MAX_TEXT = 6000;
 const MAX_TOTAL = 24000;
 
+const OWNER = "maherusman1947@gmail.com";
+const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents/";
+
+// Admin panel > AI MCQs (admins only): fixed prompt, bigger reply so the JSON is not cut
+const MCQ_SYS =
+  "You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
+const MCQ_MAX_OUT = 4096;
+
 const SYS =
   "You are the friendly civil engineering tutor of Engrgroup23. Students are preparing for the Pakistani Sub Engineer (PPSC) and DAE Civil exams. " +
   "Reply in clear, simple English unless the message asks for Urdu: then write Urdu in Urdu script and keep technical terms, formulas and units in English. If the student writes in Urdu or Roman Urdu, reply in Urdu. " +
@@ -35,10 +43,43 @@ function fail(res, status, code, message) {
 
 // ---- login + approval check (cached) ----
 const okCache = new Map();
+
+// same id as the site code idOf(user) and the rules myId()
+function idOfClaims(c) {
+  if (c.firebase && c.firebase.sign_in_provider === "anonymous") return "guest_" + c.sub;
+  if (typeof c.email === "string" && c.email_verified === true) return c.email.toLowerCase();
+  if (typeof c.phone_number === "string") return c.phone_number;
+  return "";
+}
+
+// reads one doc as this user (Firestore rules apply); null = missing or not allowed
+async function fsGet(path, token) {
+  const r = await fetch(FS + path, { headers: { Authorization: "Bearer " + token } });
+  if (r.status === 200) return ((await r.json().catch(() => ({}))).fields) || {};
+  if (r.status === 404 || r.status === 403) return null;
+  throw new Error("Firestore " + r.status);
+}
+
+// owner / manager = admin; otherwise an enabled, not expired allowed/{id} doc, or Open Access
+async function membership(claims, token, now) {
+  const id = idOfClaims(claims);
+  if (!id) return null;
+  if (id === OWNER) return { admin: true };
+  const enc = encodeURIComponent(id);
+  if (await fsGet("managers/" + enc, token)) return { admin: true };
+  const a = await fsGet("allowed/" + enc, token);
+  if (a && a.enabled && a.enabled.booleanValue === true) {
+    const ex = a.expires && a.expires.timestampValue ? Date.parse(a.expires.timestampValue) : 0;
+    if (!ex || ex > now) return { admin: false };
+  }
+  const open = await fsGet("sitedata/access", token);
+  if (open && open.open && open.open.booleanValue === true) return { admin: false };
+  return null;
+}
 async function authorize(token) {
   const now = Date.now();
   const hit = okCache.get(token);
-  if (hit && hit.exp > now) return hit.uid;
+  if (hit && hit.exp > now) return hit.who;
   let claims;
   try {
     claims = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString("utf8"));
@@ -69,9 +110,17 @@ async function authorize(token) {
   } else if (r.status !== 404) {
     return 503;
   }
+  let m;
+  try {
+    m = await membership(claims, token, now);
+  } catch (e) {
+    return 503;
+  }
+  if (!m) return { fail: 403, why: "your access is not approved or has expired" };
+  const who = { uid: claims.sub, admin: m.admin };
   if (okCache.size > 500) okCache.clear();
-  okCache.set(token, { uid: claims.sub, exp: now + 60000 });
-  return claims.sub;
+  okCache.set(token, { who, exp: now + 60000 });
+  return who;
 }
 
 // ---- per-user rate limit (best effort) ----
@@ -167,7 +216,7 @@ module.exports = async function handler(req, res) {
     if (who === 401) return fail(res, 401, "UNAUTHENTICATED", "Please log in again");
     if (who && who.fail === 403) return fail(res, 403, "PERMISSION_DENIED", "Only approved active members can use AI (" + who.why + ")");
     if (who === 503) return fail(res, 503, "UNAVAILABLE", "Could not check access, try again");
-    if (limited(who)) return fail(res, 429, "RESOURCE_EXHAUSTED", "Too many AI requests, please wait a minute");
+    if (limited(who.uid)) return fail(res, 429, "RESOURCE_EXHAUSTED", "Too many AI requests, please wait a minute");
 
     const raw = await readBody(req);
     if (raw === null || raw.length > MAX_BODY) return fail(res, 413, "INVALID_ARGUMENT", "Request too large");
@@ -175,11 +224,13 @@ module.exports = async function handler(req, res) {
     try { b = JSON.parse(raw); } catch (e) { return fail(res, 400, "INVALID_ARGUMENT", "Bad JSON"); }
     const contents = clean(b && b.contents);
     if (!contents) return fail(res, 400, "INVALID_ARGUMENT", "Invalid or too long message");
+    const mcq = b.mode === "mcq";
+    if (mcq && !who.admin) return fail(res, 403, "PERMISSION_DENIED", "Only admins can write AI MCQs");
 
     const body = {
-      systemInstruction: { parts: [{ text: SYS }] },
+      systemInstruction: { parts: [{ text: mcq ? MCQ_SYS : SYS }] },
       contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1200, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.4, maxOutputTokens: mcq ? MCQ_MAX_OUT : 1200, thinkingConfig: { thinkingBudget: 0 } },
     };
 
     let up;
