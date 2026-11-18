@@ -4300,7 +4300,7 @@ async function claimGuest(user,email){
   }
   let c1="",ok=false;
   /* normal mode: instant guest; approval mode (admin switched it on): the request is saved as "waiting" for admin/manager */
-  for(const [wi,pd] of [[true,false],[false,false],[true,true],[false,true]]){
+  for(const [wi,pd] of [[true,false],[true,true]]){
     try{await attempt(wi,pd);ok=true;break}
     catch(e1){if(!c1)c1=(e1&&(e1.code||e1.message))||"unknown"}
   }

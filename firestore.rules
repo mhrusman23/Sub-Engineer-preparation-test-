@@ -63,6 +63,12 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/meta/config).data.get('guestApprove', false) == true;
     }
 
+    // Settings > Guest hours (sitedata/style.guestHours), default 12
+    function guestHours() {
+      return exists(/databases/$(database)/documents/sitedata/style)
+        ? int(get(/databases/$(database)/documents/sitedata/style).data.get('guestHours', 12)) : 12;
+    }
+
     // approved users / guests
     match /allowed/{id} {
       allow get: if signed() && (isAdmin() || myId() == id);
@@ -73,7 +79,11 @@ service cloud.firestore {
          request.resource.data.enabled == !guestApprove() &&
          request.resource.data.get('pending', false) == guestApprove() &&
          request.resource.data.expires is timestamp &&
-         request.resource.data.expires <= request.time + duration.value(168, 'h')) ||
+         request.resource.data.expires <= request.time + duration.value(guestHours() + 1, 'h') &&
+         // one guest per network: the trialips doc must be created in the same batch (create fails if it exists)
+         request.resource.data.ipk is string &&
+         existsAfter(/databases/$(database)/documents/trialips/$(request.resource.data.ipk)) &&
+         !exists(/databases/$(database)/documents/trialips/$(request.resource.data.ipk))) ||
         // (third option) User mode = Admin approval: a signed-in user may only create a WAITING request for himself
         (signed() && !isGuest() && myId() == id && guestApprove() &&
          request.resource.data.keys().hasOnly(['email', 'enabled', 'trial', 'pending', 'createdAt']) &&
@@ -86,7 +96,7 @@ service cloud.firestore {
     // guest trial: one network (IP) once
     match /trialips/{id} {
       allow read: if isAdmin();
-      allow create: if isGuest();
+      allow create: if isGuest() && request.resource.data.email == myId();
       allow update, delete: if isAdmin();
     }
 
