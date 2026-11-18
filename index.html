@@ -2405,7 +2405,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       ul.appendChild(li);
     });
   }
-  function go(p){if(p<0||p>=order.length)return;cancelAuto();var fwd=p>pos;pos=p;renderQ();$("#confirm").hidden=true;if(started)save();if(fwd&&TMP&&TMP.ai&&window.__aiqNext)try{window.__aiqNext()}catch(e){}}
+  function go(p){if(p<0||p>=order.length)return;cancelAuto();var fwd=p>pos;pos=p;renderQ();$("#confirm").hidden=true;if(started)save();if(fwd&&TMP&&TMP.ai&&window.__aiqNext)try{window.__aiqNext(order.length-pos-1)}catch(e){}}
 
   /* ---- search by statement ---- */
   (function(){
@@ -5295,7 +5295,7 @@ function aiqMark(list){
   try{localStorage.setItem("eg23aiqSeen",JSON.stringify(s))}catch(_){}
 }
 function aiqHave(){const h=new Set(aiqSeen());AIQ.lent.concat(AIQ.buf).forEach(m=>h.add(aiqKey(m)));return h}
-function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,80),cur:AIQ.cur}))}catch(_){}}
+function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,200),cur:AIQ.cur}))}catch(_){}}
 function aiqLoad(){
   try{
     const s=JSON.parse(localStorage.getItem("eg23aiq")||"null");
@@ -5393,7 +5393,7 @@ function aiqStart(){
   if(!window.__playAi)return;
   window.__aiqDone=aiqDone;
   if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
-  window.__aiqNext=()=>{const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
+  window.__aiqNext=ahead=>{if(ahead>=10)return;const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
   window.__playAi("AI MCQs",aiqTake(10));
 }
 function aiqInit(bank){
