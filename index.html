@@ -5342,7 +5342,7 @@ async function aiqPoolSave(list){
   for(const m of list){
     try{
       const id=(await sha256hex("q:"+aiqKey(m))).slice(0,40);
-      await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:"Civil Engineering",by:ME,createdAt:serverTimestamp()});
+      await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:"Civil Engineering",by:(auth.currentUser&&auth.currentUser.uid)||"",createdAt:serverTimestamp()});
     }catch(_){}
   }
 }

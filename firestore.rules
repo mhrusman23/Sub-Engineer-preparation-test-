@@ -207,7 +207,7 @@ service cloud.firestore {
         request.resource.data.correct is int && request.resource.data.correct >= 0 && request.resource.data.correct <= 3 &&
         request.resource.data.explanation is string && request.resource.data.explanation.size() <= 600 &&
         request.resource.data.subject is string && request.resource.data.subject.size() <= 60 &&
-        request.resource.data.by == myId() &&
+        request.resource.data.by == request.auth.uid &&
         request.resource.data.createdAt == request.time;
       allow update, delete: if isAdmin();
     }
