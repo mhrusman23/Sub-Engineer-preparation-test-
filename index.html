@@ -2305,6 +2305,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     ans[id]={sel:i,ok:ok,used:used,w:ok?[]:[{sel:i,used:used}]};
     if(!ok)wrongLog.push({n:pos+1,id:id,used:used,sel:i});
     save();justAns=id;
+    if(TMP&&TMP.ai&&window.__aiqDone)try{window.__aiqDone(QO[id]?q.text:"")}catch(e){}
     if(window.__VISITOR&&window.__vCount)window.__vCount();
     updateStats();updateTimer();paintMap();renderQ();renderLog();
     /* auto-next: 1.2 s after a right answer, 4 s after a wrong one */
@@ -2362,6 +2363,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         d.appendChild(document.createTextNode(" used. Correct answer: "+LET[q.ans]+". "+q.opts[q.ans]+". This question is locked."));
       }
       fb.appendChild(d);
+      if(q.exp){var xp=el("div","fb");xp.textContent="Why: "+q.exp;fb.appendChild(xp)}
     }
     $("#prev").disabled=pos===0;
     $("#next").disabled=pos===order.length-1;
@@ -2403,7 +2405,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       ul.appendChild(li);
     });
   }
-  function go(p){if(p<0||p>=order.length)return;cancelAuto();pos=p;renderQ();$("#confirm").hidden=true;if(started)save()}
+  function go(p){if(p<0||p>=order.length)return;cancelAuto();var fwd=p>pos;pos=p;renderQ();$("#confirm").hidden=true;if(started)save();if(fwd&&TMP&&TMP.ai&&window.__aiqNext)try{window.__aiqNext(order.length-pos-1)}catch(e){}}
 
   /* ---- search by statement ---- */
   (function(){
@@ -3068,6 +3070,47 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         return true;
       }catch(e){try{tmpClean()}catch(_){}return false}
     };
+    /* AI MCQs: same test screen; window.__aiAppend adds more questions while the test runs */
+    var AIC=-1;
+    function aiAdd(list){
+      var n=0;
+      (list||[]).forEach(function(x){
+        var q=cleanQ({text:String(x.text||""),opts:Array.isArray(x.opts)?x.opts.map(String):[],ans:x.ans,sec:AIC,test:"AI"});
+        if(!validQ(q))return;
+        QO.push(q.opts.slice());QA.push(q.ans);Q.push(q);
+        var id=Q.length-1;if(x.ur)urSet(id,{q:String(x.ur),o:QO[id].slice()});
+        if(x.exp)q.exp=String(x.exp).slice(0,600);
+        n++;
+      });
+      return n;
+    }
+    window.__playAi=function(title,list){
+      try{
+        tmpClean();
+        var nm=String(title||"AI MCQs").slice(0,60);
+        TMP={q:Q.length,s:S.length,sub:SUB.length,ai:1};
+        var si=SUB.length;
+        SUB.push({name:nm,short:nm,code:"AI",spq:60,time:60,cat:"__tmp",tmp:true});
+        AIC=S.length;
+        S.push({sub:si,name:"AI MCQs",code:"AI MCQs"});
+        if(!aiAdd(list)){tmpClean();return false}
+        recalcT();
+        start(AIC);
+        TTITLE=nm;
+        return true;
+      }catch(e){try{tmpClean()}catch(_){}return false}
+    };
+    window.__aiAppend=function(list){
+      if(!TMP||!TMP.ai||finished||AIC<0||!S[AIC])return 0;
+      var from=Q.length,n=aiAdd(list);
+      for(var i=from;i<Q.length;i++)order.push(i);
+      if(n){
+        $("#qno").textContent="Question "+(pos+1)+" of "+order.length;
+        $("#next").disabled=pos===order.length-1;
+        buildMap();paintMap();updateStats();
+      }
+      return n;
+    };
     /* generic MCQ extractor for mock-test HTML/text files: numbered questions, options A-D and an answer line */
     function parseHtmlQs(html){
       var out=[];
@@ -3328,7 +3371,7 @@ if(a.html){var k=adKey(a),tr=!!trusted[k];var f=document.createElement("iframe")
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,setPersistence,browserSessionPersistence,browserLocalPersistence,signInAnonymously,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,RecaptchaVerifier,signInWithPhoneNumber,reload} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,addDoc,collection,query,where,orderBy,limit,writeBatch,serverTimestamp,Timestamp,onSnapshot,increment} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import {initializeFirestore,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,addDoc,collection,query,where,orderBy,limit,startAfter,writeBatch,serverTimestamp,Timestamp,onSnapshot,increment} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const CFG=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
@@ -4391,6 +4434,7 @@ async function check(user){
     try{const c=await cfgP;if(c&&c.exists())cfg=Object.assign(cfg,c.data())}catch(e){}
     if(cfg.enabled===false&&!IS_ADMIN)return deny(email,cfg.message||"The app is closed right now. Please try later.");
     window.__AI_ON=cfg.ai!==false&&!window.__VISITOR;
+    window.__AIQ_MODE=["all","premium","off"].includes(cfg.aiMcq)?cfg.aiMcq:"all";
     window.__LIB_ON=cfg.library!==false;
     window.__CHATNOTE=cfg.chatNote===true;
     lgStep("Loading questions...",55);
@@ -4870,6 +4914,7 @@ function startApp(bank){
   document.body.appendChild(ls);
   try{bankWatch()}catch(_){}
   try{buildMockTests()}catch(e){console.error("Mock tests init failed",e)}
+  try{aiqInit(bank)}catch(e){console.error("AI MCQs init failed",e)}
   try{updInstallUI()}catch(_){}
   recordVisit();
   try{
@@ -5132,6 +5177,22 @@ function buildUsers(host,onlyG){
 }
 /* ---------------- AI MCQs: AI writes MCQs (English + Urdu) -> admin approves -> saved in "mcqs" ---------------- */
 const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"]];
+function aimcqParse(full,n){
+  const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
+  if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format, try again");
+  let arr;try{arr=JSON.parse(t.slice(a,b+1))}catch(e){throw new Error("AI answer was broken or cut, try again")}
+  const cut=(x,k)=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,k);
+  const out=[];
+  (Array.isArray(arr)?arr:[]).forEach(m=>{
+    if(!m||!Array.isArray(m.options)||m.options.length!==4)return;
+    const o=m.options.map(x=>cut(x,200)),c=Number(m.correct),q=cut(m.question,500);
+    if(!q||o.some(x=>!x)||!Number.isInteger(c)||c<0||c>3)return;
+    const ur=cut(m.question_urdu,600);
+    out.push({question:q,question_urdu:/[\u0900-\u097F]/.test(ur)?"":ur,options:o,correct:c,explanation:cut(m.explanation,600)});
+  });
+  if(!out.length)throw new Error("AI did not return usable MCQs, try again");
+  return out.slice(0,n);
+}
 async function aimcqGenerate(subject,n,have){
   const cfg=await aiKey();
   AI_SYS_OVR="You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
@@ -5139,21 +5200,9 @@ async function aimcqGenerate(subject,n,have){
   try{
     const avoid=(have||[]).slice(-20).map(x=>String(x).slice(0,60)).join(" | ");
     const prompt="Write exactly "+n+" new multiple-choice questions for the subject: "+subject+".\n"+(avoid?"Do not repeat these: "+avoid+"\n":"")+
-      "Each array item must have exactly these keys: \"question\" (English), \"question_urdu\" (the same question in Urdu script, Arabic letters only, technical terms in English), \"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
+      "Each array item must have exactly these keys: \"question\" (English), \"question_urdu\" (the same question in Urdu script, Arabic letters only, never Hindi or Devanagari, technical terms in English), \"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
     const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
-    const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
-    if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format, try again");
-    let arr;try{arr=JSON.parse(t.slice(a,b+1))}catch(e){throw new Error("AI answer was broken or cut, try again")}
-    const cut=(x,k)=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,k);
-    const out=[];
-    (Array.isArray(arr)?arr:[]).forEach(m=>{
-      if(!m||!Array.isArray(m.options)||m.options.length!==4)return;
-      const o=m.options.map(x=>cut(x,200)),c=Number(m.correct),q=cut(m.question,500);
-      if(!q||o.some(x=>!x)||!Number.isInteger(c)||c<0||c>3)return;
-      out.push({question:q,question_urdu:cut(m.question_urdu,600),options:o,correct:c,explanation:cut(m.explanation,600)});
-    });
-    if(!out.length)throw new Error("AI did not return usable MCQs, try again");
-    return out.slice(0,n);
+    return aimcqParse(full,n);
   }finally{AI_SYS_OVR="";AI_MAXOUT=0}
 }
 function buildAiMcq(host){
@@ -5222,6 +5271,143 @@ function buildAiMcq(host){
     }catch(e){say(admDeny(e))}
   }
   tabs.aimcq.load=load;
+}
+/* ---- AI MCQs for users: opens in the normal test screen; MCQs download quietly into a local buffer.
+   Order: approved MCQs -> shared AI pool (ai_pool) -> live AI (saved to ai_pool so the pool grows) -> question bank ---- */
+const AIQ={buf:[],lent:[],filling:false,bank:[],seen:null,cur:{}};
+function aiqAllowed(){
+  if(IS_ADMIN&&!PV)return true;
+  const m=window.__AIQ_MODE||"all";
+  if(m==="off")return false;
+  if(m==="premium")return !window.__VISITOR&&!!(auth.currentUser&&!auth.currentUser.isAnonymous);
+  return true;
+}
+function aiqKey(m){return String(m.question||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().slice(0,90)}
+function aiqOk(m){return !!m&&typeof m.question==="string"&&!!m.question.trim()&&Array.isArray(m.options)&&m.options.length>=2&&Number.isInteger(m.correct)&&m.correct>=0&&m.correct<m.options.length}
+function aiqUr(u){u=String(u||"");return /[\u0900-\u097F]/.test(u)?"":u}
+function aiqSeen(){
+  if(!AIQ.seen){try{AIQ.seen=JSON.parse(localStorage.getItem("eg23aiqSeen")||"[]")}catch(_){AIQ.seen=[]}if(!Array.isArray(AIQ.seen))AIQ.seen=[]}
+  return AIQ.seen;
+}
+function aiqMark(list){
+  const s=aiqSeen();list.forEach(m=>{const k=aiqKey(m);if(!s.includes(k))s.push(k)});
+  if(s.length>1500)s.splice(0,s.length-1500);
+  try{localStorage.setItem("eg23aiqSeen",JSON.stringify(s))}catch(_){}
+}
+function aiqHave(){const h=new Set(aiqSeen());AIQ.lent.concat(AIQ.buf).forEach(m=>h.add(aiqKey(m)));return h}
+function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,200),cur:AIQ.cur}))}catch(_){}}
+function aiqLoad(){
+  try{
+    const s=JSON.parse(localStorage.getItem("eg23aiq")||"null");
+    if(s&&Array.isArray(s.buf))AIQ.buf=s.buf.filter(aiqOk);
+    if(s&&s.cur&&typeof s.cur==="object")AIQ.cur=s.cur;
+  }catch(_){}
+}
+async function aiqFromColl(coll,field,n){
+  const c=AIQ.cur[coll];
+  try{
+    const parts=[collection(db,coll),orderBy(field)];
+    if(c&&Number.isFinite(c.s))parts.push(startAfter(new Timestamp(c.s,c.n||0)));
+    const s=await getDocs(query(...parts,limit(n))),h=aiqHave(),out=[];
+    let nc=c;
+    s.docs.forEach(x=>{
+      const d=x.data(),t=d[field];
+      if(t&&typeof t.seconds==="number")nc={s:t.seconds,n:t.nanoseconds||0};
+      const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
+      const k=aiqKey(m);
+      if(m.options.length===4&&aiqOk(m)&&!h.has(k)){h.add(k);out.push(m)}
+    });
+    return {out,cur:nc};
+  }catch(_){return {out:[],cur:c}}
+}
+async function aiqLive(n){
+  const u=auth.currentUser;if(!u||n<=0)return [];
+  let tok="";try{tok=await u.getIdToken()}catch(_){return []}
+  const avoid=AIQ.buf.slice(-30).map(m=>m.question);
+  const one=async k=>{
+    const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),60000);
+    try{
+      const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({mode:"umcq",subject:"Civil Engineering",n:k,avoid}),signal:ac.signal});
+      if(!r.ok)return [];
+      let full="";
+      (await r.text()).split("\n").forEach(l=>{
+        if(!l.startsWith("data:"))return;
+        try{const j=JSON.parse(l.slice(5));((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).forEach(p=>{if(p&&typeof p.text==="string")full+=p.text})}catch(_){}
+      });
+      return aimcqParse(full,k);
+    }catch(_){return []}finally{clearTimeout(tm)}
+  };
+  const jobs=[];for(let left=n;left>0;left-=10)jobs.push(one(Math.min(10,left)));
+  const h=aiqHave();
+  return (await Promise.all(jobs)).flat().filter(m=>{const k=aiqKey(m);if(!k||h.has(k))return false;h.add(k);return true});
+}
+async function aiqPoolSave(list){
+  for(const m of list){
+    try{
+      const id=(await sha256hex("q:"+aiqKey(m))).slice(0,40);
+      await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:"Civil Engineering",by:(auth.currentUser&&auth.currentUser.uid)||"",createdAt:serverTimestamp()});
+    }catch(_){}
+  }
+}
+function aiqFromBank(n){
+  const B=AIQ.bank,h=aiqHave(),out=[];
+  if(!B.length)return out;
+  for(let t=0;t<n*30&&out.length<n;t++){
+    const q=B[Math.floor(Math.random()*B.length)];
+    if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||!Number.isInteger(q.ans))continue;
+    const m={question:q.text,question_urdu:"",options:q.opts.map(String),correct:q.ans,explanation:""},k=aiqKey(m);
+    if(aiqOk(m)&&!h.has(k)){h.add(k);out.push(m)}
+  }
+  return out;
+}
+async function aiqFill(n){
+  if(AIQ.filling)return;AIQ.filling=true;
+  try{
+    let added=0;
+    for(const [coll,field] of [["mcqs","approvedAt"],["ai_pool","createdAt"]]){
+      if(added>=n)break;
+      const r=await aiqFromColl(coll,field,n-added);
+      AIQ.buf.push(...r.out);AIQ.cur[coll]=r.cur;added+=r.out.length;aiqSave();
+    }
+    if(added<n){
+      const live=await aiqLive(n-added);
+      if(live.length){AIQ.buf.push(...live);added+=live.length;aiqSave();aiqPoolSave(live)}
+    }
+    if(added<n){AIQ.buf.push(...aiqFromBank(n-added));aiqSave()}
+  }catch(_){}
+  AIQ.filling=false;
+}
+function aiqTake(k){
+  if(AIQ.buf.length<k)AIQ.buf.push(...aiqFromBank(k-AIQ.buf.length));
+  const out=AIQ.buf.splice(0,k);
+  AIQ.lent.push(...out);aiqSave();
+  if(AIQ.buf.length<10)aiqFill(20);
+  return out.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""}));
+}
+function aiqDone(text){
+  const k=aiqKey({question:text}),i=AIQ.lent.findIndex(m=>aiqKey(m)===k);
+  if(i<0)return;
+  aiqMark(AIQ.lent.splice(i,1));aiqSave();
+}
+function aiqStart(){
+  if(!window.__playAi)return;
+  window.__aiqDone=aiqDone;
+  if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
+  window.__aiqNext=ahead=>{if(ahead>=10)return;const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
+  window.__playAi("AI MCQs",aiqTake(10));
+}
+function aiqInit(bank){
+  AIQ.bank=Array.isArray(bank&&bank.Q0)?bank.Q0:[];
+  if(!aiqAllowed())return;
+  const card=el("div","card");card.id="aiqCard";
+  card.style.cssText="display:flex;align-items:center;gap:12px;margin:12px 0;padding:14px";
+  const tx=el("div");tx.style.flex="1";
+  tx.append(el("b","","\uD83E\uDD16 AI MCQs"),el("div","label","Har dafa naye MCQs \u00b7 English + Urdu"));
+  const go=el("button","btn primary","Start");go.type="button";go.onclick=aiqStart;
+  card.append(tx,go);
+  const at=$("mtSec");if(at&&at.parentNode)at.parentNode.insertBefore(card,at);else{const s=$("start");if(s)s.appendChild(card)}
+  aiqLoad();
+  setTimeout(()=>{if(AIQ.buf.length<10)aiqFill(10)},1500);
 }
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
@@ -5475,6 +5661,8 @@ function buildSettings(host){
   const lb6=el("label","",null);lb6.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb6.append(cb6,el("span","","AI backup (free, no key) if main AI is busy/quota over - question text goes to a 3rd-party service"));
   const gm=el("select");gm.id="cfgGuestMode";gm.setAttribute("aria-label","User mode");gm.style.cssText="width:100%;margin-top:8px";
   [["auto","User mode: Normal \u2014 guest starts instantly, other users are added by admin"],["approve","User mode: Admin approval \u2014 every new guest / user waits for admin or manager to approve"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];gm.appendChild(op)});
+  const am=el("select");am.id="cfgAiMcq";am.setAttribute("aria-label","AI MCQs");am.style.cssText="width:100%;margin-top:8px";
+  [["all","AI MCQs (home page): ON for everyone"],["premium","AI MCQs: ON only for premium users (Google / Email / Phone login, not Guest or Visitor)"],["off","AI MCQs: OFF for users (admin/manager still see it)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];am.appendChild(op)});
   const cbO=el("input");cbO.type="checkbox";cbO.id="cfgOpen";
   const lbO=el("label","",null);lbO.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px;border:1px solid var(--line,#ccc);border-radius:10px";lbO.append(cbO,el("span","","OPEN ACCESS: Google login, Email and Guest free for everyone (no approval, no time limit). Switch OFF to go back to approved users + 12-hour guest."));
   const cbH=el("input");cbH.type="checkbox";cbH.id="cfgShowHrs";
@@ -5511,17 +5699,17 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
+  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,am,lb6,lb5,kl,kw,ps,mi,bi,kst,sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);cbB.checked=!(ac.exists()&&ac.data().browse===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";am.value=["all","premium","off"].includes(d.aiMcq)?d.aiMcq:"all";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);cbB.checked=!(ac.exists()&&ac.data().browse===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
       if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP()}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",aiMcq:am.value,library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
       await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,showInstall:cbI.checked,browse:cbB.checked,seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim(),updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;SHOW_INST=cbI.checked;SEO_CFG={seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim()};if(window.__applyOpen)window.__applyOpen();
       if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()});
       aiKeyP=null;aiGood=null;st.textContent="Saved.";}

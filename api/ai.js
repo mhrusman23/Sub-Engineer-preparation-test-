@@ -25,6 +25,25 @@ const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databas
 const MCQ_SYS =
   "You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
 const MCQ_MAX_OUT = 4096;
+const UMCQ_SUBJECTS = ["Civil Engineering", "Electrical Engineering", "Mechanical Engineering", "General Knowledge"];
+const UMCQ_MAX_N = 10;
+
+function umcqContents(b) {
+  const subject = UMCQ_SUBJECTS.includes(b.subject) ? b.subject : UMCQ_SUBJECTS[0];
+  const n = Math.min(UMCQ_MAX_N, Math.max(1, parseInt(b.n, 10) || 10));
+  const avoid = (Array.isArray(b.avoid) ? b.avoid : [])
+    .slice(-30)
+    .map((x) => String(x == null ? "" : x).replace(/\s+/g, " ").slice(0, 80))
+    .filter(Boolean)
+    .join(" | ");
+  const text =
+    "Write exactly " + n + " new multiple-choice questions for the subject: " + subject + ".\n" +
+    (avoid ? "Do not repeat these: " + avoid + "\n" : "") +
+    'Each array item must have exactly these keys: "question" (English), "question_urdu" (the same question in Urdu script, Arabic letters only, never Hindi or Devanagari, technical terms in English), ' +
+    '"options" (array of exactly 4 short strings), "correct" (number, 0-based index of the right option), "explanation" (one or two short English sentences). ' +
+    "Questions must be factually correct, exam level, and have only one right answer.";
+  return [{ role: "user", parts: [{ text }] }];
+}
 
 const SYS =
   "You are the friendly civil engineering tutor of Engrgroup23. Students are preparing for the Pakistani Sub Engineer (PPSC) and DAE Civil exams. " +
@@ -103,10 +122,10 @@ async function authorize(token) {
     const t = await r.text().catch(() => "");
     return { fail: 403, why: "Firestore: " + t.replace(/\s+/g, " ").slice(0, 120) };
   }
+  let cfg = {};
   if (r.status === 200) {
     const j = await r.json().catch(() => ({}));
-    const f = j.fields && j.fields.ai;
-    if (f && f.booleanValue === false) return { fail: 403, why: "AI Helper is switched off in Settings" };
+    cfg = j.fields || {};
   } else if (r.status !== 404) {
     return 503;
   }
@@ -117,7 +136,13 @@ async function authorize(token) {
     return 503;
   }
   if (!m) return { fail: 403, why: "your access is not approved or has expired" };
-  const who = { uid: claims.sub, admin: m.admin };
+  const who = {
+    uid: claims.sub,
+    admin: m.admin,
+    anon: !!(claims.firebase && claims.firebase.sign_in_provider === "anonymous"),
+    aiOff: !!(cfg.ai && cfg.ai.booleanValue === false),
+    aiMcq: (cfg.aiMcq && cfg.aiMcq.stringValue) || "all",
+  };
   if (okCache.size > 500) okCache.clear();
   okCache.set(token, { who, exp: now + 60000 });
   return who;
@@ -222,10 +247,19 @@ module.exports = async function handler(req, res) {
     if (raw === null || raw.length > MAX_BODY) return fail(res, 413, "INVALID_ARGUMENT", "Request too large");
     let b;
     try { b = JSON.parse(raw); } catch (e) { return fail(res, 400, "INVALID_ARGUMENT", "Bad JSON"); }
-    const contents = clean(b && b.contents);
-    if (!contents) return fail(res, 400, "INVALID_ARGUMENT", "Invalid or too long message");
-    const mcq = b.mode === "mcq";
-    if (mcq && !who.admin) return fail(res, 403, "PERMISSION_DENIED", "Only admins can write AI MCQs");
+    const umcq = !!b && b.mode === "umcq";
+    const mcq = umcq || (!!b && b.mode === "mcq");
+    let contents;
+    if (umcq) {
+      if (!who.admin && who.aiMcq === "off") return fail(res, 403, "PERMISSION_DENIED", "AI MCQs are switched off in Settings");
+      if (!who.admin && who.aiMcq === "premium" && who.anon) return fail(res, 403, "PERMISSION_DENIED", "AI MCQs are for premium users only");
+      contents = umcqContents(b);
+    } else {
+      if (who.aiOff) return fail(res, 403, "PERMISSION_DENIED", "Only approved active members can use AI (AI Helper is switched off in Settings)");
+      contents = clean(b && b.contents);
+      if (!contents) return fail(res, 400, "INVALID_ARGUMENT", "Invalid or too long message");
+      if (mcq && !who.admin) return fail(res, 403, "PERMISSION_DENIED", "Only admins can write AI MCQs");
+    }
 
     const body = {
       systemInstruction: { parts: [{ text: mcq ? MCQ_SYS : SYS }] },
