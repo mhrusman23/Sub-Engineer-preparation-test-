@@ -146,6 +146,7 @@ service cloud.firestore {
     // every person who signs in is recorded here (Admin panel > Visitors). A person writes only his own doc, admins read.
     match /visitors/{id} {
       allow read, delete: if isAdmin();
+      allow get: if signed() && myId() == id;
       allow create: if signed() && myId() == id &&
         request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'provider', 'firstSeen', 'lastSeen', 'visits']) &&
         request.resource.data.visits == 1 &&
