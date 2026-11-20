@@ -5383,11 +5383,11 @@ function aiqSeen(){
 }
 function aiqMark(list){
   const s=aiqSeen();list.forEach(m=>{const k=aiqKey(m);if(!s.includes(k))s.push(k)});
-  if(s.length>1500)s.splice(0,s.length-1500);
+  if(s.length>5000)s.splice(0,s.length-5000);
   try{localStorage.setItem("eg23aiqSeen",JSON.stringify(s))}catch(_){}
 }
 function aiqHave(){const h=new Set(aiqSeen());AIQ.lent.concat(AIQ.buf).forEach(m=>h.add(aiqKey(m)));return h}
-function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,200),cur:AIQ.cur}))}catch(_){}}
+function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,300),cur:AIQ.cur}))}catch(_){}}
 function aiqLoad(){
   try{
     const s=JSON.parse(localStorage.getItem("eg23aiq")||"null");
@@ -5473,7 +5473,7 @@ function aiqTake(k){
   if(AIQ.buf.length<k)AIQ.buf.push(...aiqFromBank(k-AIQ.buf.length));
   const out=AIQ.buf.splice(0,k);
   AIQ.lent.push(...out);aiqSave();
-  if(AIQ.buf.length<10)aiqFill(20);
+  if(AIQ.buf.length<25)aiqFill(50);
   return out.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""}));
 }
 function aiqDone(text){
@@ -5483,9 +5483,9 @@ function aiqDone(text){
 }
 function aiqStart(){
   if(!window.__playAi)return;
-  window.__aiqDone=aiqDone;
+  window.__aiqDone=t=>{aiqDone(t);const add=aiqTake(5);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
   if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
-  window.__aiqNext=ahead=>{if(ahead>=10)return;const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
+  window.__aiqNext=()=>{};
   window.__playAi("Civil Engineering",aiqTake(10));
 }
 /* subject names shown on the home card (Civil first, then the site's courses, then a few common ones) */
@@ -5518,7 +5518,7 @@ function aiqInit(bank){
   card.append(tx,chips);
   const at=$("mtSec");if(at&&at.parentNode)at.parentNode.insertBefore(card,at);else{const s=$("start");if(s)s.appendChild(card)}
   aiqLoad();
-  setTimeout(()=>{if(AIQ.buf.length<10)aiqFill(10)},1500);
+  setTimeout(()=>{if(AIQ.buf.length<25)aiqFill(50)},1500);
 }
 /* ---------------- AI pool -> dashboard: review/edit MCQs the AI gave students, then add them to the real question bank under any subject ---------------- */
 function aimcqPool(host){
@@ -5628,7 +5628,21 @@ window.__aiPlaySubject=async function(subject){
   const live=await aiqLive(10,subject);
   if(!live.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
   aiqPoolSave(live,subject);
-  window.__playAi(subject,live.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""})));
+  const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
+  const buf=[],seenS=new Set(live.map(aiqKey));let busy=false;
+  const more=async()=>{
+    if(busy)return;busy=true;
+    try{const r=(await aiqLive(20,subject)).filter(m=>{const k=aiqKey(m);if(seenS.has(k))return false;seenS.add(k);return true});buf.push(...r);aiqPoolSave(r,subject)}catch(_){}
+    busy=false;
+  };
+  window.__aiqNext=()=>{};
+  window.__aiqDone=()=>{
+    const add=buf.splice(0,5).map(toQ);
+    if(add.length&&window.__aiAppend)window.__aiAppend(add);
+    if(buf.length<10)more();
+  };
+  more();
+  window.__playAi(subject,live.map(toQ));
 };
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
