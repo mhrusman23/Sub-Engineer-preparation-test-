@@ -1714,12 +1714,12 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       hc.appendChild(b);
     });
     /* other AI courses (Electrical, Mechanical, GK, IT ...) as cards like Civil */
-    var have=courseNames().map(function(n){return n.toLowerCase()});
+    var have=[];courseNames().forEach(function(n){var l=n.toLowerCase();have.push(l);have.push(l.replace(/\s+engineering$/,""));if(l==="information technology")have.push("it")});
     (window.__aiqChips||[]).forEach(function(x,vi){
       var lb=x[0];if(have.indexOf(String(lb).toLowerCase())>=0||String(lb).toLowerCase()==="civil")return;
       var b=el("button","ycard v"+((have.length+vi)%6));b.type="button";
       b.appendChild(el("span","yic",lb.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
-      b.appendChild(el("span","yt",lb));b.appendChild(el("span","yd","AI practice"));
+      b.appendChild(el("span","yt",lb));
       b.appendChild(el("span","ym","New MCQs every time \u00b7 English + Urdu"));
       b.addEventListener("click",function(){
         if(b.disabled||!window.__aiPlaySubject)return;b.disabled=true;
@@ -5327,7 +5327,7 @@ function buildUsers(host,onlyG){
   (onlyG?tabs.guests:tabs.users).load=load;
 }
 /* ---------------- AI MCQs: AI writes MCQs (English + Urdu) -> admin approves -> saved in "mcqs" ---------------- */
-const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"],["Information Technology","IT"]];
+const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"],["Information Technology","IT"],["ACCA","ACCA"],["Chartered Accountancy (CA)","CA"]];
 function aimcqParse(full,n){
   const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
   if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format, try again");
@@ -5552,7 +5552,7 @@ function aiqSubjects(bank){
   const out=[["Civil","Civil Engineering"]],seen=new Set(["civil"]);
   const add=(label,subj)=>{const k=label.toLowerCase();if(seen.has(k))return;seen.add(k);out.push([label,subj])};
   (Array.isArray(bank&&bank.CARDS)?bank.CARDS:[]).forEach(c=>{const n=String((c&&c.course)||"").trim();if(n)add(n,n)});
-  [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"],["IT","Information Technology"]].forEach(x=>add(x[0],x[1]));
+  [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"],["IT","Information Technology"],["ACCA","ACCA"],["CA","Chartered Accountancy (CA)"]].forEach(x=>add(x[0],x[1]));
   return out;
 }
 function aiqInit(bank){
@@ -5563,7 +5563,7 @@ function aiqInit(bank){
   const tx=el("div");
   tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","New MCQs every time \u00b7 English + Urdu"));
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
-  window.__aiqChips=aiqSubjects(bank).slice(0,8);try{window.__buildPick&&window.__buildPick()}catch(e){}
+  window.__aiqChips=aiqSubjects(bank).slice(0,12);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
     const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
     b.onclick=async()=>{
@@ -5602,10 +5602,10 @@ function aimcqPool(host){
     const cs=Array.isArray(b.CARDS)&&b.CARDS.length?b.CARDS.filter(c=>c&&c.k&&c.t).map(c=>[c.k,c.t]):Array.from(new Set(b.SUB.map(s=>s.cat).filter(k=>k&&k!=="__tmp"))).map(k=>[k,k]);
     cs.forEach(([k,t])=>{const o=el("option","","Category: "+t);o.value=k;catSel.appendChild(o)});
     b.SUB.forEach(s=>{if(s&&s.cat!=="__tmp"){const o=el("option");o.value=s.name;dl.appendChild(o)}});
-    ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
+    ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA","Chartered Accountancy (CA)"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
   }
   /* same field = same folder: unify names like "civil", "Civil Engineering (chapter: X)" */
-  const CANON=[[/^civil\b/i,"Civil Engineering"],[/^electrical\b/i,"Electrical Engineering"],[/^mechanical\b/i,"Mechanical Engineering"],[/^(general knowledge|gk)\b/i,"General Knowledge"],[/^(information technology|it)$/i,"Information Technology"]];
+  const CANON=[[/^civil\b/i,"Civil Engineering"],[/^electrical\b/i,"Electrical Engineering"],[/^mechanical\b/i,"Mechanical Engineering"],[/^(general knowledge|gk)\b/i,"General Knowledge"],[/^(information technology|it)$/i,"Information Technology"],[/^acca\b/i,"ACCA"],[/^(chartered accountancy|ca)\b/i,"Chartered Accountancy (CA)"]];
   const canon=s=>{s=String(s||"").replace(/\s*\(chapter:.*$/i,"").replace(/\s+/g," ").trim();if(!s)return "";for(const [re,n] of CANON)if(re.test(s))return n;return s};
   const openF=new Set();
   function render(){
@@ -5684,7 +5684,7 @@ function aimcqPool(host){
         if(!auto){cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:catSel.value||"pp"});return cur.SUB.length-1}
         if(!Array.isArray(cur.CARDS)||!cur.CARDS.length)throw new Error("Home folders are not saved in the bank yet. Open Edit MCQs, publish once, then try again.");
         const names=Array.from(new Set(cur.CARDS.map(courseOfC))),base=s.replace(/\s+engineering$/i,"").trim();
-        const course=names.find(n=>lc(n)===lc(s))||names.find(n=>lc(n)===lc(base))||s;
+        const SHORT={"electrical engineering":"Electrical","mechanical engineering":"Mechanical","information technology":"IT","chartered accountancy (ca)":"CA","civil engineering":"Civil"};const course=names.find(n=>lc(n)===lc(s))||names.find(n=>lc(n)===lc(base))||SHORT[lc(s)]||s;
         const ft=names.indexOf(course)<0?"Subjects":"Practice MCQs";
         let card=cur.CARDS.find(c=>courseOfC(c)===course&&c.t===ft);
         if(!card){card={k:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:ft,d:course+" MCQs",course};cur.CARDS.push(card)}
