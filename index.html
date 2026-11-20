@@ -5523,12 +5523,16 @@ function aiqInit(bank){
 /* ---------------- AI pool -> dashboard: review/edit MCQs the AI gave students, then add them to the real question bank under any subject ---------------- */
 function aimcqPool(host){
   const st=el("div","label st"),list=el("div"),catSel=el("select"),subj=el("input"),chap=el("input"),dl=el("datalist");
-  subj.type="text";subj.maxLength=80;subj.placeholder="Subject name (e.g. General Knowledge, Electrical, ACCA)";subj.setAttribute("list","aimcqSubs");dl.id="aimcqSubs";
+  subj.type="text";subj.maxLength=80;subj.placeholder="Subject name (used if Auto is off, or an MCQ has no subject)";subj.setAttribute("list","aimcqSubs");dl.id="aimcqSubs";
   chap.type="text";chap.maxLength=60;chap.placeholder="Chapter / test name (empty = Chapter 1)";
   const rf=el("button","btn","Refresh pool"),all=el("button","btn","Select all"),add=el("button","btn primary","Add selected to dashboard");
   [rf,all,add].forEach(b=>{b.type="button"});
+  const autoCb=el("input");autoCb.type="checkbox";autoCb.checked=true;
+  const autoRow=el("label","label","");autoRow.style.cssText="display:flex;gap:8px;align-items:center;margin:10px 0";
+  autoRow.append(autoCb,document.createTextNode("Auto: put each MCQ in its own subject (its field) when I add it"));
+  const flt=el("select");
   const h=el("div","label","POOL: MCQs the AI already gave to students, plus approved ones. Edit them, choose where they belong, then add them to the dashboard as normal MCQs (no AI name).");h.style.marginTop="18px";
-  host.append(h,catSel,subj,dl,chap,rf,all,add,st,list);
+  host.append(h,autoRow,flt,catSel,subj,dl,chap,rf,all,add,st,list);flt.onchange=()=>render();
   let rows=[];
   const say=t=>{st.textContent=t};
   function fill(){
@@ -5541,9 +5545,10 @@ function aimcqPool(host){
     ["General Knowledge","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
   }
   function render(){
-    list.textContent="";
-    if(!rows.length){list.appendChild(el("div","label","Pool is empty."));return}
-    rows.forEach(r=>{
+    list.textContent="";rows.forEach(r=>{r.cb=null});
+    const vis=rows.filter(r=>!flt.value||(r.d.subject||"")===flt.value);
+    if(!vis.length){list.appendChild(el("div","label","Pool is empty."));return}
+    vis.forEach(r=>{
       const row=el("div","urow"),w=el("div","who"),cb=el("input");cb.type="checkbox";r.cb=cb;
       const q=el("span","",r.e.q),sm=el("small","");
       const sum=()=>{q.textContent=r.e.q;sm.textContent=r.e.o.map((o,i)=>"ABCD".charAt(i)+") "+o+(i===r.e.c?" \u2713":"")).join("  |  ")};sum();
@@ -5571,6 +5576,10 @@ function aimcqPool(host){
         const d=x.data();if(!Array.isArray(d.options)||d.options.length<2||d.options.length>4||typeof d.question!=="string")return;
         rows.push({coll,id:x.id,d,e:{q:d.question,o:d.options.map(String),c:Number.isInteger(d.correct)?d.correct:0}});
       }));
+      const keep=flt.value;flt.textContent="";
+      const o0=el("option","","All fields (subjects)");o0.value="";flt.appendChild(o0);
+      Array.from(new Set(rows.map(r=>r.d.subject||"").filter(Boolean))).sort().forEach(n=>{const o=el("option","",n+" ("+rows.filter(r=>(r.d.subject||"")===n).length+")");o.value=n;flt.appendChild(o)});
+      flt.value=keep;if(flt.value!==keep)flt.value="";
       say(rows.length+" MCQ(s) in the pool.");render();
     }catch(e){say(admDeny(e))}
   }
@@ -5579,30 +5588,49 @@ function aimcqPool(host){
   add.onclick=async()=>{
     const sel=rows.filter(r=>r.cb&&r.cb.checked);
     if(!sel.length){say("Tick the MCQs you want to add.");return}
-    const sname=subj.value.trim().slice(0,80);
-    if(!sname){say("Write the subject name first (e.g. General Knowledge).");return}
-    if(!BANK_JSON){say("There is no question bank yet. Upload a bank first (Questions tab).");return}
+    const auto=autoCb.checked,sname=subj.value.trim().slice(0,80);
     for(const r of sel){
       const o=r.e.o.map(x=>String(x).trim());
       if(!r.e.q.trim()||o.some(x=>!x)||!(r.e.c>=0&&r.e.c<o.length)){say("Fix this MCQ first (empty text/option): "+r.e.q.slice(0,50));return}
+      if(!(auto?(r.d.subject||sname):sname)){say("Write the subject name first (this MCQ has no subject).");return}
     }
+    if(!BANK_JSON){say("There is no question bank yet. Upload a bank first (Questions tab).");return}
     add.disabled=true;say("Adding\u2026");
     try{
-      const cur=JSON.parse(BANK_JSON);
-      let si=cur.SUB.findIndex(y=>String(y.name).toLowerCase()===sname.toLowerCase());
-      if(si<0){cur.SUB.push({name:sname,short:sname.length>22?sname.slice(0,22)+"\u2026":sname,code:"Subject",spq:60,time:60,cat:catSel.value||"pp"});si=cur.SUB.length-1}
-      const cname=(chap.value.trim()||(cur.SUB[si].cat==="pp"?sname:"Chapter 1")).slice(0,80);
-      let ci=cur.S.findIndex(y=>y.sub===si&&y.name===cname);
-      if(ci<0){cur.S.push({sub:si,name:cname,code:cname.slice(0,20)});ci=cur.S.length-1}
-      const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase()));let n=0,d=0;
-      sel.forEach(r=>{
-        const text=r.e.q.trim().slice(0,600),k=text.toLowerCase();
-        if(seen.has(k)){d++;return}seen.add(k);
-        cur.Q0.push({text,opts:r.e.o.map(x=>String(x).trim().slice(0,300)),ans:r.e.c,sec:ci,test:cname});n++;
-      });
+      const cur=JSON.parse(BANK_JSON),lc=x=>String(x).toLowerCase(),courseOfC=c=>String((c&&c.course)||"").trim()||"Civil";
+      const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase())),groups=new Map();
+      sel.forEach(r=>{const s=(auto?(r.d.subject||sname):sname).trim().slice(0,80);if(!groups.has(s))groups.set(s,[]);groups.get(s).push(r)});
+      const target=s=>{
+        const si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(s));
+        if(si>=0)return si;
+        const short=s.length>22?s.slice(0,22)+"\u2026":s;
+        if(!auto){cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:catSel.value||"pp"});return cur.SUB.length-1}
+        if(!Array.isArray(cur.CARDS)||!cur.CARDS.length)throw new Error("Home folders are not saved in the bank yet. Open Edit MCQs, publish once, then try again.");
+        const names=Array.from(new Set(cur.CARDS.map(courseOfC))),base=s.replace(/\s+engineering$/i,"").trim();
+        const course=names.find(n=>lc(n)===lc(s))||names.find(n=>lc(n)===lc(base))||s;
+        const ft=names.indexOf(course)<0?"Subjects":"Practice MCQs";
+        let card=cur.CARDS.find(c=>courseOfC(c)===course&&c.t===ft);
+        if(!card){card={k:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:ft,d:course+" MCQs",course};cur.CARDS.push(card)}
+        cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:card.k});
+        return cur.SUB.length-1;
+      };
+      const done=[];let n=0,d=0;
+      for(const [s,items] of groups){
+        const si=target(s),has=cur.S.some(y=>y.sub===si);
+        const cname=(chap.value.trim()||(cur.SUB[si].cat==="pp"?cur.SUB[si].name:(has?"More MCQs":"Chapter 1"))).slice(0,80);
+        let ci=cur.S.findIndex(y=>y.sub===si&&y.name===cname);
+        if(ci<0){cur.S.push({sub:si,name:cname,code:cname.slice(0,20)});ci=cur.S.length-1}
+        let k2=0;
+        items.forEach(r=>{
+          const text=r.e.q.trim().slice(0,600),k=text.toLowerCase();
+          if(seen.has(k)){d++;return}seen.add(k);
+          cur.Q0.push({text,opts:r.e.o.map(x=>String(x).trim().slice(0,300)),ans:r.e.c,sec:ci,test:cname});n++;k2++;
+        });
+        done.push(cur.SUB[si].name+" +"+k2);
+      }
       if(n)await publishBank(cur);
       const bt=writeBatch(db);sel.forEach(r=>bt.delete(doc(db,r.coll,r.id)));await bt.commit();
-      say(n+" MCQ(s) added to "+cur.SUB[si].name+" \u00b7 "+cname+(d?" ("+d+" duplicate(s) skipped)":"")+". Reload the app to see them on the dashboard.");
+      say(n+" MCQ(s) added: "+done.join(", ")+(d?" ("+d+" duplicate(s) skipped)":"")+". Reload the app to see them on the dashboard.");
       await load();
     }catch(e){say(e&&e.code?admDeny(e):String((e&&e.message)||e))}
     add.disabled=false;
