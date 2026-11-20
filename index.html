@@ -1713,7 +1713,22 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       b.addEventListener("click",function(){curCourse=c;buildPick();window.scrollTo(0,0)});
       hc.appendChild(b);
     });
+    /* other AI courses (Electrical, Mechanical, GK, IT ...) as cards like Civil */
+    var have=courseNames().map(function(n){return n.toLowerCase()});
+    (window.__aiqChips||[]).forEach(function(x,vi){
+      var lb=x[0];if(have.indexOf(String(lb).toLowerCase())>=0||String(lb).toLowerCase()==="civil")return;
+      var b=el("button","ycard v"+((have.length+vi)%6));b.type="button";
+      b.appendChild(el("span","yic",lb.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
+      b.appendChild(el("span","yt",lb));b.appendChild(el("span","yd","AI practice"));
+      b.appendChild(el("span","ym","Har dafa naye MCQs \u00b7 English + Urdu"));
+      b.addEventListener("click",function(){
+        if(b.disabled||!window.__aiPlaySubject)return;b.disabled=true;
+        Promise.resolve().then(function(){return window.__aiPlaySubject(x[1])}).catch(function(){}).then(function(){b.disabled=false});
+      });
+      hc.appendChild(b);
+    });
   }
+  window.__buildPick=function(){try{buildPick()}catch(e){}};
   /* admin adds a course: a folder + a subject with the same name, then AI writes chapters and MCQs */
   function addCourse(name){
     var t=name||prompt("Name of the new course (e.g. ACCA, Electrical, Mechanical, General Knowledge):","");
@@ -2232,7 +2247,11 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         var r=el("label","qeo"),rd=document.createElement("input");rd.type="radio";rd.name="qeAns";rd.value=String(j);
         var ti=document.createElement("input");ti.type="text";ti.placeholder="Option "+LET[j];
         rd.addEventListener("change",paint);
-        r.appendChild(rd);r.appendChild(el("b","",LET[j]));r.appendChild(ti);bx.appendChild(r);qeEl.rows.push({r:r,rd:rd,ti:ti});
+        r.appendChild(rd);r.appendChild(el("b","",LET[j]));r.appendChild(ti);
+        /* move option up / down (order change) */
+        [["\u25B2",-1],["\u25BC",1]].forEach(function(m){var mb=el("button","btn",m[0]);mb.type="button";mb.style.cssText="padding:2px 8px;font-size:12px;margin-left:4px";
+          mb.addEventListener("click",function(e){e.preventDefault();var o=qeEl.rows[j+m[1]];if(!o)return;var t=ti.value,c=rd.checked;ti.value=o.ti.value;rd.checked=o.rd.checked;o.ti.value=t;o.rd.checked=c;paint()});r.appendChild(mb)});
+        bx.appendChild(r);qeEl.rows.push({r:r,rd:rd,ti:ti});
       })(j)}
       function paint(){qeEl.rows.forEach(function(x){x.r.classList.toggle("ok",x.rd.checked)})}
       qeEl.paint=paint;
@@ -2668,6 +2687,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         t.appendChild(el("span","m",S[q.sec].name+" \u00b7 "+S[q.sec].code+" \u00b7 "+q.test+(h.inT?"":" \u00b7 matched in options")));
         li.appendChild(n);li.appendChild(t);
         var ar=el("span","","\u203A");ar.style.cssText="font-size:22px;line-height:1;color:var(--accent);align-self:center";li.appendChild(ar);
+        if(ADM){var eb=el("button","btn","\u270e Edit");eb.type="button";eb.style.cssText="padding:4px 10px;font-size:12px;align-self:center;margin-left:6px";eb.addEventListener("click",function(e){e.stopPropagation();quickEdit(h.id)});li.appendChild(eb)}
         li.addEventListener("click",function(){openMcq(h.id)});
         res.appendChild(li);
       });
@@ -4688,6 +4708,8 @@ function openMenu(){
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
+  if(IS_ADMIN&&!PV)mi("\u{1F916} AI MCQs (approve / pool)",()=>openAdmin("aimcq"));
+  if(IS_OWNER&&!PV)mi("\u2699\uFE0F Settings (important)",()=>openAdmin("settings"));
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   if(IS_OWNER&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
@@ -5049,6 +5071,7 @@ function startApp(bank){
     let f=document.getElementById("siteFoot");
     if(!f){f=document.createElement("div");f.id="siteFoot";f.innerHTML='<div class="sfn"></div><div><a href="/about.html">About</a> \u00b7 <a href="/privacy-policy.html">Privacy Policy</a> \u00b7 <a href="/contact.html">Contact</a></div>'}
     f.querySelector(".sfn").textContent=siteName();
+    var sI=document.getElementById("seoInfo");if(sI)document.body.appendChild(sI);   /* PPSC SEO text: after the app, before footer */
     document.body.appendChild(f);   /* always the very last thing on the page */
   }catch(_){}
   try{
@@ -5540,6 +5563,7 @@ function aiqInit(bank){
   const tx=el("div");
   tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","Har dafa naye MCQs \u00b7 English + Urdu"));
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
+  window.__aiqChips=aiqSubjects(bank).slice(0,8);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
     const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
     b.onclick=async()=>{
@@ -5584,7 +5608,11 @@ function aimcqPool(host){
     list.textContent="";rows.forEach(r=>{r.cb=null});
     const vis=rows.filter(r=>!flt.value||(r.d.subject||"")===flt.value);
     if(!vis.length){list.appendChild(el("div","label","Pool is empty."));return}
+    vis.sort((a,b)=>String(a.d.subject||"~").localeCompare(String(b.d.subject||"~")));
+    let lastSub=null;
     vis.forEach(r=>{
+      const gs=r.d.subject||"No subject";
+      if(gs!==lastSub){lastSub=gs;const gh=el("div","label","\uD83D\uDCC1 "+gs+" ("+vis.filter(x=>(x.d.subject||"No subject")===gs).length+")");gh.style.cssText="margin:16px 0 4px;font-weight:800;border-bottom:1px solid var(--line,#ccd)";list.appendChild(gh)}
       const row=el("div","urow"),w=el("div","who"),cb=el("input");cb.type="checkbox";r.cb=cb;
       const q=el("span","",r.e.q),sm=el("small","");
       const sum=()=>{q.textContent=r.e.q;sm.textContent=r.e.o.map((o,i)=>"ABCD".charAt(i)+") "+o+(i===r.e.c?" \u2713":"")).join("  |  ")};sum();
