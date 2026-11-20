@@ -1200,7 +1200,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     </div>
     <div class="card srch" id="gsrch" style="margin:12px">
       <div class="row">
-        <input id="gsIn" type="search" placeholder="Search any MCQ in all papers and subjects..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
+        <input id="gsIn" type="search" placeholder="Search any MCQ or any subject (Civil, ACCA, ...)" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
         <button class="btn" id="gsClr" type="button">Clear</button>
       </div>
       <div class="label cnt" id="gsCnt"></div>
@@ -1548,7 +1548,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   ];
   /* home options published by admin/manager (bank.CARDS) replace the default 4 */
   if(typeof CARDS!=="undefined"&&Array.isArray(CARDS)&&CARDS.length){
-    YEARS=CARDS.filter(function(c){return c&&typeof c.k==="string"&&typeof c.t==="string"}).map(function(c){return {k:c.k,t:c.t,d:c.d||""}});
+    YEARS=CARDS.filter(function(c){return c&&typeof c.k==="string"&&typeof c.t==="string"}).map(function(c){return {k:c.k,t:c.t,d:c.d||"",course:c.course||""}});
   }
   var ADM=!!window.__publishBank&&!document.body.classList.contains("pv");
   var curYear=null;
@@ -1637,7 +1637,9 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var hc=$("#homeCards");hc.textContent="";
     var hs=$("#heroStats");
     if(hs){hs.textContent="";[[Q.length,"MCQs"],[SUB.length,"Subjects & papers"],[YEARS.length,"Options"]].forEach(function(x){var s=el("span","hstat");s.appendChild(el("b","",String(x[0])));s.appendChild(document.createTextNode(" "+x[1]));hs.appendChild(s)})}
-    YEARS.forEach(function(y,yi){
+    if(curCourse&&courseNames().indexOf(curCourse)<0)curCourse=null;
+    if(curCourse){var bk=el("button","ycard add");bk.type="button";bk.appendChild(el("span","yt","\u2190"));bk.appendChild(el("span","yd","All courses \u00b7 "+curCourse));bk.addEventListener("click",function(){curCourse=null;buildPick()});hc.appendChild(bk)}else buildCourses(hc);
+    YEARS.filter(function(y){return curCourse&&courseOf(y)===curCourse}).forEach(function(y,yi){
       var ids=idsOf(y.k),q=0;ids.forEach(function(i){q+=subCount(i)});
       var b=el("button","ycard v"+(yi%6));b.type="button";
       var ic=el("span","yic");
@@ -1651,8 +1653,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     });
     if(ADM){
       var ad=el("button","ycard add");ad.type="button";
-      ad.appendChild(el("span","yt","+"));ad.appendChild(el("span","yd","Add more option"));
-      ad.addEventListener("click",addCard);hc.appendChild(ad);
+      ad.appendChild(el("span","yt","+"));ad.appendChild(el("span","yd",curCourse?"Add more folder":"Add course"));
+      ad.addEventListener("click",curCourse?addCard:function(){addCourse()});hc.appendChild(ad);
     }
     if(curYear)buildYear(curYear,keep||null);
     try{paintRev();hxDash($("#dashCard"),{})}catch(e){}
@@ -1663,7 +1665,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function bankNow(){
     /* freeze where every subject lives so heuristics never move it later */
     SUB.forEach(function(s,i){if(!s.cat||!YEARS.some(function(y){return y.k===s.cat}))s.cat=yearOf(i)});
-    return {S:S,SUB:SUB,CARDS:YEARS.map(function(y){return {k:y.k,t:y.t,d:y.d||""}}),
+    return {S:S,SUB:SUB,CARDS:YEARS.map(function(y){return {k:y.k,t:y.t,d:y.d||"",course:y.course||""}}),
       Q0:Q.map(function(q,i){return {text:q.text,opts:(QO[i]||q.opts).slice(),ans:(QA[i]!=null?QA[i]:q.ans),sec:q.sec,test:q.test}})};
   }
   function publishNow(){
@@ -1680,12 +1682,102 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     return publishNow().then(function(){astat((note||"Saved")+" \u00b7 published to all users.")})
       .catch(function(e){astat("Publish fail: "+((e&&(e.code||e.message))||e))});
   }
+  /* ===== courses: Civil first, then the rest; inside a course: folders -> subjects -> chapters ===== */
+  var curCourse=null,aiBusy=false;
+  function courseOf(y){return String((y&&y.course)||"").trim()||"Civil"}
+  function courseNames(){
+    var n=[];YEARS.forEach(function(y){var c=courseOf(y);if(n.indexOf(c)<0)n.push(c)});
+    n.sort(function(a,b){return (a==="Civil"?0:1)-(b==="Civil"?0:1)});
+    return n;
+  }
+  function courseStats(c){var o=0,s=0,q=0;YEARS.forEach(function(y){if(courseOf(y)!==c)return;o++;idsOf(y.k).forEach(function(i){s++;q+=subCount(i)})});return {o:o,s:s,q:q}}
+  function buildCourses(hc){
+    courseNames().forEach(function(c,ci){
+      var st=courseStats(c),b=el("button","ycard v"+(ci%6));b.type="button";
+      b.appendChild(el("span","yic",c.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
+      b.appendChild(el("span","yt",c));b.appendChild(el("span","yd",st.o+(st.o===1?" folder":" folders")));
+      b.appendChild(el("span","ym",st.s+" subjects \u00b7 "+st.q+" Q"));
+      b.addEventListener("click",function(){curCourse=c;buildPick();window.scrollTo(0,0)});
+      hc.appendChild(b);
+    });
+  }
+  /* admin adds a course: a folder + a subject with the same name, then AI writes chapters and MCQs */
+  function addCourse(name){
+    var t=name||prompt("Name of the new course (e.g. ACCA, Electrical, Mechanical, General Knowledge):","");
+    if(t===null||!String(t).trim())return;t=String(t).trim().slice(0,40);
+    if(courseNames().some(function(n){return n.toLowerCase()===t.toLowerCase()})){alert("This course already exists.");return}
+    var k="c"+Date.now().toString(36),si=SUB.length;
+    YEARS.push({k:k,t:"Subjects",d:t+" subjects",course:t});
+    SUB.push({name:t,short:t.length>22?t.slice(0,22)+"\u2026":t,code:"Course",spq:60,time:60,cat:k});
+    S.push({sub:si,name:"Chapter 1",code:"Ch 1"});
+    curCourse=t;
+    return afterStruct("Course '"+t+"' added. AI is writing its MCQs\u2026").then(function(){return aiFillSubject(si)});
+  }
+  async function aiFillSubject(si){
+    var sub=SUB[si];
+    if(!sub||sub.cat==="pp"||aiBusy)return;
+    if(!window.__aiGenMcqs){astat("AI is not available. Add questions with Edit MCQs.");return}
+    aiBusy=true;var total=0;
+    try{
+      astat("AI is planning the chapters of "+sub.name+"\u2026");
+      var chs=[];try{chs=await window.__aiChapters(sub.name,5)}catch(e){}
+      var empty=[];S.forEach(function(c,i){if(c.sub===si&&!Q.some(function(q){return q.sec===i}))empty.push(i)});
+      if(!chs.length)chs=["Chapter 1"];
+      var have=[];
+      for(var ci=0;ci<chs.length;ci++){
+        var cn=chs[ci],idx=-1;
+        S.forEach(function(c,i){if(c.sub===si&&c.name===cn)idx=i});
+        if(idx<0&&empty.length){idx=empty.shift();S[idx].name=cn;S[idx].code=cn.slice(0,20)}
+        if(idx<0){S.push({sub:si,name:cn,code:cn.slice(0,20)});idx=S.length-1}
+        astat("AI is writing MCQs: "+sub.name+" \u00b7 "+cn+" ("+(ci+1)+"/"+chs.length+")\u2026");
+        try{
+          var rows=await window.__aiGenMcqs(sub.name,cn,8,have);
+          rows.forEach(function(r){
+            var q=cleanQ({text:r.question,opts:r.options,ans:r.correct,sec:idx,test:cn});
+            if(!validQ(q))return;
+            QO.push(q.opts.slice());QA.push(q.ans);Q.push(q);have.push(q.text);total++;
+          });
+        }catch(e){}
+      }
+    }finally{aiBusy=false}
+    recalcT();
+    await afterStruct(total?("AI added "+total+" MCQs to "+sub.name):"AI could not write MCQs right now. Add them with Edit MCQs or try again");
+  }
+  /* search: any subject in the world (ACCA, Civil, ...) */
+  var DUNIA=["Civil Engineering","Electrical Engineering","Mechanical Engineering","Chemical Engineering","Computer Science","Software Engineering","Architecture","Surveying","Structural Engineering","Construction Management","Mathematics","Physics","Chemistry","Biology","English","Urdu","Islamiat","Pakistan Studies","General Knowledge","Current Affairs","Everyday Science","Geography","History","Computer Basics","ACCA","Chartered Accountancy (CA)","CFA","CMA","Accounting","Financial Accounting","Cost Accounting","Auditing","Taxation","Business Law","Economics","Finance","Marketing","Management","Banking","Statistics","IELTS","TOEFL","MDCAT","ECAT","CSS","PPSC","FPSC","NTS","SAT","GRE","GMAT","Anatomy","Physiology","Pharmacology","Pathology","Nursing","Law","Psychology","Sociology","Political Science","International Relations","Teaching and Education","Data Science","Artificial Intelligence","Cyber Security","Computer Networks","Web Development","Python Programming","Java Programming","Database Systems","Electronics","Thermodynamics","Fluid Mechanics","Soil Mechanics","Highway Engineering","Environmental Science"];
+  function subjTitle(s){return s.replace(/\s+/g," ").trim().replace(/(^|\s)([a-z])/g,function(m,a,b){return a+b.toUpperCase()}).slice(0,60)}
+  function subjSuggest(q){
+    var n=String(q||"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+    if(n.length<2)return [];
+    var toks=n.split(" "),out=[],seen={};
+    function ok(name){var l=name.toLowerCase();return toks.every(function(t){return l.indexOf(t)>=0})}
+    SUB.forEach(function(s,i){if(s.tmp||s.cat==="__tmp"||!ok(s.name))return;var k=s.name.toLowerCase();if(seen[k])return;seen[k]=1;out.push({name:s.name,site:i})});
+    DUNIA.forEach(function(d){var k=d.toLowerCase();if(seen[k]||!ok(d))return;seen[k]=1;out.push({name:d})});
+    out=out.slice(0,6);
+    if(n.length>=3&&!seen[n])out.push({name:subjTitle(n)});
+    return out;
+  }
+  function subjRow(s){
+    var li=document.createElement("li");li.className="gs";
+    li.appendChild(el("span","n","Subject"));
+    var t=el("span","t",s.name),m=el("span","m","");t.appendChild(m);li.appendChild(t);
+    var idle=s.site!=null?(subCount(s.site)+" MCQs \u00b7 tap to open"):(ADM?"Not on the site yet \u00b7 tap to add it as a course with AI MCQs":"Tap to practice AI MCQs on this subject");
+    m.textContent=idle;
+    li.addEventListener("click",function(){
+      if(s.site!=null){var c=SUB[s.site].cat;if(cardOf(c))openYear(c);return}
+      if(ADM){if(confirm("Add '"+s.name+"' as a new course and let AI write its MCQs?"))addCourse(s.name);return}
+      if(!window.__aiPlaySubject)return;
+      m.textContent="Preparing MCQs with AI\u2026";
+      Promise.resolve(window.__aiPlaySubject(s.name)).then(function(){m.textContent=idle},function(){m.textContent=idle});
+    });
+    return li;
+  }
   function addCard(){
     var t=prompt("Name of the new option (e.g. Book Solved, Mock Tests, Electrical):","");
     if(t===null||!t.trim())return;
     var d=prompt("Short description (optional):","");
     var k="c"+Date.now().toString(36);
-    YEARS.push({k:k,t:t.trim().slice(0,40),d:(d||"").trim().slice(0,100)});
+    YEARS.push({k:k,t:t.trim().slice(0,40),d:(d||"").trim().slice(0,100),course:curCourse||""});
     afterStruct("Option '"+t.trim()+"' added");openYear(k);
   }
   function renameCard(k){
@@ -1712,7 +1804,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var si=SUB.length;
     SUB.push({name:nm,short:nm.length>22?nm.slice(0,22)+"\u2026":nm,code:cd,spq:60,time:60,cat:k});
     S.push({sub:si,name:pp?nm:"Chapter 1",code:cd+" \u00b7 Ch 1"});
-    afterStruct("'"+nm+"' added. Now add questions to it with Edit MCQs");
+    afterStruct("'"+nm+"' added."+(pp?" Now add questions to it with Edit MCQs":" AI is writing its MCQs\u2026")).then(function(){return aiFillSubject(si)});
   }
   function addChapter(si){
     var n=0;S.forEach(function(c){if(c.sub===si)n++});
@@ -2186,7 +2278,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     rpEl.hidden=false;rpEl.scrollTop=0;
   }
   function openYear(k){
-    curYear=k;buildYear(k,null);
+    curYear=k;var _oc=cardOf(k);if(_oc)curCourse=courseOf(_oc);buildYear(k,null);
     $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
     try{if(!(history.state&&history.state.y===1))history.pushState({y:1},"")}catch(e){}
   }
@@ -2523,8 +2615,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function render(){
       res.textContent="";
       if(!norm(inp.value)){res.hidden=true;cnt.textContent="";return}
-      var r=find(inp.value),hits=r.list;
-      if(!hits.length){res.hidden=true;cnt.textContent="No matching question found.";return}
+      var r=find(inp.value),hits=r.list,sg=subjSuggest(inp.value);sg.forEach(function(s){res.appendChild(subjRow(s))});
+      if(!hits.length){res.hidden=!sg.length;cnt.textContent=sg.length?"Subjects matching your search \u2014 tap one.":"No matching question found.";return}
       var SHOW=40;
       cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to see its answer";
       hits.slice(0,SHOW).forEach(function(h){
@@ -5193,14 +5285,14 @@ function aimcqParse(full,n){
   if(!out.length)throw new Error("AI did not return usable MCQs, try again");
   return out.slice(0,n);
 }
-async function aimcqGenerate(subject,n,have){
+async function aimcqGenerate(subject,n,have,noUrdu){
   const cfg=await aiKey();
   AI_SYS_OVR="You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
   AI_MAXOUT=4096;
   try{
     const avoid=(have||[]).slice(-20).map(x=>String(x).slice(0,60)).join(" | ");
     const prompt="Write exactly "+n+" new multiple-choice questions for the subject: "+subject+".\n"+(avoid?"Do not repeat these: "+avoid+"\n":"")+
-      "Each array item must have exactly these keys: \"question\" (English), \"question_urdu\" (the same question in Urdu script, Arabic letters only, never Hindi or Devanagari, technical terms in English), \"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
+      "Each array item must have exactly these keys: \"question\" (English), "+(noUrdu?"":"\"question_urdu\" (the same question in Urdu script, Arabic letters only, never Hindi or Devanagari, technical terms in English), ")+"\"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
     const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
     return aimcqParse(full,n);
   }finally{AI_SYS_OVR="";AI_MAXOUT=0}
@@ -5270,7 +5362,7 @@ function buildAiMcq(host){
       P=s.docs.map(x=>({id:x.id,d:x.data()}));render();
     }catch(e){say(admDeny(e))}
   }
-  tabs.aimcq.load=load;
+  const poolLoad=aimcqPool(host);tabs.aimcq.load=()=>{load();poolLoad()};
 }
 /* ---- AI MCQs for users: opens in the normal test screen; MCQs download quietly into a local buffer.
    Order: approved MCQs -> shared AI pool (ai_pool) -> live AI (saved to ai_pool so the pool grows) -> question bank ---- */
@@ -5320,14 +5412,14 @@ async function aiqFromColl(coll,field,n){
     return {out,cur:nc};
   }catch(_){return {out:[],cur:c}}
 }
-async function aiqLive(n){
+async function aiqLive(n,subject){
   const u=auth.currentUser;if(!u||n<=0)return [];
   let tok="";try{tok=await u.getIdToken()}catch(_){return []}
   const avoid=AIQ.buf.slice(-30).map(m=>m.question);
   const one=async k=>{
     const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),60000);
     try{
-      const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({mode:"umcq",subject:"Civil Engineering",n:k,avoid}),signal:ac.signal});
+      const r=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({mode:"umcq",subject:subject||"Civil Engineering",n:k,avoid}),signal:ac.signal});
       if(!r.ok)return [];
       let full="";
       (await r.text()).split("\n").forEach(l=>{
@@ -5341,11 +5433,11 @@ async function aiqLive(n){
   const h=aiqHave();
   return (await Promise.all(jobs)).flat().filter(m=>{const k=aiqKey(m);if(!k||h.has(k))return false;h.add(k);return true});
 }
-async function aiqPoolSave(list){
+async function aiqPoolSave(list,subject){
   for(const m of list){
     try{
       const id=(await sha256hex("q:"+aiqKey(m))).slice(0,40);
-      await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:"Civil Engineering",by:(auth.currentUser&&auth.currentUser.uid)||"",createdAt:serverTimestamp()});
+      await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:String(subject||"Civil Engineering").slice(0,60),by:(auth.currentUser&&auth.currentUser.uid)||"",createdAt:serverTimestamp()});
     }catch(_){}
   }
 }
@@ -5409,6 +5501,116 @@ function aiqInit(bank){
   aiqLoad();
   setTimeout(()=>{if(AIQ.buf.length<10)aiqFill(10)},1500);
 }
+/* ---------------- AI pool -> dashboard: review/edit MCQs the AI gave students, then add them to the real question bank under any subject ---------------- */
+function aimcqPool(host){
+  const st=el("div","label st"),list=el("div"),catSel=el("select"),subj=el("input"),chap=el("input"),dl=el("datalist");
+  subj.type="text";subj.maxLength=80;subj.placeholder="Subject name (e.g. General Knowledge, Electrical, ACCA)";subj.setAttribute("list","aimcqSubs");dl.id="aimcqSubs";
+  chap.type="text";chap.maxLength=60;chap.placeholder="Chapter / test name (empty = Chapter 1)";
+  const rf=el("button","btn","Refresh pool"),all=el("button","btn","Select all"),add=el("button","btn primary","Add selected to dashboard");
+  [rf,all,add].forEach(b=>{b.type="button"});
+  const h=el("div","label","POOL: MCQs the AI already gave to students, plus approved ones. Edit them, choose where they belong, then add them to the dashboard as normal MCQs (no AI name).");h.style.marginTop="18px";
+  host.append(h,catSel,subj,dl,chap,rf,all,add,st,list);
+  let rows=[];
+  const say=t=>{st.textContent=t};
+  function fill(){
+    catSel.textContent="";dl.textContent="";
+    let b=null;try{b=BANK_JSON?JSON.parse(BANK_JSON):null}catch(e){}
+    if(!b)return;
+    const cs=Array.isArray(b.CARDS)&&b.CARDS.length?b.CARDS.filter(c=>c&&c.k&&c.t).map(c=>[c.k,c.t]):Array.from(new Set(b.SUB.map(s=>s.cat).filter(k=>k&&k!=="__tmp"))).map(k=>[k,k]);
+    cs.forEach(([k,t])=>{const o=el("option","","Category: "+t);o.value=k;catSel.appendChild(o)});
+    b.SUB.forEach(s=>{if(s&&s.cat!=="__tmp"){const o=el("option");o.value=s.name;dl.appendChild(o)}});
+    ["General Knowledge","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
+  }
+  function render(){
+    list.textContent="";
+    if(!rows.length){list.appendChild(el("div","label","Pool is empty."));return}
+    rows.forEach(r=>{
+      const row=el("div","urow"),w=el("div","who"),cb=el("input");cb.type="checkbox";r.cb=cb;
+      const q=el("span","",r.e.q),sm=el("small","");
+      const sum=()=>{q.textContent=r.e.q;sm.textContent=r.e.o.map((o,i)=>"ABCD".charAt(i)+") "+o+(i===r.e.c?" \u2713":"")).join("  |  ")};sum();
+      w.append(q,sm,el("small","",(r.coll==="mcqs"?"Approved":"AI pool")+(r.d.subject?" \u00b7 "+r.d.subject:"")));
+      const ed=el("div");ed.hidden=true;ed.style.cssText="width:100%";
+      const qt=el("textarea");qt.rows=2;qt.value=r.e.q;qt.oninput=()=>{r.e.q=qt.value;sum()};ed.appendChild(qt);
+      r.e.o.forEach((o,i)=>{const inp=el("input");inp.type="text";inp.value=o;inp.oninput=()=>{r.e.o[i]=inp.value;sum()};ed.appendChild(inp)});
+      const cs=el("select");r.e.o.forEach((_,i)=>{const op=el("option","","Correct answer: "+"ABCD".charAt(i));op.value=String(i);cs.appendChild(op)});
+      cs.value=String(r.e.c);cs.onchange=()=>{r.e.c=+cs.value;sum()};ed.appendChild(cs);
+      const eb=el("button","btn","Edit");eb.type="button";eb.onclick=()=>{ed.hidden=!ed.hidden};
+      const dx=el("button","btn danger","Delete");dx.type="button";let arm=false;
+      dx.onclick=async()=>{
+        if(!arm){arm=true;dx.textContent="Confirm?";setTimeout(()=>{arm=false;dx.textContent="Delete"},3000);return}
+        try{await deleteDoc(doc(db,r.coll,r.id));await load()}catch(e){say(admDeny(e))}
+      };
+      row.append(cb,w,eb,dx,ed);list.appendChild(row);
+    });
+  }
+  async function load(){
+    fill();
+    try{
+      const [a,b]=await Promise.all([getDocs(query(collection(db,"ai_pool"),limit(200))),getDocs(query(collection(db,"mcqs"),limit(200)))]);
+      rows=[];
+      [["ai_pool",a],["mcqs",b]].forEach(([coll,s])=>s.docs.forEach(x=>{
+        const d=x.data();if(!Array.isArray(d.options)||d.options.length<2||d.options.length>4||typeof d.question!=="string")return;
+        rows.push({coll,id:x.id,d,e:{q:d.question,o:d.options.map(String),c:Number.isInteger(d.correct)?d.correct:0}});
+      }));
+      say(rows.length+" MCQ(s) in the pool.");render();
+    }catch(e){say(admDeny(e))}
+  }
+  rf.onclick=load;
+  all.onclick=()=>{rows.forEach(r=>{if(r.cb)r.cb.checked=true})};
+  add.onclick=async()=>{
+    const sel=rows.filter(r=>r.cb&&r.cb.checked);
+    if(!sel.length){say("Tick the MCQs you want to add.");return}
+    const sname=subj.value.trim().slice(0,80);
+    if(!sname){say("Write the subject name first (e.g. General Knowledge).");return}
+    if(!BANK_JSON){say("There is no question bank yet. Upload a bank first (Questions tab).");return}
+    for(const r of sel){
+      const o=r.e.o.map(x=>String(x).trim());
+      if(!r.e.q.trim()||o.some(x=>!x)||!(r.e.c>=0&&r.e.c<o.length)){say("Fix this MCQ first (empty text/option): "+r.e.q.slice(0,50));return}
+    }
+    add.disabled=true;say("Adding\u2026");
+    try{
+      const cur=JSON.parse(BANK_JSON);
+      let si=cur.SUB.findIndex(y=>String(y.name).toLowerCase()===sname.toLowerCase());
+      if(si<0){cur.SUB.push({name:sname,short:sname.length>22?sname.slice(0,22)+"\u2026":sname,code:"Subject",spq:60,time:60,cat:catSel.value||"pp"});si=cur.SUB.length-1}
+      const cname=(chap.value.trim()||(cur.SUB[si].cat==="pp"?sname:"Chapter 1")).slice(0,80);
+      let ci=cur.S.findIndex(y=>y.sub===si&&y.name===cname);
+      if(ci<0){cur.S.push({sub:si,name:cname,code:cname.slice(0,20)});ci=cur.S.length-1}
+      const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase()));let n=0,d=0;
+      sel.forEach(r=>{
+        const text=r.e.q.trim().slice(0,600),k=text.toLowerCase();
+        if(seen.has(k)){d++;return}seen.add(k);
+        cur.Q0.push({text,opts:r.e.o.map(x=>String(x).trim().slice(0,300)),ans:r.e.c,sec:ci,test:cname});n++;
+      });
+      if(n)await publishBank(cur);
+      const bt=writeBatch(db);sel.forEach(r=>bt.delete(doc(db,r.coll,r.id)));await bt.commit();
+      say(n+" MCQ(s) added to "+cur.SUB[si].name+" \u00b7 "+cname+(d?" ("+d+" duplicate(s) skipped)":"")+". Reload the app to see them on the dashboard.");
+      await load();
+    }catch(e){say(e&&e.code?admDeny(e):String((e&&e.message)||e))}
+    add.disabled=false;
+  };
+  return load;
+}
+async function aimcqChapters(subject,n){
+  const cfg=await aiKey();
+  AI_SYS_OVR="You plan course syllabi. Reply with ONLY a valid JSON array of strings, no markdown and no other text.";AI_MAXOUT=1024;
+  try{
+    const full=await aiCall(cfg,[{role:"user",parts:[{text:"List exactly "+n+" main chapter names (2 to 5 words each, in teaching order) for the course: "+subject+"."}]}],null);
+    const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
+    if(a<0||b<a)return [];
+    let arr;try{arr=JSON.parse(t.slice(a,b+1))}catch(e){return []}
+    return (Array.isArray(arr)?arr:[]).map(x=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,60)).filter(Boolean).slice(0,n);
+  }finally{AI_SYS_OVR="";AI_MAXOUT=0}
+}
+window.__aiChapters=aimcqChapters;
+window.__aiGenMcqs=(subject,topic,n,have)=>aimcqGenerate(subject+(topic?" (chapter: "+topic+")":""),n,have,true);
+window.__aiPlaySubject=async function(subject){
+  if(!window.__playAi)return;
+  if(!aiqAllowed()){alert("AI MCQs are not available for your account right now.");return}
+  const live=await aiqLive(10,subject);
+  if(!live.length){alert("AI could not make MCQs for this subject right now. Please try again in a minute.");return}
+  aiqPoolSave(live,subject);
+  window.__playAi(subject,live.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""})));
+};
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
   bar.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0";
