@@ -1761,13 +1761,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var li=document.createElement("li");li.className="gs";
     li.appendChild(el("span","n","Subject"));
     var t=el("span","t",s.name),m=el("span","m","");t.appendChild(m);li.appendChild(t);
-    var idle=s.site!=null?(subCount(s.site)+" MCQs \u00b7 tap to open"):(ADM?"Not on the site yet \u00b7 tap to add it as a course with AI MCQs":"Tap to practice AI MCQs on this subject");
+    var idle=s.site!=null?(subCount(s.site)+" MCQs \u00b7 tap to open"):(ADM?"Not on the site yet \u00b7 tap to add it as a course with AI MCQs":"Tap to practice MCQs on this subject");
     m.textContent=idle;
     li.addEventListener("click",function(){
       if(s.site!=null){var c=SUB[s.site].cat;if(cardOf(c))openYear(c);return}
       if(ADM){if(confirm("Add '"+s.name+"' as a new course and let AI write its MCQs?"))addCourse(s.name);return}
       if(!window.__aiPlaySubject)return;
-      m.textContent="Preparing MCQs with AI\u2026";
+      m.textContent="Preparing MCQs\u2026";
       Promise.resolve(window.__aiPlaySubject(s.name)).then(function(){m.textContent=idle},function(){m.textContent=idle});
     });
     return li;
@@ -3167,7 +3167,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function aiAdd(list){
       var n=0;
       (list||[]).forEach(function(x){
-        var q=cleanQ({text:String(x.text||""),opts:Array.isArray(x.opts)?x.opts.map(String):[],ans:x.ans,sec:AIC,test:"AI"});
+        var q=cleanQ({text:String(x.text||""),opts:Array.isArray(x.opts)?x.opts.map(String):[],ans:x.ans,sec:AIC,test:"Practice"});
         if(!validQ(q))return;
         QO.push(q.opts.slice());QA.push(q.ans);Q.push(q);
         var id=Q.length-1;if(x.ur)urSet(id,{q:String(x.ur),o:QO[id].slice()});
@@ -3179,12 +3179,12 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     window.__playAi=function(title,list){
       try{
         tmpClean();
-        var nm=String(title||"AI MCQs").slice(0,60);
+        var nm=String(title||"Practice MCQs").slice(0,60);
         TMP={q:Q.length,s:S.length,sub:SUB.length,ai:1};
         var si=SUB.length;
-        SUB.push({name:nm,short:nm,code:"AI",spq:60,time:60,cat:"__tmp",tmp:true});
+        SUB.push({name:nm,short:nm,code:"MCQ",spq:60,time:60,cat:"__tmp",tmp:true});
         AIC=S.length;
-        S.push({sub:si,name:"AI MCQs",code:"AI MCQs"});
+        S.push({sub:si,name:nm,code:nm.slice(0,24)});
         if(!aiAdd(list)){tmpClean();return false}
         recalcT();
         start(AIC);
@@ -5486,17 +5486,36 @@ function aiqStart(){
   window.__aiqDone=aiqDone;
   if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
   window.__aiqNext=ahead=>{if(ahead>=10)return;const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
-  window.__playAi("AI MCQs",aiqTake(10));
+  window.__playAi("Civil Engineering",aiqTake(10));
+}
+/* subject names shown on the home card (Civil first, then the site's courses, then a few common ones) */
+function aiqSubjects(bank){
+  const out=[["Civil","Civil Engineering"]],seen=new Set(["civil"]);
+  const add=(label,subj)=>{const k=label.toLowerCase();if(seen.has(k))return;seen.add(k);out.push([label,subj])};
+  (Array.isArray(bank&&bank.CARDS)?bank.CARDS:[]).forEach(c=>{const n=String((c&&c.course)||"").trim();if(n)add(n,n)});
+  [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"]].forEach(x=>add(x[0],x[1]));
+  return out;
 }
 function aiqInit(bank){
   AIQ.bank=Array.isArray(bank&&bank.Q0)?bank.Q0:[];
   if(!aiqAllowed())return;
   const card=el("div","card");card.id="aiqCard";
-  card.style.cssText="display:flex;align-items:center;gap:12px;margin:12px 0;padding:14px";
-  const tx=el("div");tx.style.flex="1";
-  tx.append(el("b","","\uD83E\uDD16 AI MCQs"),el("div","label","Har dafa naye MCQs \u00b7 English + Urdu"));
-  const go=el("button","btn primary","Start");go.type="button";go.onclick=aiqStart;
-  card.append(tx,go);
+  card.style.cssText="margin:12px 0;padding:14px";
+  const tx=el("div");
+  tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","Har dafa naye MCQs \u00b7 English + Urdu"));
+  const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
+  aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
+    const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
+    b.onclick=async()=>{
+      if(!i){aiqStart();return}
+      if(b.disabled)return;
+      const t=b.textContent;b.disabled=true;b.textContent=t+"\u2026";
+      try{await window.__aiPlaySubject(subj)}catch(e){}
+      b.disabled=false;b.textContent=t;
+    };
+    chips.appendChild(b);
+  });
+  card.append(tx,chips);
   const at=$("mtSec");if(at&&at.parentNode)at.parentNode.insertBefore(card,at);else{const s=$("start");if(s)s.appendChild(card)}
   aiqLoad();
   setTimeout(()=>{if(AIQ.buf.length<10)aiqFill(10)},1500);
@@ -5605,9 +5624,9 @@ window.__aiChapters=aimcqChapters;
 window.__aiGenMcqs=(subject,topic,n,have)=>aimcqGenerate(subject+(topic?" (chapter: "+topic+")":""),n,have,true);
 window.__aiPlaySubject=async function(subject){
   if(!window.__playAi)return;
-  if(!aiqAllowed()){alert("AI MCQs are not available for your account right now.");return}
+  if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
   const live=await aiqLive(10,subject);
-  if(!live.length){alert("AI could not make MCQs for this subject right now. Please try again in a minute.");return}
+  if(!live.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
   aiqPoolSave(live,subject);
   window.__playAi(subject,live.map(m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""})));
 };
