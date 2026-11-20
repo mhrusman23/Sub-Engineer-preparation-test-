@@ -355,7 +355,7 @@ label.btn{display:inline-flex;align-items:center}
 .ycard .yt{font-size:22px;font-weight:800}
 .ycard .yd{font-size:12px;color:var(--muted)}
 .ycard .ym{margin-top:auto;font-family:var(--mono);font-size:13px;color:var(--accent);padding-top:8px}
-#yearView[hidden],#homeExtra[hidden]{display:none}
+#yearView[hidden],#homeExtra[hidden],#gsrch[hidden]{display:none}
 .yhead{display:flex;gap:10px;align-items:center;margin:12px}
 .ytitle{font-size:22px;font-weight:800}
 #yearView .hnote{margin:0 12px 8px}
@@ -919,6 +919,19 @@ html{scroll-behavior:smooth}
 .wpp .wpn{position:absolute;left:0;right:0;bottom:4px;font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000,0 0 4px #000}
 .wpp:active{transform:translateY(2px)}
 @media (prefers-reduced-motion:reduce){#appmenu .mnbox,#acct .acbx,.vbar i,.jokecard,.sheet:not([hidden]){animation:none!important}}
+
+#appmenu .mnai{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:11px 12px;border-radius:16px;border:1px solid rgba(244,215,126,.75);background:linear-gradient(135deg,#2A1F06 0%,#4A3508 48%,#8A6A12 100%);color:#fff;text-align:left;cursor:pointer;position:relative;overflow:hidden;font:inherit;box-shadow:0 0 0 1px rgba(255,232,154,.25) inset,0 10px 26px -8px rgba(212,175,55,.6);transition:transform .12s}
+#appmenu .mnai:active{transform:translateY(2px)}
+#appmenu .mnai::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%);animation:mnaiShine 3.4s ease-in-out infinite}
+@keyframes mnaiShine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+#appmenu .mnai-ic{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(180deg,#FFE89A,#D4AF37);color:#0B1530;font-weight:900;font-size:16px;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+#appmenu .mnai-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#appmenu .mnai-tx b{font-size:16px;color:#FFE89A}
+#appmenu .mnai-tx small{font-size:12px;color:rgba(255,255,255,.78)}
+#appmenu .mnai-badge{flex:none;font-size:10px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:999px;background:rgba(255,232,154,.16);border:1px solid rgba(255,232,154,.55);color:#FFE89A}
+#aip.aigen .aihead{background:linear-gradient(135deg,#0B1530,#1B2140 55%,#5A430A)}
+#aip.aigen .aisheet{border-top:2px solid #D4AF37}
+@media (prefers-reduced-motion:reduce){#appmenu .mnai::after{animation:none}}
 /* ===== v3.3.1 gate: language chips + password eye + guest gold ===== */
 .glrow{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .gllbl{font-size:12.5px;font-weight:700;opacity:.85}
@@ -1153,6 +1166,14 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         <div class="hstats" id="heroStats"></div>
       </div>
     </div></div>
+    <div class="card srch" id="gsrch" style="margin:12px 0">
+      <div class="row">
+        <input id="gsIn" type="search" placeholder="Search any MCQ or any subject (Civil, ACCA, ...)" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
+        <button class="btn" id="gsClr" type="button">Clear</button>
+      </div>
+      <div class="label cnt" id="gsCnt"></div>
+      <ul class="res" id="gsRes" hidden=""></ul>
+    </div>
     <div class="dlcard" id="dlCard" hidden><span><b>📲 Download the app</b>Open it like a real app from your home screen.</span><button type="button" data-install>Install</button></div>
     <div class="jokecard" id="jokeCard" hidden>
       <div class="jkhead"><span class="jkic">😂</span><b>Joke of the Day</b><span class="vipchip">✦ VIP</span></div>
@@ -1197,14 +1218,6 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       <div class="rrname"><b>&#9733; Revision mode</b><small id="revInfo">Practice your bookmarked MCQs</small></div>
       <button class="btn primary" id="btnRev" type="button">Start revision</button>
       <button class="btn" id="btnRevClear" type="button">Clear bookmarks</button>
-    </div>
-    <div class="card srch" id="gsrch" style="margin:12px">
-      <div class="row">
-        <input id="gsIn" type="search" placeholder="Search any MCQ or any subject (Civil, ACCA, ...)" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search all MCQs">
-        <button class="btn" id="gsClr" type="button">Clear</button>
-      </div>
-      <div class="label cnt" id="gsCnt"></div>
-      <ul class="res" id="gsRes" hidden=""></ul>
     </div>
         <div class="startrow">
       <button class="btn" id="btnEdit" type="button">Edit MCQs</button>
@@ -2075,6 +2088,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       .then(function(){hintBusy=false});
   }
   function aiCtx(id){
+    if(id===-2)return "LANGUAGE RULE (always): answer only in English and/or Urdu written in Urdu script (Arabic letters). NEVER use Hindi / Devanagari letters, and never write Urdu in Roman letters. Technical terms, formulas, units stay in English.\n\nYou are a friendly, accurate AI tutor on an exam-prep site for Pakistani students (PPSC, FPSC, NTS, Sub Engineer, Civil / Electrical / Mechanical / IT / ACCA / General Knowledge). Answer any study question clearly and briefly with simple steps, formulas and examples. If the student pastes an MCQ, solve it and explain the reasoning.";
     var q=Q[id],a=ans[id];
     var s="LANGUAGE RULE (always): answer only in English and/or Urdu written in Urdu script (Arabic letters). NEVER use Hindi / Devanagari letters, and never write Urdu in Roman letters. Technical terms, formulas, units and option letters stay in English.\n\nHere is an MCQ ("+SUB[S[q.sec].sub].name+" \u00b7 "+S[q.sec].name+"):\n\n"+q.text+"\n\n";
     q.opts.forEach(function(x,j){s+=LET[j]+". "+x+"\n"});
@@ -2130,9 +2144,29 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     sh.appendChild(hd);sh.appendChild(aiEl.q);sh.appendChild(aiEl.msgs);sh.appendChild(lg);sh.appendChild(chips);sh.appendChild(f);sh.appendChild(ex);
     aiEl.appendChild(bg);aiEl.appendChild(sh);document.body.appendChild(aiEl);aiLangUi();
   }
+  function aiEnsure(){if(!aiEl||!aiEl.isConnected){aiEl=null;aiCur=-1;aiBuild()}}
+  function aiGenUi(on){
+    var t=aiEl.querySelector(".ait"),sm=t&&t.querySelector("small"),ch=aiEl.querySelector(".aichips");
+    if(!aiEl.o&&t&&sm)aiEl.o={t:t.firstChild.nodeValue,s:sm.textContent};
+    aiEl.classList.toggle("aigen",!!on);
+    if(ch)ch.style.display=on?"none":"";
+    if(t&&sm&&aiEl.o){t.firstChild.nodeValue=on?"AI Tutor":aiEl.o.t;sm.textContent=on?"Ask anything \u00b7 any subject \u00b7 \u06c1\u0631 \u0645\u0636\u0645\u0648\u0646 \u06a9\u0627 \u0633\u0648\u0627\u0644 \u067e\u0648\u0686\u06be\u06cc\u06ba":aiEl.o.s}
+  }
+  function aiOpenGeneral(){
+    aiEnsure();aiGenUi(true);
+    if(aiCur!==-2){
+      aiCur=-2;aiSess=null;aiEl.msgs.textContent="";aiEl.cp.textContent="";
+      aiEl.msgs.appendChild(el("div","aim b","Hi! I'm your AI Tutor. Ask any question: a subject, concept, formula or MCQ. Type or paste it below.\n\u0645\u06cc\u06ba \u0622\u067e \u06a9\u0627 \u0627\u06d2 \u0622\u0626\u06cc \u0679\u06cc\u0648\u0679\u0631 \u06c1\u0648\u06ba\u06d4 \u06a9\u0648\u0626\u06cc \u0628\u06be\u06cc \u0633\u0648\u0627\u0644 \u06cc\u0627 \u0627\u06cc\u0645 \u0633\u06cc \u06a9\u06cc\u0648 \u0646\u06cc\u0686\u06d2 \u0644\u06a9\u06be\u06cc\u06ba\u06d4"));
+      aiEl.msgs.lastChild.style.whiteSpace="pre-line";
+    }
+    aiEl.q.textContent="Ask anything: Civil, Electrical, Mechanical, IT, GK, ACCA...";
+    aiEl.hidden=false;aiOpen=true;aiScroll();
+    try{aiEl.inp.focus()}catch(e){}
+  }
+  window.__aiOpenGeneral=aiOpenGeneral;
   function aiOpenQ(id){
     if(id==null||!Q[id])return;
-    if(!aiEl)aiBuild();
+    aiEnsure();aiGenUi(false);
     if(aiCur!==id){
       aiCur=id;aiSess=null;aiEl.msgs.textContent="";aiEl.cp.textContent="";
       aiEl.msgs.appendChild(el("div","aim b","Hi! Ask anything you don't understand about this question, or try the buttons below.\nاس سوال میں جو بھی سمجھ نہ آئے پوچھیں، یا نیچے دیے گئے بٹن استعمال کریں۔"));
@@ -2144,13 +2178,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function aiFuClear(){var o=aiEl.msgs.querySelectorAll(".aifu");for(var i=0;i<o.length;i++)o[i].remove()}
   /* follow-up chips under the answer: the AI's own suggestions, or defaults */
   function aiShowFu(list){
-    if(!list.length)list=AI_FU_DEF.map(function(p){return aiLang==="ur"?p[1]:aiLang==="en"?p[0]:p[0]+" / "+p[1]});
+    if(!list.length)list=(aiCur===-2?AI_FU_DEF.slice(0,2):AI_FU_DEF).map(function(p){return aiLang==="ur"?p[1]:aiLang==="en"?p[0]:p[0]+" / "+p[1]});
     var w=el("div","aifu");
     list.forEach(function(t){var b=el("button","chip",t);b.type="button";b.addEventListener("click",function(){aiSend(t)});w.appendChild(b)});
     aiEl.msgs.appendChild(w);aiScroll();
   }
   function aiSend(text){
-    if(aiBusy||aiCur<0)return;
+    if(aiBusy||aiCur===-1)return;
     var id=aiCur;aiFuClear();
     aiEl.msgs.appendChild(el("div","aim u",text));
     var b=el("div","aim b");b.innerHTML='<span class="aidots"><i></i><i></i><i></i></span>';aiEl.msgs.appendChild(b);aiScroll();
@@ -2279,10 +2313,10 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function openYear(k){
     curYear=k;var _oc=cardOf(k);if(_oc)curCourse=courseOf(_oc);buildYear(k,null);
-    $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
+    $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#gsrch").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
     try{if(!(history.state&&history.state.y===1))history.pushState({y:1},"")}catch(e){}
   }
-  function closeYear(){curYear=null;$("#yearView").hidden=true;$("#homeCards").hidden=false;$("#homeExtra").hidden=false;window.scrollTo(0,0)}
+  function closeYear(){curYear=null;$("#yearView").hidden=true;$("#homeCards").hidden=false;$("#homeExtra").hidden=false;$("#gsrch").hidden=false;window.scrollTo(0,0)}
   function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
   function readSave(){try{var s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.v===1&&(s.bv||0)===bv&&s.n===Q.length&&s.order&&s.order.length>0&&s.order.length<=Q.length&&s.tot>0)return s}catch(e){}return null}
   function resume(){
@@ -2596,6 +2630,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       }
       if(last<text.length)node.appendChild(document.createTextNode(text.slice(last)));
     }
+    function openMcq(id){
+      var q=Q[id];if(!q)return;
+      start(q.sec);
+      if($("#test").hidden||order.indexOf(id)<0)return;
+      order.sort(function(a,b){return a-b});
+      buildMap();go(order.indexOf(id));save();
+    }
     function opts(i){return (QO[i]&&QO[i].length)?QO[i]:Q[i].opts}
     function key(i){return (QO[i]&&QO[i].length)?QA[i]:Q[i].ans}
     function find(qr){
@@ -2618,7 +2659,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var r=find(inp.value),hits=r.list,sg=subjSuggest(inp.value);sg.forEach(function(s){res.appendChild(subjRow(s))});
       if(!hits.length){res.hidden=!sg.length;cnt.textContent=sg.length?"Subjects matching your search \u2014 tap one.":"No matching question found.";return}
       var SHOW=40;
-      cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to see its answer";
+      cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to open it";
       hits.slice(0,SHOW).forEach(function(h){
         var q=Q[h.id],li=document.createElement("li");li.className="gs";
         var yk=yearOf(S[q.sec].sub),yc=cardOf(yk);
@@ -2626,19 +2667,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         var t=el("span","t");hl(t,q.text,r.toks);
         t.appendChild(el("span","m",S[q.sec].name+" \u00b7 "+S[q.sec].code+" \u00b7 "+q.test+(h.inT?"":" \u00b7 matched in options")));
         li.appendChild(n);li.appendChild(t);
-        var d=null;
-        li.addEventListener("click",function(){
-          if(d){li.removeChild(d);d=null;return}
-          d=el("div","gsd");var o=opts(h.id),k=key(h.id);
-          o.forEach(function(x,j){
-            var row=el("div","go"+(j===k?" right":""));
-            row.appendChild(el("b","",LET[j]+"."));
-            row.appendChild(el("span","",x+(j===k?"  \u2713":"")));
-            d.appendChild(row);
-          });
-          if(ADM){var eb=el("button","btn qedit","\u270e Edit MCQ / answer");eb.type="button";eb.addEventListener("click",function(ev){ev.stopPropagation();quickEdit(h.id,render)});d.appendChild(eb)}
-          li.appendChild(d);
-        });
+        var ar=el("span","","\u203A");ar.style.cssText="font-size:22px;line-height:1;color:var(--accent);align-self:center";li.appendChild(ar);
+        li.addEventListener("click",function(){openMcq(h.id)});
         res.appendChild(li);
       });
       res.hidden=false;
@@ -4648,6 +4678,12 @@ function openMenu(){
     bx.appendChild(b);
   }
   mi("\u{1F3E0} Dashboard (Home)",()=>{goHomeHard()});
+  if(window.__AI_ON&&window.__aiOpenGeneral){
+    const ab=el("button","mnai");ab.type="button";
+    ab.innerHTML='<span class="mnai-ic">AI</span><span class="mnai-tx"><b>AI Tutor</b><small>Ask anything \u00b7 English + \u0627\u0631\u062f\u0648</small></span><span class="mnai-badge">\u2726 NEW</span>';
+    ab.onclick=()=>{dl.remove();try{window.__aiOpenGeneral()}catch(e){}};
+    bx.appendChild(ab);
+  }
   mi("\u{1F464} Account settings + membership",()=>openAcct());
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
@@ -5268,7 +5304,7 @@ function buildUsers(host,onlyG){
   (onlyG?tabs.guests:tabs.users).load=load;
 }
 /* ---------------- AI MCQs: AI writes MCQs (English + Urdu) -> admin approves -> saved in "mcqs" ---------------- */
-const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"]];
+const AIMCQ_SUBJECTS=[["Civil Engineering","Civil"],["Electrical Engineering","Electrical"],["Mechanical Engineering","Mechanical"],["General Knowledge","GK"],["Information Technology","IT"]];
 function aimcqParse(full,n){
   const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
   if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format, try again");
@@ -5287,11 +5323,11 @@ function aimcqParse(full,n){
 }
 async function aimcqGenerate(subject,n,have,noUrdu){
   const cfg=await aiKey();
-  AI_SYS_OVR="You write exam MCQs for Pakistani PPSC Sub Engineer and Building Inspector tests. Reply with ONLY a valid JSON array, no markdown and no other text.";
+  AI_SYS_OVR="You write exam MCQs for Pakistani competitive tests (PPSC, FPSC, NTS, Sub Engineer) in engineering, IT and general knowledge. Reply with ONLY a valid JSON array, no markdown and no other text.";
   AI_MAXOUT=4096;
   try{
     const avoid=(have||[]).slice(-20).map(x=>String(x).slice(0,60)).join(" | ");
-    const prompt="Write exactly "+n+" new multiple-choice questions for the subject: "+subject+".\n"+(avoid?"Do not repeat these: "+avoid+"\n":"")+
+    const prompt="Write exactly "+n+" new multiple-choice questions for the subject: "+subject+".\nFocus on important, frequently tested exam topics. Write every question in your own original wording (never copy from books or past papers). Each question must have exactly one clearly correct option; double-check the answer before writing it.\n"+(avoid?"Do not repeat these: "+avoid+"\n":"")+
       "Each array item must have exactly these keys: \"question\" (English), "+(noUrdu?"":"\"question_urdu\" (the same question in Urdu script, Arabic letters only, never Hindi or Devanagari, technical terms in English), ")+"\"options\" (array of exactly 4 short strings), \"correct\" (number, 0-based index of the right option), \"explanation\" (1-2 simple English sentences).";
     const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
     return aimcqParse(full,n);
@@ -5483,7 +5519,7 @@ function aiqDone(text){
 }
 function aiqStart(){
   if(!window.__playAi)return;
-  window.__aiqDone=t=>{aiqDone(t);const add=aiqTake(5);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
+  window.__aiqDone=t=>{aiqDone(t);const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
   if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
   window.__aiqNext=()=>{};
   window.__playAi("Civil Engineering",aiqTake(10));
@@ -5493,7 +5529,7 @@ function aiqSubjects(bank){
   const out=[["Civil","Civil Engineering"]],seen=new Set(["civil"]);
   const add=(label,subj)=>{const k=label.toLowerCase();if(seen.has(k))return;seen.add(k);out.push([label,subj])};
   (Array.isArray(bank&&bank.CARDS)?bank.CARDS:[]).forEach(c=>{const n=String((c&&c.course)||"").trim();if(n)add(n,n)});
-  [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"]].forEach(x=>add(x[0],x[1]));
+  [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"],["IT","Information Technology"]].forEach(x=>add(x[0],x[1]));
   return out;
 }
 function aiqInit(bank){
@@ -5542,7 +5578,7 @@ function aimcqPool(host){
     const cs=Array.isArray(b.CARDS)&&b.CARDS.length?b.CARDS.filter(c=>c&&c.k&&c.t).map(c=>[c.k,c.t]):Array.from(new Set(b.SUB.map(s=>s.cat).filter(k=>k&&k!=="__tmp"))).map(k=>[k,k]);
     cs.forEach(([k,t])=>{const o=el("option","","Category: "+t);o.value=k;catSel.appendChild(o)});
     b.SUB.forEach(s=>{if(s&&s.cat!=="__tmp"){const o=el("option");o.value=s.name;dl.appendChild(o)}});
-    ["General Knowledge","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
+    ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
   }
   function render(){
     list.textContent="";rows.forEach(r=>{r.cb=null});
@@ -5665,7 +5701,7 @@ window.__aiPlaySubject=async function(subject){
   };
   window.__aiqNext=()=>{};
   window.__aiqDone=()=>{
-    const add=buf.splice(0,5).map(toQ);
+    const add=buf.splice(0,3).map(toQ);
     if(add.length&&window.__aiAppend)window.__aiAppend(add);
     if(buf.length<10)more();
   };
