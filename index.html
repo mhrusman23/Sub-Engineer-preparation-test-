@@ -1469,7 +1469,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         /* VIP score graph — last 10 attempts, gold 3D bars (v3.3.0) */
         var vg=el("div","vgraph");
         var vgh=el("div","vghead");
-        vgh.appendChild(el("b","","📊 VIP score graph — aakhri 10 tests"));
+        vgh.appendChild(el("b","","📊 VIP score graph — last 10 tests"));
         vgh.appendChild(el("span","vipchip","✦ VIP"));
         vg.appendChild(vgh);
         var vr=el("div","vrows");
@@ -1720,7 +1720,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var b=el("button","ycard v"+((have.length+vi)%6));b.type="button";
       b.appendChild(el("span","yic",lb.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
       b.appendChild(el("span","yt",lb));b.appendChild(el("span","yd","AI practice"));
-      b.appendChild(el("span","ym","Har dafa naye MCQs \u00b7 English + Urdu"));
+      b.appendChild(el("span","ym","New MCQs every time \u00b7 English + Urdu"));
       b.addEventListener("click",function(){
         if(b.disabled||!window.__aiPlaySubject)return;b.disabled=true;
         Promise.resolve().then(function(){return window.__aiPlaySubject(x[1])}).catch(function(){}).then(function(){b.disabled=false});
@@ -1861,7 +1861,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function toBin(snap,go,what){
     var big=false;try{big=JSON.stringify(snap).length>900000}catch(e){}
     var p=(window.__binSave&&!big)?window.__binSave(snap):Promise.reject(new Error(big?"too big":"Bin not ready"));
-    p.then(go,function(e){if(confirm("Bin mein copy save nahi hui ("+((e&&(e.code||e.message))||e)+").\n\nPhir bhi '"+what+"' hamesha ke liye delete karein?"))go()});
+    p.then(go,function(e){if(confirm("Could not save a copy to the bin ("+((e&&(e.code||e.message))||e)+").\n\nDelete '"+what+"' permanently anyway?"))go()});
   }
   function afterDel(note){
     perm={};applyPerm({});bv=Date.now();clearSave();showResume();
@@ -1900,7 +1900,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       try{
         if(it.kind==="chapter"){
           var si=-1;SUB.forEach(function(s,i){if(si<0&&s.name===it.subName&&(s.code===it.subCode||true))si=i});
-          if(si<0)throw new Error("Subject '"+it.subName+"' nahi mila. Pehle subject restore karein.");
+          if(si<0)throw new Error("Subject '"+it.subName+"' was not found. Restore the subject first.");
           S.push({sub:si,name:it.ch.name,code:it.ch.code});pushQs(it.qs||[],S.length-1);
         }else if(it.kind==="subject"){
           var sb=JSON.parse(JSON.stringify(it.sub));
@@ -2412,11 +2412,11 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     t.classList.remove("warn");t.classList.remove("crit");
     var note;
     if(paused)note="Paused";
-    else if(TMOFF>0)note=started?(rem<=0?"Waqat khatam":"Baqi waqat (countdown)"):"Timer: "+mins(TMOFF)+" \u2014 first answer ke sath start hoga";
+    else if(TMOFF>0)note=started?(rem<=0?"Time is up":"Time left (countdown)"):"Timer: "+mins(TMOFF)+" \u2014 starts with the first answer";
     else note=started?"Time taken (no time limit)":"Starts when you answer your first question";
     $("#timerNote").textContent=note;paintTmr();
     if(TMOFF>0&&started&&!paused){
-      if(rem<=0){t.classList.add("crit");finish("\u23F0 Waqat khatam! Test khud finish ho gaya.")}
+      if(rem<=0){t.classList.add("crit");finish("\u23F0 Time is up! The test has finished automatically.")}
       else if(rem<60)t.classList.add("crit");
       else if(rem<300)t.classList.add("warn");
     }
@@ -2440,7 +2440,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function paintTmr(){var b=$("#btnTmrTop");if(b)b.textContent=TMOFF>0?"\u23F1 Timer: "+mins(TMOFF)+" min":"\u23F1 Timer: OFF"}
   function choose(i){
     if(finished||paused)return;
-    if(TMOFF>0&&started&&elapsed()>=TMOFF){finish("\u23F0 Waqat khatam! Test khud finish ho gaya.");return}
+    if(TMOFF>0&&started&&elapsed()>=TMOFF){finish("\u23F0 Time is up! The test has finished automatically.");return}
     var id=order[pos];
     if(ans[id])return; /* one attempt per MCQ */
     if(window.__VISITOR&&window.__vWall&&window.__vWall())return;
@@ -3555,10 +3555,10 @@ const LMAP=[
   ["+ New folder","+ نیا فولڈر"],
   ["+ Add file","+ فائل شامل کریں"],
   ["⬆️ Publish / Upload","⬆️ پبلش / اپلوڈ"],
-  ["🎮 Mock test banao — 'Mock Tests' page pe publish","🎮 مک ٹیسٹ بنائیں — ٹیسٹ پیج پر پبلش"],
-  ["📄 File ki tarah jama karo (MCQ wali HTML/JSON phir bhi test ban jati hain)","📄 فائل کے طور پر محفوظ کریں (کھول کر دیکھ سکتے ہیں)"],
-  ["📁 Yehi folder (jahan se add kiya)","📁 یہی فولڈر (یہیں سے شامل کیا)"],
-  ["📁 Kahan add karna hai?","📁 کہاں شامل کرنا ہے؟"],
+  ["🎮 Create a mock test — publish on the 'Mock Tests' page","🎮 مک ٹیسٹ بنائیں — ٹیسٹ پیج پر پبلش"],
+  ["📄 Save as a file (MCQ HTML/JSON files still become tests)","📄 فائل کے طور پر محفوظ کریں (کھول کر دیکھ سکتے ہیں)"],
+  ["📁 This same folder (where you added from)","📁 یہی فولڈر (یہیں سے شامل کیا)"],
+  ["📁 Where do you want to add it?","📁 کہاں شامل کرنا ہے؟"],
   ["🖼 Choose photo","🖼 تصویر چنیں"],
   ["← Back","← واپس"],
   ["Back","واپس"],
@@ -3569,7 +3569,7 @@ const LMAP=[
   ["Delete","حذف کریں"],
   ["Save","محفوظ کریں"],
   ["📈 Progress","📈 پروگریس"],
-  ["📊 VIP score graph — aakhri 10 tests","📊 VIP سکور گراف — آخری 10 ٹیسٹ"],
+  ["📊 VIP score graph — last 10 tests","📊 VIP سکور گراف — آخری 10 ٹیسٹ"],
   ["Last attempts","آخری کوششیں"],
   ["Weakest areas (study these)","کمزور مضامین (ان کو پڑھیں)"],
   ["Attempts","کوششیں"],
@@ -3591,40 +3591,40 @@ const LMAP=[
   ["Time period:","مدت:"],
   ["Valid till:","تک درست:"],
   ["Status:","حیثیت:"],
-  ["Baqi waqat:","باقی وقت:"],
-  ["Permanent — koi expiry nahi ♾","مستقل — ختم نہیں ہوگا ♾"],
+  ["Time left:","باقی وقت:"],
+  ["Permanent — no expiry ♾","مستقل — ختم نہیں ہوگا ♾"],
   ["Permanent ✓","مستقل ✓"],
   ["✓ Active member","✓ فعال رکن"],
   ["✦ Guest trial","✦ مہمان ٹرائل"],
-  ["Access khatam ✖","رسائی ختم ✖"],
-  ["Naam aur photo aap ke Google account se aate hain. Member ki expiry Admin panel → Users tab se badalti hai.","نام اور تصویر آپ کے گوگل اکاؤنٹ سے آتی ہے۔ رکن کی مدت ایڈمن پینل ↰ یوزرز ٹیب سے بدلتی ہے۔"],
+  ["Access ended ✖","رسائی ختم ✖"],
+  ["Your name and photo come from your Google account. Member expiry is changed in Admin panel → Users tab.","نام اور تصویر آپ کے گوگل اکاؤنٹ سے آتی ہے۔ رکن کی مدت ایڈمن پینل ↰ یوزرز ٹیب سے بدلتی ہے۔"],
   ["No files in this folder yet.","اس فولڈر میں اس وقت کوئی فائل نہیں۔"],
   ["No mock tests yet. Tap + New folder to add one.","اس وقت کوئی ٹیسٹ نہیں۔ + نیا فولڈر سے شامل کریں۔"],
-  ["Abhi koi premium folder nahi. Admin jald add karega.","اس وقت کوئی پریمیم فولڈر نہیں۔ ایڈمن جلد شامل کرے گا۔"],
-  ["📤 Site WhatsApp par share karein","📤 سائٹ ویٹس ایپ پر شیئر کریں"],
+  ["No premium folders yet. The admin will add them soon.","اس وقت کوئی پریمیم فولڈر نہیں۔ ایڈمن جلد شامل کرے گا۔"],
+  ["📤 Share site on WhatsApp","📤 سائٹ ویٹس ایپ پر شیئر کریں"],
   ["📤 Share","📤 شیئر کریں"],
-  ["👁\uFE0F Student view (user mode check karein)","👁\uFE0F سٹوڈنٹ ویو (یوزر موڈ دیکھیں)"],
-  ["🚪 Student view band karein (wapas admin)","🚪 سٹوڈنٹ ویو بند کریں (واپس ایڈمن)"],
+  ["👁\uFE0F Student view (check user mode)","👁\uFE0F سٹوڈنٹ ویو (یوزر موڈ دیکھیں)"],
+  ["🚪 Close student view (back to admin)","🚪 سٹوڈنٹ ویو بند کریں (واپس ایڈمن)"],
   ["⏱ Timer test (countdown)","⏱ ٹائمر ٹیسٹ (کاؤنٹ ڈاؤن)"],
-  ["🔄 Refresh karein","🔄 ریفریش کریں"],
+  ["🔄 Refresh","🔄 ریفریش کریں"],
   ["Baad mein","بعد میں"],
   ["💼 Jobs","💼 نوکریاں"],
   ["💬 Friendly Chat","💬 دوستانہ چیٹ"],
   ["\u{1F464}\uFE0F Username badlein","\u{1F464}\uFE0F یوزر نیم بدلیں"],
-  ["\u2795 Naya job add karein","\u2795 نیا جاب شامل کریں"],
+  ["\u2795 Add new job","\u2795 نیا جاب شامل کریں"],
   ["\u{1F517} Apply / Open","\u{1F517} درخواست / کھولیں"],
   ["\u270e Edit","\u270e ایڈٹ"],
   ["Send \u27A4","بھیجیں \u27A4"],
   ["Save changes","تبدیلی محفوظ کریں"],
   ["Cancel","منسوخ کریں"],
-  ["Live joke \u2726 roz internet se aaya \u00b7 khud Urdu hua (sirf aap ko)","لائیو مذاق ✦ روز انٹرنیٹ سے آیا · خود اردو ہوا (صرف آپ کو)"],
+  ["Live joke \u2726 fetched from the internet daily (visible only to you)","لائیو مذاق ✦ روز انٹرنیٹ سے آیا · خود اردو ہوا (صرف آپ کو)"],
 
   ["Naam:","نام:"],
   ["Tafseel:","تفصیل:"],
   ["Link (optional):","لنک (اختیاری):"],
   ["\ud83d\uddbc Choose photo (optional)","\ud83d\uddbc تصویر چنیں (اختیاری)"],
-  ["Admin jobs add karta hai — sab users card mein naam, tafseel, photo aur link dekhtay hain.","ایڈمن جابز یہاں شامل کرتا ہے — سب یوزرز کارڈ میں نام، تفصیل، تصویر اور لنک دیکھتے ہیں۔"],
-  ["Sab users yahan baat kar sakte hain. Sirf username dikhta hai — email kisi ko nazar nahi aata. Baat-cheet ki izzat rakhein \u{1F642}","سب یوزرز یہاں بات کر سکتے ہیں۔ صرف یوزر نیم نظر آتا ہے — ای میل کسی کو نہیں دکھتا۔ بات چیت کی عزت رکھیں 🙂"]
+  ["The admin adds jobs — all users see the name, details, photo and link in a card.","ایڈمن جابز یہاں شامل کرتا ہے — سب یوزرز کارڈ میں نام، تفصیل، تصویر اور لنک دیکھتے ہیں۔"],
+  ["All users can chat here. Only the username is shown — nobody can see your email. Please keep the chat respectful \u{1F642}","سب یوزرز یہاں بات کر سکتے ہیں۔ صرف یوزر نیم نظر آتا ہے — ای میل کسی کو نہیں دکھتا۔ بات چیت کی عزت رکھیں 🙂"]
 ].filter(x=>x[0].length>1);
 const LREX=[
   [/Continue as Guest \u00b7 (\d+) hours? free$/,m=>"مہمان جاری رکھیں \u00b7 "+m[1]+" گھنٹے مفت"],
@@ -3632,18 +3632,18 @@ const LREX=[
   [/^(\d+) premium folder\(s\)(.*)$/,m=>m[1]+" پریمیم فولڈر"+(/admin/.test(m[2])?" · ایڈمن/مینیجر فائل سنبھالتے ہیں":" · ✦ فائل سب کے لیے VIP")],
   [/^(\d+(?:\.\d+)?)% right$/,m=>m[1]+"% درست"],
   [/^(\d+) minutes?$/,m=>m[1]+" منٹ"],
-  [/^Timer: (\d+) \u2014 first answer ke sath start hoga$/,m=>"ٹائمر: "+m[1]+" منٹ — پہلے جواب کے ساتھ شروع ہوگا"],
+  [/^Timer: (\d+) \u2014 starts with the first answer$/,m=>"ٹائمر: "+m[1]+" منٹ — پہلے جواب کے ساتھ شروع ہوگا"],
   [/^Baqi waqat \(countdown\)$/,()=>"باقی وقت (کاؤنٹ ڈاؤن)"],
   [/^Aaj ka joke #(\d+) \u00b7 roz khud-ba-khud naya \ud83d\udd04$/,m=>"آج کا مذاق #"+m[1]+" \u00b7 روز خودبخود نیا 🔄"],
   [/^🏠 Yehi option page: '(.*)'$/,m=>"🏠 یہی صفحہ: '"+m[1]+"'"]
 ];
 const LPLACE=[
   ["Gmail address","جی میل ایڈریس"],
-  ["Apna message likhein\u2026 (max 300)","اپنا پیغام لکھیں\u2026 (300 تک)"],
+  ["Type your message\u2026 (max 300)","اپنا پیغام لکھیں\u2026 (300 تک)"],
   ["e.g. Usman Eng (1-24 letters)","مثلاً عثمان انجینئر (1-24 حروف)"],
   ["Password (at least 6 characters)","پاس ورڈ (کم از کم 6 حروف)"],
   ["6-digit code","6 ہندسوں کا کوڈ"],
-  ["🆕 Naya folder — naam yahan likhein","🆕 نیا فولڈر — نام یہاں لکھیں"]
+  ["🆕 New folder — type the name here","🆕 نیا فولڈر — نام یہاں لکھیں"]
 ];
 function tPlace(root){
   try{
@@ -3872,18 +3872,18 @@ const WS_PRESETS=[
 async function picDataUrl(f){
   const u=URL.createObjectURL(f);
   try{
-    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("Photo nahi khul saki: "+f.name));i.src=u});
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error("Could not open the photo: "+f.name));i.src=u});
     const c=document.createElement("canvas");
     let sc=Math.min(1,1280/Math.max(img.naturalWidth,img.naturalHeight)),q=0.74;
     for(let t=0;t<7;t++){
       const w=Math.max(1,Math.round(img.naturalWidth*sc)),h=Math.max(1,Math.round(img.naturalHeight*sc));
       c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
       const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",q));
-      if(!blob)throw new Error("Photo process nahi hui.");
+      if(!blob)throw new Error("Could not process the photo.");
       if(blob.size<=520*1024)return await new Promise(res=>{const rr=new FileReader();rr.onload=()=>res(String(rr.result));rr.readAsDataURL(blob)});
       sc*=0.82;q=Math.max(0.5,q-0.05);
     }
-    throw new Error("Photo bohat bari hai — choti photo lagayein.");
+    throw new Error("The photo is too large — use a smaller photo.");
   }finally{URL.revokeObjectURL(u)}
 }
 function syncWs(){
@@ -3892,7 +3892,7 @@ function syncWs(){
   document.querySelectorAll("#ws .wpp").forEach(b=>b.style.outline=(wsPic&&wsPic==="grad:"+b.dataset.g)?"3px solid var(--accent,#1F4FD8)":"none");
   const pv=document.getElementById("wsPrev");
   const g=(wsPic&&wsPic.indexOf("grad:")===0)?wsPic.slice(5):"";
-  if(pv){pv.style.backgroundImage=g?g:(wsPic?"url(\""+wsPic+"\")":"none");pv.textContent=wsPic?"":"VIP wallpaper neeche grid se chuno"}
+  if(pv){pv.style.backgroundImage=g?g:(wsPic?"url(\""+wsPic+"\")":"none");pv.textContent=wsPic?"":"Choose a VIP wallpaper from the grid below"}
 }
 function webFill(){
   const s=SITE||{};
@@ -3918,14 +3918,14 @@ function buildWebset(){
   top.appendChild(el("h2","","🌐 Website settings ✦ VIP"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{wsEl.hidden=true};top.appendChild(cl);
   box.appendChild(top);
-  box.appendChild(el("div","label","Ye settings sirf aap (owner) badal sakte hain — sab visitor ko nazar aati hain."));
-  const lab1=el("div","label","Website ka naam (hero + gate par):");box.appendChild(lab1);
+  box.appendChild(el("div","label","Only you (the owner) can change these settings — all visitors will see them."));
+  const lab1=el("div","label","Website name (hero + gate):");box.appendChild(lab1);
   const wname=el("input");wname.id="wsName";wname.placeholder="Engrgroup23";wname.style.cssText="width:100%";box.appendChild(wname);
   const lab2=el("div","label","Description (tagline):");box.appendChild(lab2);
   const wdesc=el("input");wdesc.id="wsDesc";wdesc.placeholder="Sub Engineer past paper & book solved.";wdesc.style.cssText="width:100%";box.appendChild(wdesc);
   box.appendChild(el("div","label","Contact email (About / Contact / Privacy pages par dikhega):"));
   const wmail=el("input");wmail.id="wsEmail";wmail.type="email";wmail.placeholder="maherusman1947@gmail.com";wmail.style.cssText="width:100%";box.appendChild(wmail);
-  const lab3=el("div","label","\ud83d\udce2 Announcement strip (login + app ke top par; khali = band):");box.appendChild(lab3);
+  const lab3=el("div","label","\ud83d\udce2 Announcement strip (login screen + top of the app; empty = off):");box.appendChild(lab3);
   const wannc=el("input");wannc.id="wsAnnc";wannc.placeholder="Naye PPSC 2026 papers add ho gaye!";wannc.style.cssText="width:100%";box.appendChild(wannc);
   box.appendChild(el("div","label","Theme color:"));
   const accRow=el("div");accRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0";
@@ -3943,7 +3943,7 @@ function buildWebset(){
     b.onclick=()=>{wsMode=x[0]==="wsAuto"?"":(x[0]==="wsLight"?"light":"dark");syncWs()};mRow.appendChild(b);
   });
   box.appendChild(mRow);
-  box.appendChild(el("div","label","✦ VIP premium wallpapers (8) — tap karo, foran lag jayega:"));
+  box.appendChild(el("div","label","✦ VIP premium wallpapers (8) — tap to apply instantly:"));
   const wp=el("div","wpg");
   WS_PRESETS.forEach(p=>{
     const b=el("button","btn wpp");b.type="button";b.dataset.g=p.c;b.title=p.t;b.setAttribute("aria-label","Wallpaper "+p.t);
@@ -3953,7 +3953,7 @@ function buildWebset(){
     wp.appendChild(b);
   });
   box.appendChild(wp);
-  box.appendChild(el("div","label","Ya apni photo lagao (hero + question page background):"));
+  box.appendChild(el("div","label","Or use your own photo (hero + question page background):"));
   const wf=el("input");wf.id="wsFile";wf.type="file";wf.accept="image/*";wf.hidden=true;box.appendChild(wf);
   const wrow=el("div");wrow.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0";
   const pv=el("div");pv.id="wsPrev";pv.style.cssText="width:96px;height:64px;border-radius:10px;border:2px dashed var(--line,#ccc);background:center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888";
@@ -3967,13 +3967,13 @@ function buildWebset(){
     wf.value="";
   };
   const whr=el("div");whr.style.cssText="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line,#ccc)";
-  whr.appendChild(el("b","","🔐 Login & Trial (kitne ghantay, kya message)"));
+  whr.appendChild(el("b","","🔐 Login & Trial (how many hours, which message)"));
   box.appendChild(whr);
   box.appendChild(el("div","label","Guest login ke liye kitne ghantay free access?"));
   const wh=el("input");wh.id="wsGuest";wh.type="number";wh.min="1";wh.max="8760";wh.placeholder="12 (default)";wh.style.cssText="width:100%";box.appendChild(wh);
-  box.appendChild(el("div","label","Trial ya access khatam hone par visitor ko kya message dikhe? (khali = purana text)"));
+  box.appendChild(el("div","label","Message shown to the visitor when the trial or access ends (empty = default text)"));
   const we=el("input");we.id="wsEnd";we.type="text";we.placeholder="Aap ka trial khatam ho gaya hai \u2014 admin se rabta karein (03494482609)";we.style.cssText="width:100%";box.appendChild(we);
-  box.appendChild(el("div","label","Google / number (approved) users ki expiry Admin panel → Users tab se hoti hai (din ke sath)."));
+  box.appendChild(el("div","label","Expiry for Google / number (approved) users is set in Admin panel → Users tab (in days)."));
   box.appendChild(el("div","label","Home page ke options/cards Add/Hide/Rename ke liye: Admin panel → Settings tab."));
   const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
   const sv=el("button","btn primary","\u{1F4BE} Save");sv.type="button";sv.onclick=()=>saveSite();srow.appendChild(sv);
@@ -3981,7 +3981,7 @@ function buildWebset(){
   async function saveSite(){
     sv.disabled=true;wst.textContent="Saving…";
     try{
-      mtStatus("\u{1F4BE} Settings save ho rahi hain…",20);
+      mtStatus("\u{1F4BE} Saving settings…",20);
       const ghv=parseFloat(document.getElementById("wsGuest").value);
       const gh=Number.isFinite(ghv)&&ghv>0?Math.min(8760,Math.floor(ghv)):12;
       const endv=document.getElementById("wsEnd");
@@ -3991,16 +3991,16 @@ function buildWebset(){
         guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),updatedAt:serverTimestamp()};
       await setDoc(doc(db,"sitedata","style"),data);
       applySite(data);
-      mtStatus("Save ho gaya — sab visitors ko nazar aayega",100,true);
+      mtStatus("Saved — all visitors will see it",100,true);
       wst.textContent="Saved ✓";
-    }catch(e){wst.textContent="Error: "+((e&&(e.code||e.message))||e);alert("Save nahi hui: "+((e&&(e.message||e.code))||e))}
+    }catch(e){wst.textContent="Error: "+((e&&(e.code||e.message))||e);alert("Not saved: "+((e&&(e.message||e.code))||e))}
     finally{sv.disabled=false}
   }
   document.body.appendChild(wsEl);
 }
 function openWebset(){
   if(PV)return;
-  if(!IS_OWNER){alert("Sirf owner ye settings badal sakta hai.");return}
+  if(!IS_OWNER){alert("Only the owner can change these settings.");return}
   if(!wsEl)buildWebset();
   webFill();wsEl.hidden=false;
 }
@@ -4251,8 +4251,8 @@ function lgShow(m,p){
   lgW.hidden=false;lgStep(m,p||0);
   if(!lgTick){lgTick=setInterval(()=>{if(lgPct<92)lgStep(null,lgPct+(lgPct<60?2:1))},700)}   /* keeps moving while the phone waits for the network */
   clearTimeout(lgT1);clearTimeout(lgT2);lgN.textContent="";
-  lgT1=setTimeout(()=>{lgN.textContent="Internet thora slow hai, intezar karein..."},8000);
-  lgT2=setTimeout(()=>{lgN.textContent="Agar bohot der ho jaye to page refresh karein."},20000);
+  lgT1=setTimeout(()=>{lgN.textContent="The internet is a bit slow, please wait..."},8000);
+  lgT2=setTimeout(()=>{lgN.textContent="If it takes too long, refresh the page."},20000);
 }
 function lgHide(){
   if(!lgW||lgW.hidden)return;
@@ -4276,11 +4276,11 @@ function showWall(){
   w.style.cssText="position:fixed;inset:0;z-index:100001;background:rgba(7,12,28,.72);display:flex;align-items:center;justify-content:center;padding:20px;font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif";
   const c=document.createElement("div");
   c.style.cssText="width:min(340px,100%);background:#fff;color:#13222d;border-radius:22px;padding:24px 20px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.45)";
-  c.innerHTML='<div style="font-size:42px">\ud83d\udd12</div><div style="font-weight:800;font-size:20px;margin:6px 0">Aap ne '+V_LIMIT+' MCQs kar liye!</div><div style="opacity:.8;margin-bottom:16px">Free practice jaari rakhne ke liye login karein. Aap ka ab tak ka test save rahega aur wahin se aage barh sakenge.</div>';
+  c.innerHTML='<div style="font-size:42px">\ud83d\udd12</div><div style="font-weight:800;font-size:20px;margin:6px 0">You have solved '+V_LIMIT+' MCQs!</div><div style="opacity:.8;margin-bottom:16px">Log in to continue free practice. Your test so far will be saved and you can continue from where you left off.</div>';
   const b1=document.createElement("button");b1.type="button";b1.textContent="\ud83d\udd10 Login / Sign up";
   b1.style.cssText="display:block;width:100%;border:0;border-radius:14px;padding:14px;background:#1d4ed8;color:#fff;font:800 16px system-ui,sans-serif";
   b1.onclick=()=>{try{sessionStorage.setItem("eg23resume","1")}catch(_){}goLogin()};
-  const b2=document.createElement("button");b2.type="button";b2.textContent="Abhi nahi";
+  const b2=document.createElement("button");b2.type="button";b2.textContent="Not now";
   b2.style.cssText="display:block;width:100%;border:0;background:none;margin-top:8px;padding:10px;color:#566;font:600 14px system-ui,sans-serif";
   b2.onclick=()=>w.remove();
   c.append(b1,b2);w.appendChild(c);document.body.appendChild(w);
@@ -4331,7 +4331,7 @@ onAuthStateChanged(auth,user=>{
     browseOn().then(ok=>{
       if(ok){startBrowse();return}
       lgHide();showMethods(true);gverbox.hidden=true;gout.hidden=true;gtrial.hidden=true;gcon.textContent="";
-      try{if(sessionStorage.getItem("eg23nobrowse")==="1")msg("Login karein ya Guest chunein taake aap aage MCQs hal kar sakein.");else msg("")}catch(_){msg("")}
+      try{if(sessionStorage.getItem("eg23nobrowse")==="1")msg("Log in or choose Guest so you can continue solving MCQs.");else msg("")}catch(_){msg("")}
     });
   }
 });
@@ -4611,7 +4611,7 @@ async function check(user){
     if(code==="permission-denied"||/Missing or insufficient permissions/i.test(code)){
       deny(email,(IS_OWNER||IS_ADMIN)
         ?"Server rules abhi publish nahi hui is liye data load nahi ho raha. File manager mein 'firestore.rules' kholen \u2192 Firebase Console \u2192 Firestore Database \u2192 Rules tab \u2192 poori file paste kar ke Publish dabayen. (permission-denied)"
-        :"Site ki settings abhi update ho rahi hain \u2014 thori der baad dobara try karein ya admin (03494482609) se rabta karein. (permission-denied)");
+        :"Site settings are being updated \u2014 please try again shortly or contact the admin (03494482609). (permission-denied)");
     }else deny(email,"Error: "+code);
   }
 }
@@ -4661,7 +4661,7 @@ function openModeChooser(){
   const bx=el("div","mdch");bx.style.cssText="position:fixed;right:12px;top:58px;min-width:260px";
   const opts=[];
   if(REAL_OWNER)opts.push(["admin","\u{1F6E0}\uFE0F","Admin mode","Sab kuch: Website settings, Managers, Bin, Jokes"]);
-  opts.push(["manager","\u{1F9D1}\u200D\u{1F4BC}","Manager mode","Jo manager ko nazar aata hai (owner settings nahi)"]);
+  opts.push(["manager","\u{1F9D1}\u200D\u{1F4BC}","Manager mode","What the manager can see (not owner settings)"]);
   opts.push(["user","\u{1F441}\uFE0F","User mode","Bilkul student ki tarah"]);
   opts.forEach(o=>{
     const b=el("button",""),ic=el("span","ic",o[1]),tx=el("span","");
@@ -4717,7 +4717,7 @@ function openMenu(){
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
   if(!PV)mi("\u{1F464}\uFE0F Username badlein",()=>openAcct("uname"));
-  mi("\u{1F4E4} WhatsApp par site share karein",()=>shareSite());
+  mi("\u{1F4E4} Share site on WhatsApp",()=>shareSite());
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
 
   mi("\u21A9 Sign out",()=>{try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}signOut(auth).then(()=>location.reload())});
@@ -4781,27 +4781,27 @@ async function openAds(){
   head.appendChild(el("h2","","\u{1F4E2} Ads"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>dl.remove();head.appendChild(cl);box.appendChild(head);
   const st=el("div","label st");box.appendChild(st);
-  box.appendChild(el("div","label","Ads Joke card ki jagah aati hain, ek khatam ho to dusri. Koi ad na ho to jokes wapas."));
+  box.appendChild(el("div","label","Ads appear in place of the Joke card, one after another. If there are no ads, jokes come back."));
   let D={list:[],rotate:8,keepJokes:false,hideVip:false},editAt=-1,img="";
   const inp=(ph,type)=>{const i=document.createElement("input");i.type=type||"text";i.placeholder=ph;i.style.cssText="width:100%;margin-top:6px";box.appendChild(i);return i};
   const row=(t)=>{const l=el("label");l.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";const c=el("input");c.type="checkbox";l.append(c,el("span","",t));box.appendChild(l);return c};
-  const cKeep=row("Jokes bhi saath dikhayen (band = sirf ads)");
-  const cVip=row("VIP / premium users ko ads na dikhayen");
+  const cKeep=row("Also show jokes (off = ads only)");
+  const cVip=row("Do not show ads to VIP / premium users");
   const rw=el("div");rw.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";rw.append(el("span","","Har ad kitne second:"));
   const rot=document.createElement("input");rot.type="number";rot.min=3;rot.max=60;rot.style.width="80px";rw.appendChild(rot);box.appendChild(rw);
   box.appendChild(el("div","label","Naya ad / edit"));
   const ti=inp("Title (e.g. Sub Engineer Notes 2026)");
   const tx=document.createElement("textarea");tx.rows=2;tx.placeholder="Chhota text (optional)";tx.style.cssText="width:100%;margin-top:6px";box.appendChild(tx);
   const lk=inp("Link (https://wa.me/... ya website)","url");
-  const bt=inp("Button ka text (e.g. WhatsApp karein)");
-  const iu=inp("Image link (https://...) ya neeche se photo chunein","url");
+  const bt=inp("Button text (e.g. Chat on WhatsApp)");
+  const iu=inp("Image link (https://...) or choose a photo below","url");
   const fi=document.createElement("input");fi.type="file";fi.accept="image/*";fi.style.marginTop="6px";box.appendChild(fi);
   const pv=document.createElement("img");pv.style.cssText="display:none;max-width:100%;max-height:140px;border-radius:10px;margin-top:6px";box.appendChild(pv);
   fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=900,k=Math.min(1,m/im.width),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);img=c.toDataURL("image/jpeg",.78);iu.value="";pv.src=img;pv.style.display="block";st.textContent="Photo tayyar ("+Math.round(img.length/1024)+" KB)."};im.src=r.result};r.readAsDataURL(f)};
   iu.oninput=()=>{img="";if(iu.value){pv.src=iu.value;pv.style.display="block"}else pv.style.display="none"};
-  box.appendChild(el("div","label","Ya network ka ad code (AdSense / Adsterra / Monetag) yahan paste karein"));
+  box.appendChild(el("div","label","Or paste the ad network code (AdSense / Adsterra / Monetag) here"));
   const hh=document.createElement("textarea");hh.rows=3;hh.placeholder="<script ...> ya <ins ...>";hh.style.cssText="width:100%;margin-top:6px;font-family:monospace;font-size:12px";box.appendChild(hh);
-  const hz=inp("Ad ki height px (khali = khud pata lagayen)","number");
+  const hz=inp("Ad height in px (empty = auto)","number");
   const dr=el("div");dr.style.cssText="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap";
   const fr=document.createElement("input");fr.type="date";const to=document.createElement("input");to.type="date";
   dr.append(el("span","","Start:"),fr,el("span","","End:"),to);box.appendChild(dr);
@@ -4809,13 +4809,13 @@ async function openAds(){
   const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:12px";box.appendChild(list);
   async function save(msg){
     D.keepJokes=cKeep.checked;D.hideVip=cVip.checked;D.rotate=Math.max(3,+rot.value||8);
-    try{await window.__ads.set(D);if(window.__adsRepaint)window.__adsRepaint();st.textContent=msg||"Saved · sab users ko nazar aayega.";draw()}
-    catch(e){st.textContent="Error: "+(e.code||e.message)+(String(e.code||"").includes("permission")?" (rules publish karein)":"")}
+    try{await window.__ads.set(D);if(window.__adsRepaint)window.__adsRepaint();st.textContent=msg||"Saved · all users will see it.";draw()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)+(String(e.code||"").includes("permission")?" (publish the rules)":"")}
   }
   function clear(){editAt=-1;img="";[ti,lk,bt,iu,hh,hz,fr,to].forEach(x=>x.value="");tx.value="";fi.value="";pv.style.display="none";bs.textContent="Add ad"}
   function draw(){
     list.textContent="";rot.value=D.rotate||8;cKeep.checked=!!D.keepJokes;cVip.checked=!!D.hideVip;
-    if(!(D.list||[]).length)list.appendChild(el("div","label","Abhi koi ad nahi."));
+    if(!(D.list||[]).length)list.appendChild(el("div","label","No ads yet."));
     (D.list||[]).forEach((a,i)=>{
       const c=el("div");c.style.cssText="border:1px solid var(--line,#ccd);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center";
       if(a.img){const m=document.createElement("img");m.src=a.img;m.style.cssText="width:56px;height:56px;object-fit:cover;border-radius:8px";c.appendChild(m)}
@@ -4823,16 +4823,16 @@ async function openAds(){
       const mk=(l,f)=>{const b=el("button","btn",l);b.type="button";b.style.minHeight="34px";b.onclick=f;c.appendChild(b)};
       mk(a.on===false?"ON":"OFF",()=>{a.on=a.on===false;save()});
       mk("✎",()=>{editAt=i;ti.value=a.title||"";tx.value=a.text||"";lk.value=a.link||"";bt.value=a.btn||"";hh.value=a.html||"";hz.value=a.h||"";fr.value=a.from||"";to.value=a.to||"";img=a.img&&a.img.startsWith("data:")?a.img:"";iu.value=a.img&&!img?a.img:"";if(a.img){pv.src=a.img;pv.style.display="block"}bs.textContent="Save changes";box.scrollIntoView({block:"start"})});
-      mk("\u{1F5D1}",()=>{if(confirm("Ye ad delete karein?")){D.list.splice(i,1);save("Deleted.")}});
+      mk("\u{1F5D1}",()=>{if(confirm("Delete this ad?")){D.list.splice(i,1);save("Deleted.")}});
       list.appendChild(c);
     });
   }
   bs.onclick=async()=>{
     const a={title:ti.value.trim(),text:tx.value.trim(),link:lk.value.trim(),btn:bt.value.trim(),img:img||iu.value.trim(),html:hh.value.trim(),h:(+hz.value)||((hh.value.match(/['"]height['"]\s*:\s*(\d+)/)||[])[1]*1+6)||(/container-/.test(hh.value)?320:120),from:fr.value,to:to.value,on:true};
     if(!(a.title||a.text||a.img||a.html)){st.textContent="Kam az kam title, photo ya ad code dein.";return}
-    if(a.link&&!/^https?:\/\//i.test(a.link)){st.textContent="Link https:// se shuru hona chahiye.";return}
+    if(a.link&&!/^https?:\/\//i.test(a.link)){st.textContent="The link must start with https://.";return}
     D.list=D.list||[];if(editAt>=0){a.on=D.list[editAt].on!==false;D.list[editAt]=a}else D.list.push(a);
-    clear();await save(editAt>=0?"Updated.":"Ad add ho gaya · sab ko nazar aayega.");
+    clear();await save(editAt>=0?"Updated.":"Ad added · everyone will see it.");
   };
   [cKeep,cVip,rot].forEach(x=>x.onchange=()=>save());
   try{D=Object.assign(D,await window.__ads.get())}catch(e){st.textContent="Error: "+(e.code||e.message)}
@@ -4855,7 +4855,7 @@ async function openJokes(){
   const cAuto=row("AI auto-adds 5 new jokes every day (when admin or manager opens the app)");
   const cHide=row("Hide the 30 built-in jokes (show only my / AI jokes)");
   const bar=el("div");bar.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px";box.appendChild(bar);
-  const bAi=el("button","btn primary","\u{1F916} AI se 5 naye jokes banao");bAi.type="button";bar.appendChild(bAi);
+  const bAi=el("button","btn primary","\u{1F916} Create 5 new jokes with AI");bAi.type="button";bar.appendChild(bAi);
   box.appendChild(el("div","label","Add / edit a joke · English"));
   const en=document.createElement("textarea");en.rows=2;en.style.cssText="width:100%";box.appendChild(en);
   box.appendChild(el("div","label","Urdu (leave empty = AI will translate)"));
@@ -4863,8 +4863,8 @@ async function openJokes(){
   const bSave=el("button","btn primary","Add joke");bSave.type="button";bSave.style.marginTop="8px";box.appendChild(bSave);
   const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px;margin-top:12px";box.appendChild(list);
   async function save(msg){
-    try{await window.__jk.set(D);if(window.__jkRepaint)window.__jkRepaint();st.textContent=msg||"Saved · sab users ko nazar aayega.";draw()}
-    catch(e){st.textContent="Error: "+(e.code||e.message)+" (rules: sitedata write admin/manager ke liye khuli honi chahiye)"}
+    try{await window.__jk.set(D);if(window.__jkRepaint)window.__jkRepaint();st.textContent=msg||"Saved · all users will see it.";draw()}
+    catch(e){st.textContent="Error: "+(e.code||e.message)+" (rules: sitedata write must be open to admin/manager)"}
   }
   function draw(){
     cAuto.checked=D.auto!==false;cHide.checked=!!D.hideBuiltin;
@@ -4884,18 +4884,18 @@ async function openJokes(){
   cAuto.onchange=()=>{D.auto=cAuto.checked;save()};
   cHide.onchange=()=>{D.hideBuiltin=cHide.checked;save()};
   bAi.onclick=async()=>{
-    bAi.disabled=true;st.textContent="AI jokes bana raha hai...";
-    try{const add=await jkGenerate(5,D.list||[]);D.list=((D.list||[]).concat(add)).slice(-60);D.autoAt=Date.now();await save(add.length+" naye jokes add ho gaye.")}
+    bAi.disabled=true;st.textContent="AI is creating jokes...";
+    try{const add=await jkGenerate(5,D.list||[]);D.list=((D.list||[]).concat(add)).slice(-60);D.autoAt=Date.now();await save(add.length+" new jokes added.")}
     catch(e){st.textContent=(window.__aiErr?window.__aiErr(e):String(e.message||e))}
     bAi.disabled=false;
   };
   bSave.onclick=async()=>{
     const e1=en.value.trim();let u1=ur.value.trim();
-    if(e1.length<5){st.textContent="English joke likhein.";return}
+    if(e1.length<5){st.textContent="Write an English joke.";return}
     bSave.disabled=true;
     try{
       if(!u1){
-        st.textContent="Urdu translation ho rahi hai...";
+        st.textContent="Translating to Urdu...";
         AI_SYS_OVR="You translate short jokes into Urdu script (Arabic letters only, never Hindi). Keep technical terms in English. Reply with only the Urdu text.";
         try{const sx=await window.__aiStart("Translate.");u1=String(await sx.send("Translate into Urdu:\n"+e1,null)||"").replace(/\n[ \t]*[*_]*FOLLOW-?UPS?[*_]*[ \t]*:[\s\S]*$/i,"").trim()}finally{AI_SYS_OVR=""}
         if(!u1||JK_BAD.test(u1))throw new Error("Urdu translation failed, type Urdu yourself");
@@ -4993,7 +4993,7 @@ function openAcct(focus){
   usb.onclick=async()=>{
     const n=uin.value.trim().replace(/\s+/g," ");
     const cu=auth.currentUser;
-    if(!cu){ust.textContent="Login nahi hai.";return}
+    if(!cu){ust.textContent="You are not logged in.";return}
     usb.disabled=true;ust.textContent="Saving…";
     try{
       await setDoc(doc(db,"pubusers",cu.uid),{name:n,updatedAt:serverTimestamp()},{merge:true});
@@ -5003,14 +5003,14 @@ function openAcct(focus){
       const em=document.querySelector("#userbar .em");
       if(em)em.textContent=(P.name||"")+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"");
       const pn=document.getElementById("pfName");if(pn)pn.textContent=P.name||"";
-      ust.textContent="Saved \u2713 "+(n?"chat aur menu mein '"+n+"' dikh raha hai":"username hat gaya — Google naam wapas dikh raha hai");
-      mtStatus(n?"Username save ho gaya \u2713":"Username hata diya \u2014 Google naam wapas",100,true);
-    }catch(e){ust.textContent=(e&&e.code==="permission-denied")?"Rules Publish karein: Firebase Console \u2192 Firestore \u2192 Rules \u2192 file paste \u2192 Publish.":("Error: "+((e&&(e.code||e.message))||e))}
+      ust.textContent="Saved \u2713 "+(n?"shown in chat and menu as '"+n+"'":"username removed — your Google name is shown again");
+      mtStatus(n?"Username saved \u2713":"Username removed \u2014 Google name restored",100,true);
+    }catch(e){ust.textContent=(e&&e.code==="permission-denied")?"Publish the rules: Firebase Console \u2192 Firestore \u2192 Rules \u2192 paste the file \u2192 Publish.":("Error: "+((e&&(e.code||e.message))||e))}
     finally{usb.disabled=false}
   };
   ur.appendChild(uin);ur.appendChild(usb);bx.appendChild(ur);
   const unr=el("div");unr.style.cssText="padding:6px 16px 2px;font:12px/1.4 sans-serif;color:var(--muted,#666)";
-  unr.textContent="Yehi naam ☰ Menu aur \ud83d\udcac Friendly Chat mein sab ko nazar aata hai — email kisi ko nahi dikhta. Khali karke Save karein to Google naam wapas aata hai.";
+  unr.textContent="This name is visible to everyone in ☰ Menu and \ud83d\udcac Friendly Chat — your email is never shown. Leave it empty and Save to restore your Google name.";
   bx.appendChild(unr);
   ust.style.cssText="padding:0 16px 8px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";
   bx.appendChild(ust);
@@ -5019,24 +5019,24 @@ function openAcct(focus){
   function crow(k,v,cls){const rr=el("div","acrow"+(cls?" "+cls:""));rr.appendChild(el("span","",k));rr.appendChild(el("b","",v));mc.appendChild(rr)}
   const isAdm=IS_OWNER||IS_ADMIN;
   crow("Account type:",IS_OWNER?"Owner \u2726":(IS_ADMIN?"Manager":"Member"));
-  if(isAdm){crow("Time period:","Permanent \u2014 koi expiry nahi \u267E")}
+  if(isAdm){crow("Time period:","Permanent \u2014 no expiry \u267E")}
   else if(P.expires){
     const d=new Date(P.expires);
     crow("Valid till:",d.toLocaleDateString([],{day:"numeric",month:"short",year:"numeric"})+" "+d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));
     crow("Status:",P.trial?"\u2726 Guest trial":"\u2713 Active member");
-    const cd=el("div","acrow accd");cd.appendChild(el("span","","Baqi waqat:"));
+    const cd=el("div","acrow accd");cd.appendChild(el("span","","Time left:"));
     const b=el("b","");cd.appendChild(b);mc.appendChild(cd);
     const tick=()=>{
       if(!b.isConnected){clearInterval(iv);return}
       const ms=P.expires-Date.now();
-      if(ms<=0){b.textContent="Access khatam \u2716";clearInterval(iv);return}
+      if(ms<=0){b.textContent="Access ended \u2716";clearInterval(iv);return}
       const s=Math.floor(ms/1000),dd=Math.floor(s/86400),hh=Math.floor(s%86400/3600),mm=Math.floor(s%3600/60),ss=s%60;
       b.textContent=(dd>0?dd+" din "+hh+"h ":"")+String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
     };
     const iv=setInterval(tick,1000);tick();
   } else {crow("Time period:","Permanent \u2713");crow("Status:","\u2713 Active member")}
   bx.appendChild(mc);
-  bx.appendChild(el("div","acnote","Naam aur photo aap ke Google account se aate hain. Member ki expiry Admin panel \u2192 Users tab se badalti hai."));
+  bx.appendChild(el("div","acnote","Your name and photo come from your Google account. Member expiry is changed in Admin panel \u2192 Users tab."));
   const brow=el("div","acbtns");
   const so=el("button","btn","\u21A9 Sign out");so.type="button";so.onclick=()=>{signOut(auth).then(()=>location.reload())};brow.appendChild(so);
   const cl=el("button","btn primary","Close");cl.type="button";cl.onclick=()=>dl.remove();brow.appendChild(cl);
@@ -5131,9 +5131,9 @@ function bankToast(){
   const t=el("div");t.id="bktoast";
   t.setAttribute("role","status");
   t.style.cssText="position:fixed;left:12px;right:12px;bottom:88px;z-index:1250;background:linear-gradient(145deg,#FFE89A,#C9A227 70%,#7A5A06);color:#3B2A00;border:1px solid #7A5A06;border-radius:16px;padding:13px 15px;box-shadow:0 12px 34px rgba(0,0,0,.4);font:600 14px/1.5 sans-serif;display:flex;flex-direction:column;gap:8px";
-  t.appendChild(el("b","","🔄 Naye sawal site par aa gaye!"));
-  t.appendChild(el("div","","Admin ne naye MCQs / files publish ki hain. Page refresh karein, sab dashboard par foran nazar aayega."));
-  const rb=el("button","btn primary","🔄 Refresh karein");rb.type="button";rb.style.cssText="width:100%";
+  t.appendChild(el("b","","🔄 New questions are on the site!"));
+  t.appendChild(el("div","","The admin has published new MCQs / files. Refresh the page and everything will appear on the dashboard instantly."));
+  const rb=el("button","btn primary","🔄 Refresh");rb.type="button";rb.style.cssText="width:100%";
   rb.onclick=()=>location.reload();
   const xb=el("button","btn","Baad mein");xb.type="button";xb.style.cssText="width:100%";
   xb.onclick=()=>t.remove();
@@ -5243,7 +5243,7 @@ function ustat(d){
 function admDeny(e){
   const m=String((e&&(e.code||e.message))||e).trim();
   if(m==="permission-denied"||/insufficient permissions/i.test(m)){
-    return "Firestore rules abhi publish nahi hui \u2014 Firebase Console \u2192 Firestore Database \u2192 Rules \u2192 Downloads\\firestore.rules ki POORI file paste karke \u2705 Publish dabayen.";
+    return "Firestore rules are not published yet \u2014 Firebase Console \u2192 Firestore Database \u2192 Rules \u2192 paste the WHOLE Downloads\\firestore.rules file and press \u2705 Publish.";
   }
   return "Error: "+m;
 }
@@ -5561,7 +5561,7 @@ function aiqInit(bank){
   const card=el("div","card");card.id="aiqCard";
   card.style.cssText="margin:12px 0;padding:14px";
   const tx=el("div");
-  tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","Har dafa naye MCQs \u00b7 English + Urdu"));
+  tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","New MCQs every time \u00b7 English + Urdu"));
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
   window.__aiqChips=aiqSubjects(bank).slice(0,8);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
@@ -5604,31 +5604,44 @@ function aimcqPool(host){
     b.SUB.forEach(s=>{if(s&&s.cat!=="__tmp"){const o=el("option");o.value=s.name;dl.appendChild(o)}});
     ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
   }
+  /* same field = same folder: unify names like "civil", "Civil Engineering (chapter: X)" */
+  const CANON=[[/^civil\b/i,"Civil Engineering"],[/^electrical\b/i,"Electrical Engineering"],[/^mechanical\b/i,"Mechanical Engineering"],[/^(general knowledge|gk)\b/i,"General Knowledge"],[/^(information technology|it)$/i,"Information Technology"]];
+  const canon=s=>{s=String(s||"").replace(/\s*\(chapter:.*$/i,"").replace(/\s+/g," ").trim();if(!s)return "";for(const [re,n] of CANON)if(re.test(s))return n;return s};
+  const openF=new Set();
   function render(){
     list.textContent="";rows.forEach(r=>{r.cb=null});
-    const vis=rows.filter(r=>!flt.value||(r.d.subject||"")===flt.value);
+    const vis=rows.filter(r=>!flt.value||canon(r.d.subject)===flt.value);
     if(!vis.length){list.appendChild(el("div","label","Pool is empty."));return}
-    vis.sort((a,b)=>String(a.d.subject||"~").localeCompare(String(b.d.subject||"~")));
-    let lastSub=null;
-    vis.forEach(r=>{
-      const gs=r.d.subject||"No subject";
-      if(gs!==lastSub){lastSub=gs;const gh=el("div","label","\uD83D\uDCC1 "+gs+" ("+vis.filter(x=>(x.d.subject||"No subject")===gs).length+")");gh.style.cssText="margin:16px 0 4px;font-weight:800;border-bottom:1px solid var(--line,#ccd)";list.appendChild(gh)}
-      const row=el("div","urow"),w=el("div","who"),cb=el("input");cb.type="checkbox";r.cb=cb;
-      const q=el("span","",r.e.q),sm=el("small","");
-      const sum=()=>{q.textContent=r.e.q;sm.textContent=r.e.o.map((o,i)=>"ABCD".charAt(i)+") "+o+(i===r.e.c?" \u2713":"")).join("  |  ")};sum();
-      w.append(q,sm,el("small","",(r.coll==="mcqs"?"Approved":"AI pool")+(r.d.subject?" \u00b7 "+r.d.subject:"")));
-      const ed=el("div");ed.hidden=true;ed.style.cssText="width:100%";
-      const qt=el("textarea");qt.rows=2;qt.value=r.e.q;qt.oninput=()=>{r.e.q=qt.value;sum()};ed.appendChild(qt);
-      r.e.o.forEach((o,i)=>{const inp=el("input");inp.type="text";inp.value=o;inp.oninput=()=>{r.e.o[i]=inp.value;sum()};ed.appendChild(inp)});
-      const cs=el("select");r.e.o.forEach((_,i)=>{const op=el("option","","Correct answer: "+"ABCD".charAt(i));op.value=String(i);cs.appendChild(op)});
-      cs.value=String(r.e.c);cs.onchange=()=>{r.e.c=+cs.value;sum()};ed.appendChild(cs);
-      const eb=el("button","btn","Edit");eb.type="button";eb.onclick=()=>{ed.hidden=!ed.hidden};
-      const dx=el("button","btn danger","Delete");dx.type="button";let arm=false;
-      dx.onclick=async()=>{
-        if(!arm){arm=true;dx.textContent="Confirm?";setTimeout(()=>{arm=false;dx.textContent="Delete"},3000);return}
-        try{await deleteDoc(doc(db,r.coll,r.id));await load()}catch(e){say(admDeny(e))}
-      };
-      row.append(cb,w,eb,dx,ed);list.appendChild(row);
+    const groups=new Map();
+    vis.forEach(r=>{const g=canon(r.d.subject)||"No subject";if(!groups.has(g))groups.set(g,[]);groups.get(g).push(r)});
+    Array.from(groups.keys()).sort((x,y)=>x==="No subject"?1:y==="No subject"?-1:x.localeCompare(y)).forEach(g=>{
+      const items=groups.get(g),box=el("details");
+      box.style.cssText="margin:10px 0;border:1px solid var(--line,#ccd);border-radius:14px;padding:6px 10px";
+      box.open=openF.has(g)||!!flt.value;
+      box.addEventListener("toggle",()=>{if(box.open)openF.add(g);else openF.delete(g)});
+      const sm0=el("summary","","\uD83D\uDCC1 "+g+" ("+items.length+" MCQs)");sm0.style.cssText="cursor:pointer;font-weight:800;padding:8px 0";
+      const pick=el("button","btn","Select this folder");pick.type="button";pick.style.margin="4px 0 6px";
+      pick.onclick=()=>{const on=items.some(r=>r.cb&&!r.cb.checked);items.forEach(r=>{if(r.cb)r.cb.checked=on});pick.textContent=on?"Unselect this folder":"Select this folder"};
+      box.append(sm0,pick);
+      items.forEach(r=>{
+        const row=el("div","urow"),w=el("div","who"),cb=el("input");cb.type="checkbox";r.cb=cb;
+        const q=el("span","",r.e.q),sm=el("small","");
+        const sum=()=>{q.textContent=r.e.q;sm.textContent=r.e.o.map((o,i)=>"ABCD".charAt(i)+") "+o+(i===r.e.c?" \u2713":"")).join("  |  ")};sum();
+        w.append(q,sm,el("small","",r.coll==="mcqs"?"Approved":"AI pool"));
+        const ed=el("div");ed.hidden=true;ed.style.cssText="width:100%";
+        const qt=el("textarea");qt.rows=2;qt.value=r.e.q;qt.oninput=()=>{r.e.q=qt.value;sum()};ed.appendChild(qt);
+        r.e.o.forEach((o,i)=>{const inp=el("input");inp.type="text";inp.value=o;inp.oninput=()=>{r.e.o[i]=inp.value;sum()};ed.appendChild(inp)});
+        const cs=el("select");r.e.o.forEach((_,i)=>{const op=el("option","","Correct answer: "+"ABCD".charAt(i));op.value=String(i);cs.appendChild(op)});
+        cs.value=String(r.e.c);cs.onchange=()=>{r.e.c=+cs.value;sum()};ed.appendChild(cs);
+        const eb=el("button","btn","Edit");eb.type="button";eb.onclick=()=>{ed.hidden=!ed.hidden};
+        const dx=el("button","btn danger","Delete");dx.type="button";let arm=false;
+        dx.onclick=async()=>{
+          if(!arm){arm=true;dx.textContent="Confirm?";setTimeout(()=>{arm=false;dx.textContent="Delete"},3000);return}
+          try{await deleteDoc(doc(db,r.coll,r.id));await load()}catch(e){say(admDeny(e))}
+        };
+        row.append(cb,w,eb,dx,ed);box.appendChild(row);
+      });
+      list.appendChild(box);
     });
   }
   async function load(){
@@ -5642,7 +5655,7 @@ function aimcqPool(host){
       }));
       const keep=flt.value;flt.textContent="";
       const o0=el("option","","All fields (subjects)");o0.value="";flt.appendChild(o0);
-      Array.from(new Set(rows.map(r=>r.d.subject||"").filter(Boolean))).sort().forEach(n=>{const o=el("option","",n+" ("+rows.filter(r=>(r.d.subject||"")===n).length+")");o.value=n;flt.appendChild(o)});
+      Array.from(new Set(rows.map(r=>canon(r.d.subject)).filter(Boolean))).sort().forEach(n=>{const o=el("option","",n+" ("+rows.filter(r=>canon(r.d.subject)===n).length+")");o.value=n;flt.appendChild(o)});
       flt.value=keep;if(flt.value!==keep)flt.value="";
       say(rows.length+" MCQ(s) in the pool.");render();
     }catch(e){say(admDeny(e))}
@@ -5656,14 +5669,14 @@ function aimcqPool(host){
     for(const r of sel){
       const o=r.e.o.map(x=>String(x).trim());
       if(!r.e.q.trim()||o.some(x=>!x)||!(r.e.c>=0&&r.e.c<o.length)){say("Fix this MCQ first (empty text/option): "+r.e.q.slice(0,50));return}
-      if(!(auto?(r.d.subject||sname):sname)){say("Write the subject name first (this MCQ has no subject).");return}
+      if(!(auto?(canon(r.d.subject)||sname):sname)){say("Write the subject name first (this MCQ has no subject).");return}
     }
     if(!BANK_JSON){say("There is no question bank yet. Upload a bank first (Questions tab).");return}
     add.disabled=true;say("Adding\u2026");
     try{
       const cur=JSON.parse(BANK_JSON),lc=x=>String(x).toLowerCase(),courseOfC=c=>String((c&&c.course)||"").trim()||"Civil";
       const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase())),groups=new Map();
-      sel.forEach(r=>{const s=(auto?(r.d.subject||sname):sname).trim().slice(0,80);if(!groups.has(s))groups.set(s,[]);groups.get(s).push(r)});
+      sel.forEach(r=>{const s=(auto?(canon(r.d.subject)||sname):sname).trim().slice(0,80);if(!groups.has(s))groups.set(s,[]);groups.get(s).push(r)});
       const target=s=>{
         const si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(s));
         if(si>=0)return si;
@@ -5789,8 +5802,8 @@ function buildBank(host){
   upl.style.cssText="display:block;text-align:center;cursor:pointer";
   const go=el("button","btn primary","Publish uploaded file");go.type="button";go.hidden=true;
   const dl=el("button","btn","Download backup (current questions)");dl.type="button";
-  const ij=el("button","btn","+ Import JSON files (new mock tests)");ij.type="button";ij.onclick=()=>{const e=document.getElementById("edFileJson");if(e)e.click();else alert("Import box load nahi hua — page ko refresh karke dubara try karein.")};
-  const ih=el("button","btn","+ Import HTML files (new mock tests)");ih.type="button";ih.onclick=()=>{const e=document.getElementById("edFileHtml");if(e)e.click();else alert("Import box load nahi hua — page ko refresh karke dubara try karein.")};
+  const ij=el("button","btn","+ Import JSON files (new mock tests)");ij.type="button";ij.onclick=()=>{const e=document.getElementById("edFileJson");if(e)e.click();else alert("The import box did not load — refresh the page and try again.")};
+  const ih=el("button","btn","+ Import HTML files (new mock tests)");ih.type="button";ih.onclick=()=>{const e=document.getElementById("edFileHtml");if(e)e.click();else alert("The import box did not load — refresh the page and try again.")};
   const rl=el("button","btn","Reload app");rl.type="button";rl.hidden=true;rl.onclick=()=>location.reload();
   const note=el("div","label","To edit questions: tap Edit MCQs on the start screen, make changes, then tap Publish to everyone. Any MCQ answer can also be fixed directly from the test, result or search with '\u270e Edit MCQ / answer'. Create new home options with '+ Add more option'.");
   /* extra upload options: add (keep existing) from JSON, and add from CSV */
@@ -5908,21 +5921,21 @@ function buildSettings(host){
   (function(){
     const box=el("div");box.style.cssText="padding:12px;border:1px solid var(--line,#ccc);border-radius:12px;margin-bottom:14px";
     box.appendChild(el("b","","\ud83c\udf10 Website name & contact email"));
-    box.appendChild(el("div","label","Naam badlein: login page, dashboard, browser tab, About / Contact / Privacy pages aur installed app sab par lagu hoga."));
+    box.appendChild(el("div","label","Change the name: it applies on the login page, dashboard, browser tab, About / Contact / Privacy pages and the installed app."));
     const n=el("input");n.type="text";n.placeholder="Website name (e.g. PPSC PAST PAPERS)";n.style.cssText="width:100%;margin-top:6px";
     const e=el("input");e.type="email";e.placeholder="Contact email";e.style.cssText="width:100%;margin-top:6px";
     const b=el("button","btn primary","\u{1F4BE} Save name");b.type="button";b.style.marginTop="8px";
     const st=el("span","label st");st.style.marginLeft="8px";
     n.value=String((SITE&&SITE.name)||"");e.value=String((SITE&&SITE.email)||"");
     b.onclick=async()=>{
-      if(!IS_OWNER){alert("Sirf owner naam badal sakta hai.");return}
+      if(!IS_OWNER){alert("Only the owner can change the name.");return}
       b.disabled=true;st.textContent="Saving\u2026";
       try{
         const data={name:n.value.trim(),email:e.value.trim(),updatedAt:serverTimestamp()};
         await setDoc(doc(db,"sitedata","style"),data,{merge:true});
         applySite(Object.assign({},SITE||{},{name:data.name,email:data.email}));
         st.textContent="Saved \u2713";
-      }catch(err){st.textContent="Error";alert("Save nahi hui: "+((err&&(err.message||err.code))||err))}
+      }catch(err){st.textContent="Error";alert("Not saved: "+((err&&(err.message||err.code))||err))}
       finally{b.disabled=false}
     };
     box.append(n,e,b,st);host.appendChild(box);
@@ -5952,8 +5965,8 @@ function buildSettings(host){
     }
     go.onclick=async()=>{
       if(busy)return;
-      if(!IS_OWNER){alert("Sirf owner chala sakta hai.");return}
-      if(!window.__aiStart){alert("AI abhi dastiyab nahi.");return}
+      if(!IS_OWNER){alert("Only the owner can run this.");return}
+      if(!window.__aiStart){alert("AI is not available right now.");return}
       busy=true;halt=false;go.disabled=true;
       const si=parseInt(sel.value,10),items=[];
       (bank.Q0||[]).forEach(q=>{const sc=bank.S[q.sec];if(sc&&sc.sub===si)items.push(q)});
@@ -5966,7 +5979,7 @@ function buildSettings(host){
         const ex=await window.__urGet(key);
         if(ex&&ex.q){skip++;upd();continue}
         try{const r=await one(q);if(r){await setDoc(doc(db,"urdu",key),{q:r.q,o:r.o,at:serverTimestamp()});done++}else fail++}
-        catch(e){fail++;if(fail>10){st.textContent="Bahut errors: "+((e&&(e.code||e.message))||e)+" \u2014 Rules (urdu) publish kiye? AI chal raha hai?";break}}
+        catch(e){fail++;if(fail>10){st.textContent="Too many errors: "+((e&&(e.code||e.message))||e)+" \u2014 Have you published the rules (urdu)? Is the AI running?";break}}
         upd();
       }
       st.textContent=(halt?"Stopped. ":"Finished. ")+st.textContent;
@@ -6134,7 +6147,7 @@ function buildJobs(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{dl.hidden=true};hd.appendChild(cl);
   box.appendChild(hd);
   const info=el("div","label");info.style.cssText="padding:10px 14px 0";
-  info.textContent="Admin jobs add karta hai — sab users card mein naam, tafseel, photo aur link dekhtay hain.";
+  info.textContent="The admin adds jobs — all users see the name, details, photo and link in a card.";
   box.appendChild(info);
   const lst=el("div");lst.id="jobsLst";lst.style.cssText="display:flex;flex-direction:column;padding:4px 0 12px";
   box.appendChild(lst);
@@ -6149,12 +6162,12 @@ async function jobsLoad(){
   lst.textContent="";
   const add=canJobs();
   if(add){
-    const ab=el("button","btn primary","\u2795 Naya job add karein");ab.type="button";
+    const ab=el("button","btn primary","\u2795 Add new job");ab.type="button";
     ab.style.cssText="display:block;margin:10px auto;width:calc(100% - 28px)";
     ab.onclick=()=>jobForm(null,null);
     lst.appendChild(ab);
   }
-  const st=el("div","mtempty","Jobs load ho rahe hain…");lst.appendChild(st);
+  const st=el("div","mtempty","Loading jobs…");lst.appendChild(st);
   try{
     const sn=await getDocs(query(collection(db,"jobs"),orderBy("createdAt","desc"),limit(60)));
     if(!st.isConnected)return;
@@ -6178,9 +6191,9 @@ async function jobsLoad(){
       c.appendChild(ft);
       lst.appendChild(c);
     });
-    if(!n&&!add)lst.appendChild(el("div","mtempty","Abhi koi job nahi. Admin jald jobs add karega."));
+    if(!n&&!add)lst.appendChild(el("div","mtempty","No jobs yet. The admin will add jobs soon."));
   }catch(e){
-    st.textContent=(e&&e.code==="permission-denied")?"Jobs abhi load nahi hui \u2014 Firestore rules Publish karein: Firebase Console \u2192 Firestore Database \u2192 Rules \u2192 Downloads\\firestore.rules ki poori file paste \u2192 Publish.":"Error: "+((e&&(e.code||e.message))||e);
+    st.textContent=(e&&e.code==="permission-denied")?"Jobs could not be loaded yet \u2014 Publish the Firestore rules: Firebase Console \u2192 Firestore Database \u2192 Rules \u2192 paste the whole Downloads\\firestore.rules file \u2192 Publish.":"Error: "+((e&&(e.code||e.message))||e);
   }
 }
 function jobForm(it,id){
@@ -6190,7 +6203,7 @@ function jobForm(it,id){
   dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
   const box=el("div");box.style.cssText="background:var(--panel,#fff);border-radius:18px;max-width:520px;width:100%;margin:22px 0;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.4);animation:pop3d .22s ease-out";
   dl.appendChild(box);
-  box.appendChild(el("h2","",id?"\u270e Job edit karein":"\u2795 Naya job add karein"));
+  box.appendChild(el("h2","",id?"\u270e Edit job":"\u2795 Add new job"));
   const mk=(lbl,inp)=>{box.appendChild(el("div","label",lbl));box.appendChild(inp)};
   const ti=el("input");ti.type="text";ti.maxLength=80;ti.placeholder="Job name (e.g. Sub Engineer PPSC 2026)";ti.value=String((it&&it.title)||"");mk("Naam:",ti);
   const de=el("textarea");de.rows="4";de.maxLength=900;de.placeholder="Description — qualification, last date, salary, contact waghera…";de.style.cssText="width:100%;font:14px/1.5 sans-serif";de.value=String((it&&it.desc)||"");mk("Tafseel:",de);
@@ -6204,7 +6217,7 @@ function jobForm(it,id){
   if(!pic)pv.style.display="none";
   wf.onchange=async()=>{
     const f=wf.files&&wf.files[0];if(!f)return;
-    ph.textContent="Photo ready ho rahi hai…";
+    ph.textContent="Preparing photo…";
     try{pic=await picDataUrl(f);pv.src=pic;pv.style.display="block";ph.textContent="\u270e Photo badalna hai? Tap karein"}
     catch(e){alert((e&&e.message)||e);ph.textContent="\ud83d\uddbc Choose photo (optional)"}
     wf.value="";
@@ -6219,19 +6232,19 @@ function jobForm(it,id){
   document.body.appendChild(dl);
   sv.onclick=async()=>{
     const t=ti.value.trim(),d2=de.value.trim(),u=lu.value.trim();
-    if(!t){stt.textContent="Job ka naam zaroori hai.";return}
-    if(!t&&!d2&&!pic&&!u){stt.textContent="Kam az kam naam likhein.";return}
-    sv.disabled=true;stt.textContent=id?"Save ho raha hai…":"Add ho raha hai…";
+    if(!t){stt.textContent="The job name is required.";return}
+    if(!t&&!d2&&!pic&&!u){stt.textContent="Please enter at least a name.";return}
+    sv.disabled=true;stt.textContent=id?"Saving…":"Adding…";
     try{
       const data={title:t.slice(0,80),desc:d2.slice(0,900),url:u.slice(0,300),pic:pic||""};
       if(id)await setDoc(doc(db,"jobs",id),Object.assign(data,{updatedAt:serverTimestamp()}),{merge:true});
       else await addDoc(collection(db,"jobs"),Object.assign(data,{createdAt:serverTimestamp(),by:ME}));
       dl.remove();
-      mtStatus(id?"Job update ho gaya \u2713":"Job add ho gaya \u2713 — sab users ko nazar aayega",100,true);
+      mtStatus(id?"Job updated \u2713":"Job added \u2713 — all users will see it",100,true);
       jobsLoad();
     }catch(e){
       stt.textContent="Error: "+((e&&(e.code||e.message))||e);
-      if(e&&e.code==="permission-denied")stt.textContent="Rules Publish karein: Firebase Console \u2192 Firestore \u2192 Rules \u2192 Downloads\\firestore.rules paste \u2192 Publish.";
+      if(e&&e.code==="permission-denied")stt.textContent="Publish the rules: Firebase Console \u2192 Firestore \u2192 Rules \u2192 paste Downloads\\firestore.rules \u2192 Publish.";
       sv.disabled=false;
     }
   };
@@ -6271,26 +6284,26 @@ function buildChat(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>{dl.hidden=true;chatOff()};hd.appendChild(cl);
   box.appendChild(hd);
   const note=el("div","label");note.style.cssText="padding:8px 14px 0";
-  note.textContent="Sab users yahan baat kar sakte hain. Sirf username dikhta hai — email kisi ko nazar nahi aata. Baat-cheet ki izzat rakhein 🙂";
+  note.textContent="All users can chat here. Only the username is shown — nobody can see your email. Please keep the chat respectful 🙂";
   box.appendChild(note);
   note.id="chatNote";
   if(IS_ADMIN){
     const tr=el("label");tr.style.cssText="display:flex;align-items:center;gap:8px;padding:6px 14px 0;font:600 13px/1.3 sans-serif;color:var(--muted,#555)";
     const ck=el("input");ck.type="checkbox";ck.id="chatNoteCk";ck.checked=window.__CHATNOTE===true;
-    const tt=el("span","","Users ko ye description dikhayen (ON / OFF)");
+    const tt=el("span","","Show this description to users (ON / OFF)");
     ck.onchange=async()=>{
       ck.disabled=true;
       try{await setDoc(doc(db,"meta","config"),{chatNote:ck.checked,updatedAt:serverTimestamp()},{merge:true});window.__CHATNOTE=ck.checked}
-      catch(e){ck.checked=!ck.checked;alert("Save nahi hui: "+((e&&(e.code||e.message))||e))}
+      catch(e){ck.checked=!ck.checked;alert("Not saved: "+((e&&(e.code||e.message))||e))}
       ck.disabled=false;
     };
     tr.append(ck,tt);box.appendChild(tr);
   }
   const lst=el("div");lst.className="chatlist";lst.id="chatLst";
-  lst.appendChild(el("div","mtempty","Salam! Pehla message aap bhejein 🙂"));
+  lst.appendChild(el("div","mtempty","Hi! Be the first to send a message 🙂"));
   box.appendChild(lst);
   const inrow=el("div","cinrow");
-  const inp=el("input");inp.id="chatIn";inp.type="text";inp.maxLength=300;inp.placeholder="Apna message likhein… (max 300)";inp.autocomplete="off";
+  const inp=el("input");inp.id="chatIn";inp.type="text";inp.maxLength=300;inp.placeholder="Type your message… (max 300)";inp.autocomplete="off";
   const sb=el("button","btn primary","Send ➤");sb.type="button";sb.id="chatSend";
   inrow.appendChild(inp);inrow.appendChild(sb);box.appendChild(inrow);
   const nt=el("div");nt.style.cssText="padding:0 12px 10px;font:12px/1.4 sans-serif;color:var(--muted,#666)";nt.id="chatNt";
@@ -6302,15 +6315,15 @@ function buildChat(){
     const cu=auth.currentUser;
     if(!cu){nt.textContent="Chat ke liye login zaroori hai.";return}
     const now=Date.now();
-    if(chatLast&&now-chatLast<2000){nt.textContent="Aaram se 🙂 2 second ruk kar dobara bhejein.";return}
-    sb.disabled=true;inp.disabled=true;nt.textContent="Bhej raha hoon…";
+    if(chatLast&&now-chatLast<2000){nt.textContent="Easy there 🙂 wait 2 seconds and send again.";return}
+    sb.disabled=true;inp.disabled=true;nt.textContent="Sending…";
     try{
       await addDoc(collection(db,"chat"),{uid:cu.uid,name:chatName(),txt:tx.slice(0,300),ts:serverTimestamp()});
       inp.value="";chatLast=Date.now();nt.textContent="";
       chatScroll();
     }catch(e){
       nt.textContent="Send fail: "+((e&&(e.code||e.message))||e);
-      alert("\u26A0\uFE0F Message na bheja ja saka: "+((e&&(e.code||e.message))||e)+" \u2014 "+(e&&e.code==="permission-denied"?"rules Publish hona baqi hai (Firebase Console \u2192 Firestore \u2192 Rules).":"thori der baad dobara try karein."));
+      alert("\u26A0\uFE0F Message could not be sent: "+((e&&(e.code||e.message))||e)+" \u2014 "+(e&&e.code==="permission-denied"?"the rules still need to be published (Firebase Console \u2192 Firestore \u2192 Rules).":"try again in a moment."));
     }
     finally{sb.disabled=false;inp.disabled=false;inp.focus()}
   };
@@ -6330,7 +6343,7 @@ function chatListen(){
       arr.reverse();
       lst.textContent="";
       const cu=auth.currentUser;
-      if(!arr.length)lst.appendChild(el("div","mtempty","Salam! Pehla message aap bhejein 🙂"));
+      if(!arr.length)lst.appendChild(el("div","mtempty","Hi! Be the first to send a message 🙂"));
       arr.forEach(m=>{
         const me=cu&&m.uid===cu.uid;
         const b=el("div","cmsg "+(me?"me":"them"));
@@ -6343,10 +6356,10 @@ function chatListen(){
     },err=>{
       lst.textContent="";
       const er=err&&(err.code||err.message)||String(err);
-      lst.appendChild(el("div","mtempty",er==="permission-denied"?"Chat abhi khul nahi saki \u2014 site ki security rules update ho rahi hain. Thori der baad dobara kholen.":("Chat load nahi hui: "+er)));
+      lst.appendChild(el("div","mtempty",er==="permission-denied"?"Chat could not open yet \u2014 the site's security rules are being updated. Please try again shortly.":("Chat could not load: "+er)));
     });
   }catch(e){
-    lst.textContent="Chat load nahi hui: "+((e&&(e.code||e.message))||e);
+    lst.textContent="Chat could not load: "+((e&&(e.code||e.message))||e);
   }
 }
 function openLibrary(){
@@ -6476,7 +6489,7 @@ function jsonQuizHtml(raw,title,aiOn){
     const ttl=String(title||"MCQ Test").replace(/[<>&]/g,"");
     const css="*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f3f6fd;color:#10172b}.top{position:sticky;top:0;z-index:5;background:#0f1f4d;color:#fff;padding:10px 14px}.top b{display:block;font-size:16px;margin-bottom:4px}.top span{font-size:13px;opacity:.95}.bar{height:5px;background:#ffffff33;border-radius:9px;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#f5c542;transition:width .25s}.w{max-width:760px;margin:0 auto;padding:12px}.c{background:#fff;border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 2px 10px #0f1f4d1a}.n{font:700 12px monospace;color:#5b6a8f;margin-bottom:4px}.q{font-weight:650;margin-bottom:10px;white-space:pre-wrap}.o{display:block;width:100%;text-align:left;background:#f3f6fd;border:2px solid #dbe3f5;border-radius:11px;padding:10px 12px;margin:0 0 8px;font:inherit;color:inherit;cursor:pointer}.o b{display:inline-block;min-width:22px;color:#2447c9}.o.ok{background:#dcf7e3;border-color:#26a653}.o.no{background:#fde2e2;border-color:#d9363e}.o[disabled]{cursor:default}.e{font-size:14px;color:#42506f;background:#fff8e1;border-radius:9px;padding:8px 10px;margin-top:4px}.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:700 15px system-ui;background:#2447c9;color:#fff;margin:6px 0 24px}.r{text-align:center;font-weight:700;font-size:18px;padding:10px}.ai{border:0;border-radius:10px;padding:8px 12px;font:700 14px system-ui;background:#f5c542;color:#2b2100;margin:2px 0 8px;cursor:pointer}.ai[disabled]{opacity:.6}";
     const js="var D="+data+",AI="+(aiOn?"true":"false")+",BX={},ok=0,bad=0,R=document.getElementById('r'),S=document.getElementById('s'),B=document.getElementById('b');"
-     +"function up(){var l=D.length-ok-bad;S.textContent='Sahi: '+ok+'  \\u00b7  Ghalat: '+bad+'  \\u00b7  Baqi: '+l+'  \\u00b7  Total: '+D.length;B.style.width=Math.round((ok+bad)*100/D.length)+'%'}"
+     +"function up(){var l=D.length-ok-bad;S.textContent='Correct: '+ok+'  \\u00b7  Wrong: '+bad+'  \\u00b7  Left: '+l+'  \\u00b7  Total: '+D.length;B.style.width=Math.round((ok+bad)*100/D.length)+'%'}"
      +"function build(){R.textContent='';ok=bad=0;D.forEach(function(x,i){var c=document.createElement('div');c.className='c';"
      +"var n=document.createElement('div');n.className='n';n.textContent='Q '+(i+1)+' / '+D.length;c.appendChild(n);"
      +"var q=document.createElement('div');q.className='q';q.textContent=x.q;c.appendChild(q);var bs=[];"
@@ -6504,8 +6517,8 @@ function showHtml(it,html){
         const L="ABCDEFGH",opts=(d.o||[]).map((x,k)=>L.charAt(k)+") "+x).join("\n");
         const ctx="You are a friendly civil engineering tutor for PPSC Sub Engineer exam students. MCQ: "+d.q+"\nOptions:\n"+opts+"\nCorrect answer: "+(d.a>=0?L.charAt(d.a):"unknown")+"\nStudent picked: "+L.charAt(d.p);
         const s=await window.__aiStart(ctx);
-        const out=await s.send("Is MCQ ko Roman Urdu mein aasan lafzon mein samjhao: sahi jawab kyun sahi hai aur baaqi options kyun ghalat hain. Chota aur saaf jawab do, 5-6 lines.",t=>reply(t));
-        reply(out||"AI ne jawab nahi diya, dobara try karein.");
+        const out=await s.send("Explain this MCQ in simple English: why the correct answer is correct and why the other options are wrong. Keep the answer short and clear, 5-6 lines.",t=>reply(t));
+        reply(out||"The AI did not answer, please try again.");
       }catch(e){reply((window.__aiErr?window.__aiErr(e):String(e&&e.message||e)))}
     };
     window.addEventListener("message",onMsg);
@@ -6609,9 +6622,9 @@ async function mtRender(){
   if(!grid)return;
   grid.textContent="";det.hidden=true;grid.hidden=false;
   let folders=[];
-  try{folders=(await fetchMockAll()).filter(f=>f.kind==="folder")}catch(e){cnt.textContent=(e&&e.code==="permission-denied")?"Access inactive hai — phir login karke try karein.":"Error: "+(e.code||e.message);return}
+  try{folders=(await fetchMockAll()).filter(f=>f.kind==="folder")}catch(e){cnt.textContent=(e&&e.code==="permission-denied")?"Access is inactive — log in again and try.":"Error: "+(e.code||e.message);return}
   cnt.textContent=folders.length+" premium folder(s)"+((IS_ADMIN&&!PV)?" · admin/manager manage files":" · files sab ke liye \u2726 VIP");
-  if(!folders.length)grid.appendChild(el("div","mtempty",(IS_ADMIN&&!PV)?"No mock tests yet. Tap + New folder to add one.":"Abhi koi premium folder nahi. Admin jald add karega."));
+  if(!folders.length)grid.appendChild(el("div","mtempty",(IS_ADMIN&&!PV)?"No mock tests yet. Tap + New folder to add one.":"No premium folders yet. The admin will add them soon."));
   folders.forEach(f=>{
     const card=el("button","mfolder");card.type="button";
     card.appendChild(el("div","vipchip","\u2726 VIP"));
@@ -6637,7 +6650,7 @@ async function mtOpenFolder(fid){
   $("mtDTitle").textContent=f?f.name:"Folder";
   $("mtAddItem").hidden=!(IS_ADMIN&&!PV);
   const list=$("mtList");list.textContent="";
-  let items=[];try{items=await fetchMockItems(fid)}catch(e){list.appendChild(el("div","mtempty",(e&&e.code==="permission-denied")?"Aap ka access inactive hai — admin se rabta karein.":"Error: "+(e.code||e.message)));return}
+  let items=[];try{items=await fetchMockItems(fid)}catch(e){list.appendChild(el("div","mtempty",(e&&e.code==="permission-denied")?"Your access is inactive — contact the admin.":"Error: "+(e.code||e.message)));return}
   $("mtDCount").textContent=items.length+" item(s)";
   if(!items.length)list.appendChild(el("div","mtempty",(IS_ADMIN&&!PV)?"Empty folder — tap + Add file to upload HTML / JSON / PDF / Photo from your phone.":"No files in this folder yet."));
   items.forEach(it=>list.appendChild(mtRow(it,IS_ADMIN&&!PV)));
@@ -6698,7 +6711,7 @@ async function copyLibToMock(it,fid){
   if(it.type==="link"&&it.url)meta.url=String(it.url);
   if(it.type==="html"&&it.trusted)meta.trusted=true;
   await setDoc(doc(db,MT_FOLDERS,id),meta);
-  mtStatus(t+" — shift ho gayi ✓",100,true);
+  mtStatus(t+" — moved ✓",100,true);
   return id;
 }
 function libRemove(it){
@@ -6733,12 +6746,12 @@ async function shiftDlg(it,st,load){
       wrap.style.opacity="";dl.querySelectorAll("button").forEach(b=>{b.disabled=false});
       const m=(e&&(e.code||e.message))||e;
       st.textContent="Shift error: "+m;
-      alert("Shift nahi ho saki: "+m);busy=false;
+      alert("Could not move: "+m);busy=false;
     }
   }
   const fb=el("button","btn primary","\u{1F4C1} Mock Tests folder mein…");fb.type="button";
   fb.onclick=async()=>{
-    const nm=prompt("Folder ka naam (misal 'Past Papers'). Naya folder ban jayega agar pehle se na ho — khali rakhen to 'General':",it.category||"");
+    const nm=prompt("Folder name (e.g. 'Past Papers'). A new folder is created if it does not exist — leave empty for 'General':",it.category||"");
     if(nm===null)return;
     try{const fid=await mtFolderByName(nm);await go(fid,"Mock Tests > "+(String(nm).trim()||"General"))}
     catch(e){st.textContent="Shift error: "+((e&&(e.code||e.message))||e)}
@@ -6746,7 +6759,7 @@ async function shiftDlg(it,st,load){
   wrap.appendChild(fb);
   const names=(Array.isArray(window.__optNames)&&window.__optNames.length)?window.__optNames
     :[{k:"mock",t:"Mock Tests"},{k:"pp",t:"Past Papers"},{k:"y1",t:"1st Year"},{k:"y2",t:"2nd Year"},{k:"y3",t:"3rd Year"}];
-  box.appendChild(el("div","label","Seedha kisi option/page ke andar:"));
+  box.appendChild(el("div","label","Directly inside an option/page:"));
   const orow=el("div");orow.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
   names.forEach(n=>{
     const b=el("button","btn",String(n.t||n.k));b.type="button";
@@ -6761,10 +6774,10 @@ async function shiftDlg(it,st,load){
 /* ---- shared import/upload router: JSON/HTML => playable mock test, PDF/photo/txt => file ---- */
 function routeImport(f,inputId,cat){
   const e=document.getElementById(inputId);
-  if(!e||typeof DataTransfer==="undefined"){alert("Yahan direct import nahi ho sakta. Edit MCQs kholein aur wahan '+ Import' button use karein.");return false}
+  if(!e||typeof DataTransfer==="undefined"){alert("Direct import is not possible here. Open Edit MCQs and use the '+ Import' button there.");return false}
   window.__impCat=cat||null;
   try{const dt=new DataTransfer();dt.items.add(f);e.files=dt.files}
-  catch(_){window.__impCat=null;alert("Browser file attach nahi kar saka. Edit MCQs → Import button use karein.");return false}
+  catch(_){window.__impCat=null;alert("The browser could not attach the file. Use Edit MCQs → Import button.");return false}
   e.dispatchEvent(new Event("change"));
   window.__impCat=null;
   return true;
@@ -6784,7 +6797,7 @@ async function mtSaveFile(f,fid,isImg,isPdf){
     mtStatus("\u{1F4E4} "+base.title+" … "+Math.min(i+4,chunks.length)+"/"+chunks.length+" parts",Math.round(Math.min(i+4,chunks.length)*100/chunks.length));
   }
   await setDoc(doc(db,MT_FOLDERS,id),meta);
-  mtStatus(base.title+" — upload ho gayi ✓",100,true);
+  mtStatus(base.title+" — uploaded ✓",100,true);
 }
 async function mtUploadFiles(files,fid,onDone,htmlMode){
   htmlMode=htmlMode||"mocktest";
@@ -6810,17 +6823,17 @@ async function mtUploadFiles(files,fid,onDone,htmlMode){
       let nq=0;
       try{const tx=await f.text();nq=(window.__parseHtmlQs?window.__parseHtmlQs(tx):[]).length}catch(_){}
       if(nq&&routeImport(f,"edFileHtml",optCat)){imp++;continue}
-      try{await mtSaveFile(f,fid,false,false);up++;if(!nq)errs.push(f.name+" -- sawal text se nahi nikle, isliye ready HTML page ki tarah save hui (kholne par chalegi)")}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}
+      try{await mtSaveFile(f,fid,false,false);up++;if(!nq)errs.push(f.name+" -- no questions could be extracted, so it was saved as a ready HTML page (it will work when opened)")}catch(e){errs.push(f.name+": "+((e&&(e.message||e.code))||e))}
       continue}
     if(isPdf&&f.size>25*1048576){errs.push(f.name+" (PDF 25 MB se bara)");continue}
     if(isImg&&f.size>15*1048576){errs.push(f.name+" (photo 15 MB se bari)");continue}
-    if(!(isImg||isPdf||/\.txt$/.test(nm))){errs.push(f.name+" (sirf HTML, JSON, PDF, photo ya TXT chalega)");continue}
+    if(!(isImg||isPdf||/\.txt$/.test(nm))){errs.push(f.name+" (only HTML, JSON, PDF, photo or TXT are allowed)");continue}
     try{await mtSaveFile(f,fid,isImg,isPdf);up++}
     catch(e){errs.push(f.name+": "+(e.message||e.code||e))}
   }
   if(onDone)try{onDone()}catch(_){}
   let m=[];
-  if(up)m.push(up+" file(s) add ho gayi.");
+  if(up)m.push(up+" file(s) added.");
   if(errs.length)m.push("Dhyan dein: "+errs.join(", "));
   if(m.length)alert(m.join(" "));
   if(optCat){
@@ -6846,15 +6859,15 @@ function mtUploadWizard(files,fid,optK,onDone){
   const isQFile=f=>{const nm=String(f.name||"").toLowerCase();return /\.json$/.test(nm)||f.type==="application/json"||/\.html?$/.test(nm)||f.type==="text/html"};
   let hm="mocktest";
   if(list.some(isQFile)){
-    box.appendChild(el("div","label","HTML / JSON files ke liye kya karein?"));
+    box.appendChild(el("div","label","What should be done with HTML / JSON files?"));
     const hrow=el("div");hrow.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
-    const bM=el("button","btn primary","\u{1F3AE} Mock test banao — 'Mock Tests' page pe publish"),bF=el("button","btn","\u{1F4C4} File ki tarah jama karo (khul kar dekh sakte hain)");
+    const bM=el("button","btn primary","\u{1F3AE} Create a mock test — publish on the 'Mock Tests' page"),bF=el("button","btn","\u{1F4C4} Save as a file (can be opened and viewed)");
     bM.type="button";bF.type="button";
     bM.onclick=()=>{hm="mocktest";bM.classList.add("primary");bF.classList.remove("primary")};
     bF.onclick=()=>{hm="file";bF.classList.add("primary");bM.classList.remove("primary")};
     hrow.appendChild(bM);hrow.appendChild(bF);box.appendChild(hrow);
   }
-  box.appendChild(el("div","label","\u{1F4C1} Kahan add karna hai?"));
+  box.appendChild(el("div","label","\u{1F4C1} Where do you want to add it?"));
   const drow=el("div");drow.style.cssText="display:flex;flex-direction:column;gap:8px";
   box.appendChild(drow);
   let dest=null;
@@ -6871,8 +6884,8 @@ function mtUploadWizard(files,fid,optK,onDone){
     try{const n=(window.__optNames||[]).find(x=>x.k===optK);if(n)t=n.t}catch(_){}
     addDest("opt:"+optK,"\u{1F3E0} Yehi option page: '"+t+"'");
   }
-  if(fid)addDest(fid,"\u{1F4C1} Yehi folder (jahan se add kiya)");
-  const nf=el("input");nf.type="text";nf.placeholder="\u{1F195} Naya folder — naam yahan likhein";nf.style.cssText="width:100%";
+  if(fid)addDest(fid,"\u{1F4C1} This same folder (where you added from)");
+  const nf=el("input");nf.type="text";nf.placeholder="\u{1F195} New folder — type the name here";nf.style.cssText="width:100%";
   drow.appendChild(nf);
   nf.addEventListener("input",()=>{dest=nf.value.trim()?("new:"+nf.value.trim()):null;paint()});
   (async()=>{
@@ -6886,7 +6899,7 @@ function mtUploadWizard(files,fid,optK,onDone){
   box.appendChild(pub);box.appendChild(ups);
   function close(){try{dl.remove()}catch(_){}}
   pub.onclick=async()=>{
-    if(dest==null){ups.textContent="Pehle upar se folder ya option page chunein.";return}
+    if(dest==null){ups.textContent="First choose a folder or option page above.";return}
     pub.disabled=true;dl.style.opacity=".75";
     try{
       let target=String(dest);
@@ -6925,7 +6938,7 @@ async function optFiles(container,k){
     container.appendChild(up);
   }
   if(!items.length){
-    if(canAdd)container.appendChild(el("div","mtempty","Abhi koi file nahi. '+ Add file' se phone se HTML / JSON mock test, PDF ya photo add karein."));
+    if(canAdd)container.appendChild(el("div","mtempty","No files yet. Use '+ Add file' to add an HTML / JSON mock test, PDF or photo from your phone."));
     return;
   }
   const ttl=el("div","label","Files in this option: "+items.length);
@@ -6959,10 +6972,10 @@ window.__onMockImport=function(n,cardTitle,skipped,errs){
   if(optCtx){try{optFiles(optCtx.el,optCtx.k)}catch(_){}}
   try{mtRender()}catch(_){}
   var parts=[];
-  if(n)parts.push("\u2705 "+n+" naye sawal publish ho gaye hain!"+(cardTitle?" Naya test '"+cardTitle+"' option ke andar aa gaya — option wapas kholein.":" Naya test 'Mock Tests' option ke andar aa gaya hai."));
-  else parts.push("\u26A0\uFE0F Koi sawal import nahi ho saka. File ka format check karein.");
-  if(skipped)parts.push(skipped+" sawal chhor diye (jawab ya options adhoore the).");
-  if(errs&&errs.length)parts.push("Error wali files:\n\u2022 "+errs.join("\n\u2022 "));
+  if(n)parts.push("\u2705 "+n+" new questions published!"+(cardTitle?" New test '"+cardTitle+"' is now inside the option — reopen the option.":" New test is now inside the 'Mock Tests' option."));
+  else parts.push("\u26A0\uFE0F No questions could be imported. Check the file format.");
+  if(skipped)parts.push(skipped+" questions skipped (answer or options were incomplete).");
+  if(errs&&errs.length)parts.push("Files with errors:\n\u2022 "+errs.join("\n\u2022 "));
   alert(parts.join("\n"));
 };
 
