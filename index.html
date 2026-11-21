@@ -5804,7 +5804,55 @@ function fieldEnsure(cur){
   }));
   return made;
 }
-function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)}
+/* ---- stray courses: a paper name such as "Financial Reporting (FR)" must never be a course of its own. It is merged into its real course (ACCA, CA, ...) ---- */
+function subjCourseMap(){
+  const m={},amb={};
+  const add=(c,n)=>{
+    [String(n).toLowerCase(),String(n).toLowerCase().replace(/\s*\(.*\)\s*$/,"").replace(/^(caf|cfap)\s*\d+\s*[\u2013-]\s*/,"")].forEach(k=>{
+      if(!k||k.length<4)return;
+      if(m[k]&&m[k]!==c)amb[k]=1;else m[k]=c;
+    });
+  };
+  Object.keys(AIORG_SUBJ).forEach(c=>AIORG_SUBJ[c].forEach(n=>add(c,n)));
+  Object.keys(FIELD_PACK).forEach(c=>{if(/^(ACCA|CA|IT|Mechanical|Electrical|General Knowledge)$/.test(c))FIELD_PACK[c].forEach(cd=>cd.subs.forEach(n=>add(c,n)))});
+  Object.keys(amb).forEach(k=>{delete m[k]});
+  return m;
+}
+const BASE_COURSES=["civil","electrical","mechanical","it","general knowledge","gk","acca","ca","information technology","chartered accountancy (ca)"];
+function courseCleanup(cur){
+  if(!cur||!Array.isArray(cur.CARDS)||!Array.isArray(cur.SUB)||!Array.isArray(cur.S))return 0;
+  const lc=x=>String(x).toLowerCase(),cname=c=>String((c&&c.course)||"").trim()||"Civil";
+  const map=subjCourseMap(),strip=n=>lc(n).replace(/\s*\(.*\)\s*$/,"").replace(/^(caf|cfap)\s*\d+\s*[\u2013-]\s*/,"");
+  const isBase=n=>BASE_COURSES.indexOf(lc(n))>=0||/^(civil|electrical|mechanical)\b/.test(lc(n));
+  const resolve=t=>{const names=Array.from(new Set(cur.CARDS.map(cname)));const alt={"it":"information technology","general knowledge":"gk"};
+    return names.find(n=>lc(n)===lc(t))||names.find(n=>lc(n).replace(/\s+engineering$/,"")===lc(t))||names.find(n=>lc(n)===(alt[lc(t)]||"\u0000"))||t};
+  let changes=0;
+  const strays=Array.from(new Set(cur.CARDS.map(cname))).filter(n=>!isBase(n)&&(map[lc(n)]||map[strip(n)]));
+  strays.forEach(cn=>{
+    const T=resolve(map[lc(cn)]||map[strip(cn)]);
+    const keyOfTarget=()=>{
+      if(T==="Civil")return ncCard(cur).k;
+      const ex=cur.CARDS.find(c=>c&&cname(c)===T&&c.k!=="pp"&&c.t!=="Past Papers"&&!/-pp$/.test(String(c.k)));
+      if(ex)return ex.k;
+      const k="fld-"+lc(T).replace(/[^a-z0-9]+/g,"-");cur.CARDS.push({k,t:"Subjects",d:T+" subjects",course:T});return k;
+    };
+    cur.CARDS.filter(c=>c&&cname(c)===cn).forEach(card=>{
+      cur.SUB.forEach((y,yi)=>{
+        if(!y||y.cat!==card.k||y.code==="merged")return;
+        const tIdx=cur.SUB.findIndex((z,zi)=>zi!==yi&&z&&z.cat!=="__tmp"&&z.code!=="merged"&&(lc(z.name)===lc(y.name)||strip(z.name)===strip(y.name))&&(()=>{const zc=cur.CARDS.find(c=>c&&c.k===z.cat);return !!zc&&cname(zc)===T})());
+        if(tIdx>=0){
+          const have=new Set(cur.S.filter(c=>c&&c.sub===tIdx).map(c=>c.name));
+          cur.S.forEach(c=>{if(c&&c.sub===yi){let nm=c.name,n=2;while(have.has(nm))nm=c.name+" "+(n++);if(nm!==c.name){cur.Q0.forEach(q=>{if(cur.S[q.sec]===c)q.test=nm});c.name=nm}have.add(nm);c.sub=tIdx}});
+          y.code="merged";changes++;
+        }else{y.cat=keyOfTarget();changes++}
+      });
+    });
+    const dead=new Set(cur.CARDS.filter(c=>c&&cname(c)===cn).map(c=>c.k));
+    cur.CARDS=cur.CARDS.filter(c=>!(c&&dead.has(c.k)));changes++;
+  });
+  return changes;
+}
+function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)+courseCleanup(cur)}
 
 /* import the built-in verified MCQs into the bank: each MCQ goes to its own course > subject; answer positions are shuffled; duplicates are skipped */
 async function verifiedImport(){
@@ -5830,7 +5878,9 @@ async function aiOrgCommit(items){
   const SHORT={"civil engineering":"Civil","electrical engineering":"Electrical","mechanical engineering":"Mechanical","information technology":"IT","chartered accountancy (ca)":"CA"};
   const courseName=raw=>{
     const names=Array.from(new Set(cur.CARDS.map(cc))),x=String(raw||"").trim();
-    const ex=names.find(n=>lc(n)===lc(x));if(ex)return ex;
+    const ex=names.find(n=>lc(n)===lc(x));if(ex&&BASE_COURSES.indexOf(lc(ex))>=0)return ex;
+    if(BASE_COURSES.indexOf(lc(x))<0){const sm=subjCourseMap(),rc=sm[lc(x)]||sm[lc(x).replace(/\s*\(.*\)\s*$/,"")];if(rc)x=rc}
+    const ex2=names.find(n=>lc(n)===lc(x));if(ex2)return ex2;
     const cn=aiqCanon(x),sh=SHORT[lc(cn)]||cn;
     const alt={"it":"information technology","general knowledge":"gk"};
     return names.find(n=>lc(n)===lc(sh))||names.find(n=>lc(n).replace(/\s+engineering$/,"")===lc(sh))||names.find(n=>lc(n)===(alt[lc(sh)]||"\u0000"))||sh;
@@ -5845,7 +5895,7 @@ async function aiOrgCommit(items){
   };
   const subIdx=(course,name,paper)=>{
     const inCourse=y=>{const cd=cur.CARDS.find(x=>x.k===y.cat);return !!cd&&cc(cd)===course&&(paper||course!=="Civil"||cd.k===NEWCIVIL_K)};
-    let si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(name)&&inCourse(y));
+    let si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&y.code!=="merged"&&lc(y.name)===lc(name)&&inCourse(y));
     if(si>=0)return si;
     if(!paper&&course!=="Civil"&&name.length>=3){
       const ln=lc(name);
@@ -6078,7 +6128,7 @@ function aimcqAutoPanel(host){
     try{
       const cur=JSON.parse(BANK_JSON),n=fieldSetup(cur);
       if(!n){say("Everything is already organized.")}
-      else{await publishBank(cur);say(n+" change(s) saved: New Civil, CA/ACCA subjects + 5-year past papers, IT, Mechanical, Electrical and GK subjects are in place. Reload the app to see it.")}
+      else{await publishBank(cur);say(n+" change(s) saved: folders organized, stray courses (like Financial Reporting (FR)) merged into ACCA/CA, subjects added. Reload the app to see it.")}
     }catch(e){say(e&&e.code?admDeny(e):String((e&&e.message)||e))}
     mv.disabled=false;
   };
