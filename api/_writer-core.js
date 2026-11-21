@@ -29,8 +29,12 @@ async function callAI(cfg, system, prompt, maxOut) {
     const j = await r.json();
     return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
   }
-  const models = [cfg.model || "gemini-flash-latest"];
-  if (!cfg.model) ["gemini-flash-lite-latest", "gemini-2.5-flash-lite"].forEach((m) => models.push(m));
+  // FIX: gemini-2.5-flash-lite band ho gaya hai, is liye dead models ko hata diya
+  const clean = (cfg.model || "").trim();
+  const dead = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
+  const models = [];
+  if (clean && !dead.includes(clean)) models.push(clean);
+  ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest"].forEach((m) => { if (!models.includes(m)) models.push(m); });
   let lastErr = "";
   for (const m of models) {
     for (const think of [true, false]) {
@@ -146,7 +150,6 @@ function pickTarget(bank, queued, rot) {
   return targets[rot % Math.min(targets.length, 12)];
 }
 
-
 async function runOnce() {
     const logRef = db.doc("meta/autolog");
     const ls = await logRef.get(), d = ls.exists ? ls.data() : {};
@@ -207,7 +210,7 @@ async function runOnce() {
       serverAt: FV.serverTimestamp(), serverRot: (d.serverRot || 0) + 1,
       ...(published || waiting === 0 ? { serverPubAt: FV.serverTimestamp() } : {}),
       writerDay: today, writerDayN: dayN + saved, writerTotal: (d.writerTotal || 0) + saved,
-      writerLast: "Free server: " + subj + (saved ? " +" + saved : "") + (published ? " | published " + published + " to bank" : "") + (note ? " \u2014 " + note : ""),
+      writerLast: "Free server: " + subj + (saved ? " +" + saved : "") + (published ? " | published " + published + " to bank" : "") + (note ? " — " + note : ""),
     }, { merge: true });
   return { ok: true, saved, published, subject: subj, note };
 }
