@@ -1,0 +1,7 @@
+{
+  "name": "site-with-ai-writer",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}
