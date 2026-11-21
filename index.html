@@ -1720,8 +1720,9 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var b=el("button","ycard v"+((have.length+vi)%6));b.type="button";
       b.appendChild(el("span","yic",lb.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
       b.appendChild(el("span","yt",lb));
-      b.appendChild(el("span","ym","New MCQs every time \u00b7 English + Urdu"));
       b.addEventListener("click",function(){
+        /* admin: turn this AI card into a full course like Civil (folders, subjects, chapters), so MCQs added with Edit MCQs are saved inside it */
+        if(ADM&&confirm("'"+lb+"' is only an AI card right now. Make it a full course like Civil, so the MCQs you add are saved inside it?\n\nOK = make full course\nCancel = open AI practice")){addCourse(lb,true);return}
         if(b.disabled||!window.__aiPlaySubject)return;b.disabled=true;
         Promise.resolve().then(function(){return window.__aiPlaySubject(x[1])}).catch(function(){}).then(function(){b.disabled=false});
       });
@@ -1730,7 +1731,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   window.__buildPick=function(){try{buildPick()}catch(e){}};
   /* admin adds a course: a folder + a subject with the same name, then AI writes chapters and MCQs */
-  function addCourse(name){
+  function addCourse(name,noAi){
     var t=name||prompt("Name of the new course (e.g. ACCA, Electrical, Mechanical, General Knowledge):","");
     if(t===null||!String(t).trim())return;t=String(t).trim().slice(0,40);
     if(courseNames().some(function(n){return n.toLowerCase()===t.toLowerCase()})){alert("This course already exists.");return}
@@ -1739,6 +1740,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     SUB.push({name:t,short:t.length>22?t.slice(0,22)+"\u2026":t,code:"Course",spq:60,time:60,cat:k});
     S.push({sub:si,name:"Chapter 1",code:"Ch 1"});
     curCourse=t;
+    if(noAi)return afterStruct("Course '"+t+"' is ready like Civil. Add MCQs with Edit MCQs \u2192 + Add MCQ \u2192 pick '"+t+"'.");
     return afterStruct("Course '"+t+"' added. AI is writing its MCQs\u2026").then(function(){return aiFillSubject(si)});
   }
   async function aiFillSubject(si){
@@ -5065,6 +5067,7 @@ function startApp(bank){
   try{bankWatch()}catch(_){}
   try{buildMockTests()}catch(e){console.error("Mock tests init failed",e)}
   try{aiqInit(bank)}catch(e){console.error("AI MCQs init failed",e)}
+  try{aimcqAutoStart()}catch(e){}
   try{updInstallUI()}catch(_){}
   recordVisit();
   try{
@@ -5397,6 +5400,10 @@ function buildAiMcq(host){
       });
       if(d.explanation)w.appendChild(el("small","","Why: "+d.explanation));
       w.appendChild(el("small","",(d.subject||"")+" \u00b7 "+(d.source||"")));
+      if(d.course||d.chapter)w.appendChild(el("small","","\uD83D\uDCC1 "+[d.course,d.subject,d.chapter].filter(Boolean).join(" \u2192 ")));
+      if(d.flag){const fw=el("small","","\u26A0 "+(d.flag==="repeat"?"Repeated? ":d.flag==="fixed"?"Fixed: ":"Answer doubtful: ")+(d.flagNote||""));fw.style.cssText="color:#b45309;font-weight:700";w.appendChild(fw)}
+      const fix=(d.flag==="answer"&&Number.isInteger(d.suggested)&&d.suggested>=0&&d.suggested<(d.options||[]).length&&d.suggested!==d.correct)?el("button","btn","Use AI answer ("+"ABCD".charAt(d.suggested)+")"):null;
+      if(fix){fix.type="button";fix.onclick=async()=>{fix.disabled=true;try{await updateDoc(doc(db,"pending_mcqs",r.id),{correct:d.suggested,flag:"fixed",flagNote:"answer changed to "+"ABCD".charAt(d.suggested)+" (was "+"ABCD".charAt(d.correct)+")"});say("Answer changed. Now tap Approve.");await load()}catch(e){say(admDeny(e));fix.disabled=false}}}
       const ok=el("button","btn primary","Approve");ok.type="button";
       ok.onclick=async()=>{
         ok.disabled=true;
@@ -5412,7 +5419,7 @@ function buildAiMcq(host){
         if(!arm){arm=true;no.textContent="Confirm?";setTimeout(()=>{arm=false;no.textContent="Reject"},3000);return}
         try{await deleteDoc(doc(db,"pending_mcqs",r.id));say("Rejected.");await load()}catch(e){say(admDeny(e))}
       };
-      row.append(w,ok,no);list.appendChild(row);
+      row.append(w);if(fix)row.append(fix);row.append(ok,no);list.appendChild(row);
     });
   }
   async function load(){
@@ -5421,7 +5428,8 @@ function buildAiMcq(host){
       P=s.docs.map(x=>({id:x.id,d:x.data()}));render();
     }catch(e){say(admDeny(e))}
   }
-  const poolLoad=aimcqPool(host);tabs.aimcq.load=()=>{load();poolLoad()};
+  const autoLoad=aimcqAutoPanel(host);aimcqOrganizer(host);
+  const poolLoad=aimcqPool(host);tabs.aimcq.load=()=>{load();poolLoad();autoLoad()};
 }
 /* ---- AI MCQs for users: opens in the normal test screen; MCQs download quietly into a local buffer.
    Order: approved MCQs -> shared AI pool (ai_pool) -> live AI (saved to ai_pool so the pool grows) -> question bank ---- */
@@ -5561,7 +5569,7 @@ function aiqInit(bank){
   const card=el("div","card");card.id="aiqCard";
   card.style.cssText="margin:12px 0;padding:14px";
   const tx=el("div");
-  tx.append(el("b","","\uD83D\uDCDA Practice MCQs"),el("div","label","New MCQs every time \u00b7 English + Urdu"));
+  tx.append(el("b","","\uD83D\uDCDA Practice MCQs"));
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
   window.__aiqChips=aiqSubjects(bank).slice(0,12);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
@@ -5581,6 +5589,340 @@ function aiqInit(bank){
   setTimeout(()=>{if(AIQ.buf.length<25)aiqFill(50)},1500);
 }
 /* ---------------- AI pool -> dashboard: review/edit MCQs the AI gave students, then add them to the real question bank under any subject ---------------- */
+/* ---- AUTO ORGANIZER: while an admin has the site open, new AI-pool / approved MCQs are sorted into course > subject > chapter and saved into the bank by themselves; every run is written to meta/autolog (the admin sees it in AI MCQs tab) ---- */
+const AIORG_SUBJ={
+  "General Knowledge":["Pakistan GK","International GK","Current Affairs","Islamiat","Pakistan Studies","General Science","English","Urdu","Mathematics","Computer GK"],
+  "Civil":["Surveying","Structural Analysis","Concrete Technology","Building Materials","Soil Mechanics","Fluid Mechanics and Hydraulics","Highway Engineering","Irrigation Engineering","Environmental Engineering","Estimation and Costing","Engineering Mechanics","Construction Management"],
+  "Electrical":["Circuit Theory","Electrical Machines","Power Systems","Power Electronics","Electronics","Digital Electronics","Control Systems","Electrical Measurements","Electromagnetics","Wiring and Safety"],
+  "Mechanical":["Thermodynamics","Fluid Mechanics","Machine Design","Heat Transfer","Strength of Materials","Manufacturing Processes","Theory of Machines","Refrigeration and Air Conditioning","Engineering Mechanics","Internal Combustion Engines"],
+  "IT":["Programming","Data Structures and Algorithms","Databases","Computer Networks","Operating Systems","Web Development","Computer Architecture","Cyber Security","Software Engineering","MS Office and Basics"],
+  "ACCA":["Financial Accounting","Management Accounting","Corporate Law","Taxation","Audit and Assurance","Financial Reporting","Financial Management","Performance Management","Business and Technology"],
+  "CA":["Financial Accounting","Cost and Management Accounting","Business Law","Taxation","Auditing","Corporate Reporting","Business Finance","Economics","Business Communication and Ethics"]
+};
+function aiOrgSubjText(){
+  return "SUBJECT LIST (use the best fitting subject of the chosen course; if an existing subject of the site fits better, reuse its name; only if nothing fits, write a short new subject name): "+
+    Object.keys(AIORG_SUBJ).map(k=>k+": "+AIORG_SUBJ[k].join(", ")).join(". ")+
+    ". The chapter is the topic inside the subject (for example Pakistan GK: Geography of Pakistan, History, Sports; Surveying: Leveling, Chain Surveying; Taxation: Income Tax).";
+}
+/* ---- AI CHECK: doubtful MCQs (repeated / answer looks wrong / same question with another answer) are NOT saved; they go to the AI MCQs waiting list with a warning ---- */
+function aiOrgFlags(items){
+  const nz=t=>String(t||"").toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g," ").trim();
+  const tk=t=>new Set(nz(t).split(" ").filter(w=>w.length>1));
+  const L="ABCDEF",pool=[],exact=new Map();
+  try{const b=JSON.parse(BANK_JSON||"null");if(b&&Array.isArray(b.Q0))b.Q0.forEach(q=>{if(q&&typeof q.text==="string"&&Array.isArray(q.opts)){const e={n:nz(q.text),t:tk(q.text),text:q.text,ans:nz(q.opts[q.ans])};pool.push(e);if(!exact.has(e.n))exact.set(e.n,e)}})}catch(_){}
+  const out=[];
+  items.forEach(it=>{
+    const n=nz(it.question),t=tk(it.question),a=nz(it.options[it.correct]);let f=null;
+    if(!it.trusted&&t.size>=4){
+      const ex=exact.get(n);
+      if(ex){if(ex.ans!==a)f={flag:"answer",note:"Same question is already in the bank with a different answer (bank: "+ex.ans.slice(0,60)+" / this: "+a.slice(0,60)+")",sug:-1}}
+      else{
+        let best=null,bs=0;
+        for(const p of pool){
+          if(p.t.size<4)continue;
+          let c=0;for(const w of t)if(p.t.has(w))c++;
+          const sc=c/(t.size+p.t.size-c);
+          if(sc>bs){bs=sc;best=p;if(sc>=0.97)break}
+        }
+        if(best&&bs>=0.82)f=best.ans!==a
+          ?{flag:"answer",note:"Almost the same question is in the bank with a different answer (bank: "+best.ans.slice(0,60)+" / this: "+a.slice(0,60)+")",sug:-1}
+          :{flag:"repeat",note:"Looks repeated: "+best.text.slice(0,100),sug:-1};
+      }
+    }
+    if(!f&&!it.trusted&&it.ok===false&&Number.isInteger(it.better)&&it.better>=0&&it.better<it.options.length&&it.better!==it.correct)
+      f={flag:"answer",note:"AI thinks the answer is "+L.charAt(it.better)+") "+it.options[it.better]+", not "+L.charAt(it.correct)+")."+(it.why?" "+it.why:""),sug:it.better};
+    out.push(f);
+    if(!f){const e={n,t,text:it.question,ans:a};pool.push(e);if(!exact.has(n))exact.set(n,e)}
+  });
+  return out;
+}
+async function aiOrgHold(list){
+  for(let i=0;i<list.length;i+=400){
+    const bt=writeBatch(db);
+    list.slice(i,i+400).forEach(({it,f})=>bt.set(doc(collection(db,"pending_mcqs")),{question:it.question.slice(0,600),question_urdu:"",options:it.options.map(x=>String(x).slice(0,300)),correct:it.correct,explanation:"",subject:String(it.subject||"").slice(0,80),course:String(it.course||"").slice(0,40),chapter:String(it.chapter||"").slice(0,80),status:"pending",source:"AI-check",flag:f.flag,flagNote:String(f.note||"").slice(0,300),suggested:f.sug,by:ME,createdAt:serverTimestamp()}));
+    await bt.commit();
+  }
+}
+const AUTOORG={busy:false,started:false};
+async function aiOrgCommit(items){
+  if(!BANK_JSON)throw new Error("There is no question bank yet. Upload a bank first (Questions tab).");
+  const cur=JSON.parse(BANK_JSON),lc=x=>String(x).toLowerCase(),cc=c=>String((c&&c.course)||"").trim()||"Civil",cut=(x,k)=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,k);
+  if(!Array.isArray(cur.CARDS)||!cur.CARDS.length)throw new Error("Home folders are not saved in the bank yet. Open Edit MCQs, publish once, then try again.");
+  const SHORT={"civil engineering":"Civil","electrical engineering":"Electrical","mechanical engineering":"Mechanical","information technology":"IT","chartered accountancy (ca)":"CA"};
+  const courseName=raw=>{
+    const names=Array.from(new Set(cur.CARDS.map(cc))),x=String(raw||"").trim();
+    const ex=names.find(n=>lc(n)===lc(x));if(ex)return ex;
+    const cn=aiqCanon(x),sh=SHORT[lc(cn)]||cn;
+    return names.find(n=>lc(n)===lc(sh))||sh;
+  };
+  const mkKey=()=>"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const cardOfCourse=(course,paper)=>{
+    let c=cur.CARDS.find(x=>cc(x)===course&&(paper?(x.k==="pp"||x.t==="Past Papers"):(x.k!=="pp"&&x.t!=="Past Papers")));
+    if(c)return c;
+    c={k:mkKey(),t:paper?"Past Papers":"Subjects",d:course+(paper?" past papers":" subjects"),course};
+    cur.CARDS.push(c);return c;
+  };
+  const subIdx=(course,name,paper)=>{
+    const inCourse=y=>{const cd=cur.CARDS.find(x=>x.k===y.cat);return !!cd&&cc(cd)===course};
+    let si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(name)&&inCourse(y));
+    if(si>=0)return si;
+    const card=cardOfCourse(course,paper);
+    cur.SUB.push({name,short:name.length>22?name.slice(0,22)+"\u2026":name,code:paper?"Paper":"Subject",spq:60,time:60,cat:card.k});
+    return cur.SUB.length-1;
+  };
+  const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase())),secOf=new Map(),done=new Map();let n=0,d=0;
+  for(const it of items){
+    const paper=it.kind==="paper",course=courseName(it.course),sname=cut(it.subject,80)||"General",cname=paper?sname:(cut(it.chapter,80)||"Chapter 1");
+    const text=it.question.trim().slice(0,600),k=text.toLowerCase();
+    if(seen.has(k)){d++;continue}seen.add(k);
+    const si=subIdx(course,sname,paper),sk=si+"\u0001"+cname;
+    let ci=secOf.get(sk);
+    if(ci==null){ci=cur.S.findIndex(y=>y.sub===si&&y.name===cname);if(ci<0){cur.S.push({sub:si,name:cname,code:cname.slice(0,20)});ci=cur.S.length-1}secOf.set(sk,ci)}
+    cur.Q0.push({text,opts:it.options.map(x=>String(x).trim().slice(0,300)),ans:it.correct,sec:ci,test:cname});n++;
+    const dk=course+" \u2192 "+(paper?"Past Papers \u2192 ":sname+" \u2192 ")+cname;done.set(dk,(done.get(dk)||0)+1);
+  }
+  if(n)await publishBank(cur);
+  return {n,d,done};
+}
+async function aimcqAutoClassify(cfg,rows,subs){
+  AI_SYS_OVR="You classify and fact-check exam MCQs for a Pakistani exam-prep website. Reply with ONLY a valid JSON array, no markdown and no other text.";AI_MAXOUT=3072;
+  try{
+    const list=rows.map((r,i)=>i+". [written for: "+String(r.d.subject||"").slice(0,60)+"] "+String(r.d.question).slice(0,200)+" | "+r.d.options.map((o,j)=>"ABCDEF".charAt(j)+") "+String(o).slice(0,80)).join("  ").slice(0,300)+" | marked answer: "+"ABCDEF".charAt(r.d.correct)).join("\n");
+    const prompt="For each numbered MCQ return one object: {\"i\":number,\"course\":one of Civil, Electrical, Mechanical, General Knowledge, IT, ACCA, CA,\"subject\":short subject name,\"chapter\":short chapter or topic name (2 to 5 words),\"ok\":true or false (false ONLY if you are confident the marked answer is wrong),\"better\":0-based index of the right option (only when ok is false),\"why\":max 12 words}. "+aiOrgSubjText()+" Keep the same subject name for the same field, and reuse these existing subject names when they fit: "+subs.slice(0,120).join(", ")+".\n\nMCQs:\n"+list;
+    const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
+    const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
+    if(a<0||b<a)throw new Error("bad format");
+    const arr=JSON.parse(t.slice(a,b+1)),out=new Array(rows.length).fill(null);
+    (Array.isArray(arr)?arr:[]).forEach(m=>{if(m&&Number.isInteger(m.i)&&m.i>=0&&m.i<rows.length)out[m.i]={course:String(m.course||"").trim().slice(0,40),subject:String(m.subject||"").trim().slice(0,80),chapter:String(m.chapter||"").trim().slice(0,80),ok:m.ok===false?false:true,better:(m.better==null||m.better==="")?-1:Number(m.better),why:String(m.why||"").trim().slice(0,160)}});
+    return out;
+  }finally{AI_SYS_OVR="";AI_MAXOUT=0}
+}
+async function aimcqAutoLog(rep){
+  try{
+    const r=doc(db,"meta","autolog");let old=[];
+    try{const sn=await getDoc(r);if(sn.exists()&&Array.isArray(sn.data().log))old=sn.data().log}catch(_){}
+    await setDoc(r,{lastRun:serverTimestamp(),log:[rep].concat(old).slice(0,30)},{merge:true});
+  }catch(_){}
+}
+async function aimcqAutoRun(manual){
+  if(AUTOORG.busy)return {skip:true,note:"Already running."};
+  AUTOORG.busy=true;
+  const rep={t:Date.now(),src:manual?"manual":"auto",saved:0,dup:0,folders:"",note:""};
+  try{
+    try{await setDoc(doc(db,"meta","autolog"),{lastRun:serverTimestamp()},{merge:true})}catch(_){}
+    const rows=[];
+    for(const [coll,field] of [["ai_pool","createdAt"],["mcqs","approvedAt"]]){
+      try{
+        const sn=await getDocs(query(collection(db,coll),orderBy(field),limit(40)));
+        sn.docs.forEach(x=>{const d=x.data();if(typeof d.question==="string"&&d.question.trim()&&Array.isArray(d.options)&&d.options.length>=2&&d.options.length<=4&&d.options.every(o=>String(o).trim())&&Number.isInteger(d.correct)&&d.correct>=0&&d.correct<d.options.length)rows.push({coll,id:x.id,d})});
+      }catch(_){}
+    }
+    let review=true;
+    try{const sn=await getDoc(doc(db,"meta","autolog"));if(sn.exists()&&sn.data().review===false)review=false}catch(_){}
+    const appr=rows.filter(r=>r.coll==="mcqs"),use=review?rows.filter(r=>r.coll==="ai_pool").concat(manual||appr.length>=10?appr:[]):((manual||rows.length>=10)?rows:[]);
+    if(!use.length){rep.skip=true;rep.note=rows.length?"Only "+rows.length+" waiting (auto saves to the bank when 10 are waiting).":"Nothing waiting.";return rep}
+    let bank=null;try{bank=JSON.parse(BANK_JSON||"null")}catch(_){}
+    if(!bank||!Array.isArray(bank.CARDS)||!bank.CARDS.length){rep.note="Home folders are not saved in the bank yet. Open Edit MCQs, publish once.";await aimcqAutoLog(rep);return rep}
+    const subs=bank.SUB.filter(y=>y&&y.cat!=="__tmp").map(y=>y.name);
+    let cfg=null;try{cfg=await aiKey()}catch(_){}
+    const meta=new Array(use.length).fill(null);let aiFail=0;
+    if(cfg)for(let b=0;b<use.length;b+=20){
+      const part=use.slice(b,b+20);let m=null;
+      for(let t=0;t<2&&!m;t++){try{m=await aimcqAutoClassify(cfg,part,subs)}catch(_){}}
+      if(m)m.forEach((x,i)=>{meta[b+i]=x});else aiFail++;
+    }
+    const items=use.map((r,i)=>{
+      const m=meta[i],hint=aiqCanon(r.d.subject)||"General Knowledge";
+      return {question:String(r.d.question),options:r.d.options.map(String),correct:r.d.correct,kind:"chapter",trusted:r.coll==="mcqs",
+        course:(m&&m.course)||hint,subject:(m&&m.subject)||hint,chapter:(m&&m.chapter)||"Chapter 1",
+        ok:m?m.ok:true,better:m?m.better:-1,why:m?m.why:""};
+    });
+    const fl=aiOrgFlags(items),clean=[],held=[];
+    items.forEach((it,k)=>{if(fl[k])held.push({it,f:fl[k]});else if(review&&!it.trusted)held.push({it,f:{flag:"",note:"",sug:-1}});else clean.push(it)});
+    const res=await aiOrgCommit(clean);
+    if(held.length)await aiOrgHold(held);
+    rep.saved=res.n;rep.dup=res.d;rep.sent=held.length;rep.held=held.filter(h=>h.f.flag).length;
+    rep.repeat=held.filter(h=>h.f.flag==="repeat").length;rep.answer=held.filter(h=>h.f.flag==="answer").length;
+    rep.folders=Array.from(res.done.entries()).map(([a,b])=>a+" +"+b).join(", ").slice(0,400);
+    if(aiFail)rep.note="AI could not classify "+aiFail+" batch(es): sorted by field name only.";
+    for(let k=0;k<use.length;k+=400){const bt=writeBatch(db);use.slice(k,k+400).forEach(r=>bt.delete(doc(db,r.coll,r.id)));await bt.commit()}
+    await aimcqAutoLog(rep);
+    if((rep.saved||rep.sent||rep.held)&&!manual)aimcqAutoBanner(rep);
+    return rep;
+  }catch(e){
+    rep.note="Error: "+String((e&&e.message)||e).slice(0,200);await aimcqAutoLog(rep);return rep;
+  }finally{
+    AUTOORG.busy=false;try{window.__autoOrgRefresh&&window.__autoOrgRefresh()}catch(_){}
+  }
+}
+function aimcqAutoBanner(rep){
+  try{
+    const old=document.getElementById("autoorgbn");if(old)old.remove();
+    const b=el("div");b.id="autoorgbn";b.setAttribute("role","status");
+    b.style.cssText="position:fixed;left:12px;right:12px;bottom:88px;z-index:1250;background:#fff;color:#1b2a4a;border:1px solid #2f5bd8;border-radius:16px;padding:13px 15px;box-shadow:0 12px 34px rgba(0,0,0,.25)";
+    b.appendChild(el("b","","\uD83E\uDD16 Auto organizer: "+(rep.sent?rep.sent+" MCQs from users are waiting for your approval":rep.saved+" MCQs saved")));
+    b.appendChild(el("div","label",rep.folders||""));
+    if(rep.held){const w=el("div","label","\u26A0 "+rep.held+" need your review ("+(rep.repeat||0)+" repeated, "+(rep.answer||0)+" answer doubtful): see Admin panel \u2192 AI MCQs.");w.style.cssText="color:#b45309;font-weight:700";b.appendChild(w)}
+    const x=el("button","btn","OK");x.type="button";x.style.cssText="width:100%;margin-top:8px";x.onclick=()=>b.remove();b.appendChild(x);
+    document.body.appendChild(b);setTimeout(()=>{if(b.parentNode)b.remove()},30000);
+  }catch(_){}
+}
+function aimcqAutoStart(){
+  if(AUTOORG.started||!IS_ADMIN||PV||PM)return;
+  AUTOORG.started=true;
+  const tick=async()=>{
+    try{
+      const sn=await getDoc(doc(db,"meta","autolog")),d=sn.exists()?sn.data():{};
+      if(d.enabled===false)return;
+      const lr=d.lastRun&&d.lastRun.toMillis?d.lastRun.toMillis():0;
+      if(Date.now()-lr<30*60*1000)return;
+      await aimcqAutoRun(false);
+    }catch(_){}
+  };
+  setTimeout(tick,25000);setInterval(tick,10*60*1000);
+}
+function aimcqAutoPanel(host){
+  const h=el("div","label","AUTO ORGANIZER: the bot sorts new MCQs by itself into course, subject and chapter, saves them in the bank, and writes a report here.");h.style.marginTop="18px";
+  const st=el("div","label st"),list=el("div"),cb=el("input"),row=el("label","label","");
+  cb.type="checkbox";cb.checked=true;row.style.cssText="display:flex;gap:8px;align-items:center;margin:10px 0";
+  row.append(cb,document.createTextNode("Auto ON: runs every 30 minutes while an admin has the site open (when 10 or more MCQs are waiting)"));
+  const rv=el("input"),rvRow=el("label","label","");rv.type="checkbox";rv.checked=true;rvRow.style.cssText="display:flex;gap:8px;align-items:center;margin:10px 0";
+  rvRow.append(rv,document.createTextNode("Admin approval first: AI MCQs that users practise come to the waiting list below; you tap Approve, then Run now saves them in the bank, sorted in order"));
+  const now=el("button","btn primary","Run now");now.type="button";
+  host.append(h,row,rvRow,now,st,list);
+  const say=t=>{st.textContent=t};
+  async function load(){
+    try{
+      const sn=await getDoc(doc(db,"meta","autolog")),d=sn.exists()?sn.data():{};
+      cb.checked=d.enabled!==false;rv.checked=d.review!==false;list.textContent="";
+      const log=Array.isArray(d.log)?d.log:[];
+      if(!log.length){list.appendChild(el("div","label","No reports yet."));return}
+      log.slice(0,12).forEach(r=>{
+        const t=new Date(r.t||0).toLocaleString();
+        const x=el("div","label",t+" \u00b7 "+(r.src||"auto")+" \u00b7 "+(r.saved||0)+" saved"+(r.dup?", "+r.dup+" duplicate":"")+(r.sent?" \u00b7 "+r.sent+" sent to your review list":"")+(r.held?" \u00b7 \u26A0 "+r.held+" need review ("+(r.repeat||0)+" repeated, "+(r.answer||0)+" answer doubtful)":"")+(r.folders?": "+r.folders:"")+(r.note?" \u2014 "+r.note:""));
+        x.style.margin="6px 0";list.appendChild(x);
+      });
+    }catch(e){say(admDeny(e))}
+  }
+  rv.onchange=async()=>{try{await setDoc(doc(db,"meta","autolog"),{review:rv.checked},{merge:true});say(rv.checked?"Admin approval first is ON.":"Admin approval first is OFF: the bot saves MCQs in the bank by itself.")}catch(e){say(admDeny(e))}};
+  cb.onchange=async()=>{try{await setDoc(doc(db,"meta","autolog"),{enabled:cb.checked},{merge:true});say(cb.checked?"Auto organizer is ON.":"Auto organizer is OFF.")}catch(e){say(admDeny(e))}};
+  now.onclick=async()=>{
+    now.disabled=true;say("Running\u2026 please wait.");
+    const r=await aimcqAutoRun(true);
+    say(r.skip?(r.note||"Nothing to do."):(r.saved+" MCQs saved."+(r.sent?" "+r.sent+" sent to your review list (AI MCQs, waiting for approval).":"")+(r.held?" \u26A0 "+r.held+" need your review ("+(r.repeat||0)+" repeated, "+(r.answer||0)+" answer doubtful) in the waiting list below.":"")+(r.note?" "+r.note:"")+(r.saved?" Reload the app to see them.":"")));
+    now.disabled=false;await load();
+  };
+  window.__autoOrgRefresh=load;load();
+  return load;
+}
+/* ---- AI ORGANIZER: admin pastes raw MCQs, the AI sorts them (course > subject > chapter, or past paper) in the SAME ORDER, then they are saved into the question bank ---- */
+function aimcqOrganizer(host){
+  const st=el("div","label st"),box=el("textarea"),prev=el("div"),courseSel=el("select"),kindSel=el("select"),subj=el("input"),chap=el("input");
+  const h=el("div","label","AI ORGANIZER: paste MCQs in any format (English / Urdu, with or without answers). The AI sorts them into course, subject, chapter or past paper, keeps the same order, and saves them into the bank.");h.style.marginTop="22px";
+  box.rows=8;box.placeholder="Paste MCQs here (a chapter, or a whole past paper)\u2026";box.style.cssText="width:100%;box-sizing:border-box";
+  [["","Course: AI decides"],["Civil","Course: Civil"],["Electrical","Course: Electrical"],["Mechanical","Course: Mechanical"],["General Knowledge","Course: General Knowledge"],["IT","Course: IT"],["ACCA","Course: ACCA"],["CA","Course: CA"]].forEach(([v,t])=>{const o=el("option","",t);o.value=v;courseSel.appendChild(o)});
+  [["","Type: AI decides"],["chapter","Type: Chapter MCQs"],["paper","Type: Past paper"]].forEach(([v,t])=>{const o=el("option","",t);o.value=v;kindSel.appendChild(o)});
+  subj.type="text";subj.maxLength=80;subj.placeholder="Subject (empty = AI decides)";
+  chap.type="text";chap.maxLength=80;chap.placeholder="Chapter, or past paper name e.g. PPSC 2023 (empty = AI decides)";
+  const run=el("button","btn primary","AI: organize"),save=el("button","btn","Save all in order"),clr=el("button","btn","Clear");
+  [run,save,clr].forEach(b=>{b.type="button"});
+  host.append(h,box,courseSel,kindSel,subj,chap,run,save,clr,st,prev);
+  let items=[],busy=false;
+  const say=t=>{st.textContent=t};
+  const lock=v=>{busy=v;[run,save,clr].forEach(b=>{b.disabled=v})};
+  const cut=(x,k)=>String(x==null?"":x).replace(/\s+/g," ").trim().slice(0,k);
+  function split(text){
+    const t=String(text||"").replace(/\r/g,"").trim();
+    if(!t)return [];
+    let bl=t.split(/\n(?=\s*(?:Q\.?\s*)?\d{1,4}\s*[.):\-]\s)/i);
+    if(bl.length<2)bl=t.split(/\n\s*\n/);
+    const out=[];let c="";
+    bl.forEach(b=>{if(c&&c.length+b.length>3500){out.push(c);c=""}c+=(c?"\n":"")+b});
+    if(c.trim())out.push(c);
+    return out;
+  }
+  function parse(full){
+    const t=String(full||"").replace(/```json|```/gi,"").trim(),a=t.indexOf("["),b=t.lastIndexOf("]");
+    if(a<0||b<a)throw new Error("AI did not return MCQs in the expected format");
+    let arr;try{arr=JSON.parse(t.slice(a,b+1))}catch(e){throw new Error("AI answer was broken or cut")}
+    const out=[];
+    (Array.isArray(arr)?arr:[]).forEach(m=>{
+      if(!m||!Array.isArray(m.options)||m.options.length<2||m.options.length>6)return;
+      const o=m.options.map(x=>cut(x,300)),c=Number(m.correct),q=cut(m.question,600);
+      if(!q||o.some(x=>!x)||!Number.isInteger(c)||c<0||c>=o.length)return;
+      out.push({question:q,options:o,correct:c,ok:m.answer_ok===false?false:true,better:(m.better==null||m.better==="")?-1:Number(m.better),why:cut(m.why,160),course:cut(m.course,40),kind:String(m.kind||"").toLowerCase()==="paper"?"paper":"chapter",subject:cut(m.subject,80),chapter:cut(m.chapter,80)});
+    });
+    return out;
+  }
+  async function ask(cfg,text,hint){
+    AI_SYS_OVR="You are an exam MCQ organizer for a Pakistani exam-prep website. Reply with ONLY a valid JSON array, no markdown and no other text.";AI_MAXOUT=4096;
+    try{
+      const prompt="Below is raw text that contains multiple-choice questions (English and/or Urdu). Extract EVERY question in the SAME ORDER as in the text. Do not skip, merge, shorten or invent questions, and keep the original wording. If the text gives the answer (answer key, tick, marked option) use it; otherwise choose the correct option yourself.\n"+
+        "For each question return an object with exactly these keys: \"question\" (string), \"options\" (array of the option texts without the A/B/C/D letters), \"correct\" (number, 0-based index of the right option), \"course\" (exactly one of: Civil, Electrical, Mechanical, General Knowledge, IT, ACCA, CA), \"kind\" (\"paper\" if it is from a past paper such as PPSC, FPSC, NTS or a board paper, otherwise \"chapter\"), \"subject\" (short subject name such as Surveying, Financial Accounting; pick it from the subject list below; for a past paper the full paper name such as PPSC Sub Engineer Civil 2023), \"chapter\" (chapter or topic name; for a past paper the same as the paper name), \"answer_ok\" (false ONLY if you are confident the answer given in the text or key is wrong), \"better\" (0-based index of the option you believe is right, only when answer_ok is false), \"why\" (max 12 words).\n"+
+        aiOrgSubjText()+"\n"+(hint?"Admin hints (they win over your own guess): "+hint+"\n":"")+"\nTEXT:\n"+text;
+      const full=await aiCall(cfg,[{role:"user",parts:[{text:prompt}]}],null);
+      return parse(full);
+    }finally{AI_SYS_OVR="";AI_MAXOUT=0}
+  }
+  run.onclick=async()=>{
+    if(busy)return;
+    const parts=split(box.value);
+    if(!parts.length){say("Paste the MCQs first.");return}
+    lock(true);items=[];prev.textContent="";
+    let cfg;try{cfg=await aiKey()}catch(e){say(aiErrBase(e));lock(false);return}
+    const hint=[courseSel.value&&"course = "+courseSel.value,kindSel.value&&"kind = "+kindSel.value,subj.value.trim()&&"subject = "+subj.value.trim(),chap.value.trim()&&"chapter / paper name = "+chap.value.trim()].filter(Boolean).join("; ");
+    let fail=0,err="";
+    for(let i=0;i<parts.length;i++){
+      say("AI is organizing part "+(i+1)+" of "+parts.length+"\u2026 ("+items.length+" MCQs so far)");
+      let rows=null;
+      for(let t=0;t<2&&!rows;t++){try{rows=await ask(cfg,parts[i],hint)}catch(e){err=(e&&e.code)?aiErrBase(e):String((e&&e.message)||e)}}
+      if(rows)items.push(...rows);else fail++;
+    }
+    items.forEach(it=>{
+      if(courseSel.value)it.course=courseSel.value;
+      if(kindSel.value)it.kind=kindSel.value;
+      if(it.kind==="paper"){const pn=cut(subj.value,80)||cut(chap.value,80)||it.subject||it.chapter||"Past Paper";it.subject=pn;it.chapter=pn}
+      else{if(subj.value.trim())it.subject=cut(subj.value,80);if(chap.value.trim())it.chapter=cut(chap.value,80)}
+      it.course=it.course||"General Knowledge";it.subject=it.subject||"General";it.chapter=it.chapter||"Chapter 1";
+    });
+    render();
+    say(items.length?items.length+" MCQs organized"+(fail?" ("+fail+" part(s) failed: "+err+")":"")+". Check the folders below, then tap Save all in order.":"AI could not organize these MCQs. "+err);
+    lock(false);
+  };
+  function render(){
+    prev.textContent="";
+    if(!items.length)return;
+    const g=new Map();
+    items.forEach(it=>{const k=it.course+"\u0001"+(it.kind==="paper"?"Past Papers":it.subject)+"\u0001"+it.chapter+"\u0001"+it.kind;g.set(k,(g.get(k)||0)+1)});
+    g.forEach((n,k)=>{
+      const a=k.split("\u0001");
+      const row=el("div","label","\uD83D\uDCC1 "+a[0]+" \u2192 "+(a[3]==="paper"?"Past Papers \u2192 ":a[1]+" \u2192 ")+a[2]+" ("+n+" MCQs)");
+      row.style.margin="6px 0";prev.appendChild(row);
+    });
+    const f=items[0],sm=el("small","","First MCQ: "+f.question.slice(0,120)+"  |  "+f.options.map((o,i)=>"ABCDEF".charAt(i)+") "+o).join("  ").slice(0,200)+"  \u2713 "+"ABCDEF".charAt(f.correct));
+    prev.appendChild(sm);
+    const fl=aiOrgFlags(items),bad=[];fl.forEach((x,k)=>{if(x)bad.push([k,x])});
+    if(bad.length){
+      const w=el("div","label","\u26A0 "+bad.length+" doubtful MCQ(s): they will go to the AI MCQs waiting list for your review, not into the bank.");w.style.cssText="margin-top:10px;color:#b45309;font-weight:700";prev.appendChild(w);
+      bad.slice(0,8).forEach(([k,x])=>prev.appendChild(el("small","",(k+1)+". "+items[k].question.slice(0,80)+" \u2192 "+(x.flag==="repeat"?"Repeated? ":"Answer? ")+x.note)));
+    }
+  }
+  clr.onclick=()=>{if(busy)return;items=[];box.value="";prev.textContent="";say("")};
+  save.onclick=async()=>{
+    if(busy)return;
+    if(!items.length){say("Nothing to save. Tap AI: organize first.");return}
+    lock(true);say("Saving\u2026");
+    try{
+      const fl=aiOrgFlags(items),clean=[],held=[];
+      items.forEach((it,k)=>{if(fl[k])held.push({it,f:fl[k]});else clean.push(it)});
+      const r=await aiOrgCommit(clean);
+      if(held.length)await aiOrgHold(held);
+      say(r.n+" MCQ(s) saved in order: "+Array.from(r.done.entries()).map(([x,y])=>x+" +"+y).join(", ")+(r.d?" ("+r.d+" duplicate(s) skipped)":"")+(held.length?". \u26A0 "+held.length+" doubtful MCQ(s) are in the AI MCQs waiting list for your review":"")+(r.n?". Reload the app to see them.":""));
+      items=[];box.value="";prev.textContent="";
+    }catch(e){say(e&&e.code?admDeny(e):String((e&&e.message)||e))}
+    lock(false);
+  };
+}
 function aimcqPool(host){
   const st=el("div","label st"),list=el("div"),catSel=el("select"),subj=el("input"),chap=el("input"),dl=el("datalist");
   subj.type="text";subj.maxLength=80;subj.placeholder="Subject name (used if Auto is off, or an MCQ has no subject)";subj.setAttribute("list","aimcqSubs");dl.id="aimcqSubs";
@@ -5601,6 +5943,7 @@ function aimcqPool(host){
     if(!b)return;
     const cs=Array.isArray(b.CARDS)&&b.CARDS.length?b.CARDS.filter(c=>c&&c.k&&c.t).map(c=>[c.k,c.t]):Array.from(new Set(b.SUB.map(s=>s.cat).filter(k=>k&&k!=="__tmp"))).map(k=>[k,k]);
     cs.forEach(([k,t])=>{const o=el("option","","Category: "+t);o.value=k;catSel.appendChild(o)});
+    ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA","Chartered Accountancy (CA)"].forEach(n=>{const o=el("option","","Category: "+n);o.value="course:"+n;catSel.appendChild(o)});
     b.SUB.forEach(s=>{if(s&&s.cat!=="__tmp"){const o=el("option");o.value=s.name;dl.appendChild(o)}});
     ["General Knowledge","Information Technology","Electrical Engineering","Mechanical Engineering","Civil Engineering","ACCA","Chartered Accountancy (CA)"].forEach(n=>{const o=el("option");o.value=n;dl.appendChild(o)});
   }
@@ -5681,13 +6024,21 @@ function aimcqPool(host){
         const si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(s));
         if(si>=0)return si;
         const short=s.length>22?s.slice(0,22)+"\u2026":s;
-        if(!auto){cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:catSel.value||"pp"});return cur.SUB.length-1}
-        if(!Array.isArray(cur.CARDS)||!cur.CARDS.length)throw new Error("Home folders are not saved in the bank yet. Open Edit MCQs, publish once, then try again.");
-        const names=Array.from(new Set(cur.CARDS.map(courseOfC))),base=s.replace(/\s+engineering$/i,"").trim();
-        const SHORT={"electrical engineering":"Electrical","mechanical engineering":"Mechanical","information technology":"IT","chartered accountancy (ca)":"CA","civil engineering":"Civil"};const course=names.find(n=>lc(n)===lc(s))||names.find(n=>lc(n)===lc(base))||SHORT[lc(s)]||s;
-        const ft=names.indexOf(course)<0?"Subjects":"Practice MCQs";
-        let card=cur.CARDS.find(c=>courseOfC(c)===course&&c.t===ft);
-        if(!card){card={k:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:ft,d:course+" MCQs",course};cur.CARDS.push(card)}
+        const cardFor=f=>{
+          if(!Array.isArray(cur.CARDS)||!cur.CARDS.length)throw new Error("Home folders are not saved in the bank yet. Open Edit MCQs, publish once, then try again.");
+          const names=Array.from(new Set(cur.CARDS.map(courseOfC))),base=f.replace(/\s+engineering$/i,"").trim();
+          const SHORT={"electrical engineering":"Electrical","mechanical engineering":"Mechanical","information technology":"IT","chartered accountancy (ca)":"CA","civil engineering":"Civil"};const course=names.find(n=>lc(n)===lc(f))||names.find(n=>lc(n)===lc(base))||SHORT[lc(f)]||f;
+          const ft=names.indexOf(course)<0?"Subjects":"Practice MCQs";
+          let card=cur.CARDS.find(c=>courseOfC(c)===course&&c.t===ft);
+          if(!card){card={k:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:ft,d:course+" MCQs",course};cur.CARDS.push(card)}
+          return card;
+        };
+        if(!auto){
+          let cat=catSel.value||"pp";
+          if(cat.indexOf("course:")===0)cat=cardFor(cat.slice(7)).k;
+          cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat});return cur.SUB.length-1;
+        }
+        const card=cardFor(s);
         cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:card.k});
         return cur.SUB.length-1;
       };
@@ -5727,14 +6078,51 @@ async function aimcqChapters(subject,n){
 }
 window.__aiChapters=aimcqChapters;
 window.__aiGenMcqs=(subject,topic,n,have)=>aimcqGenerate(subject+(topic?" (chapter: "+topic+")":""),n,have,true);
+/* fast subject practice: MCQs of the SAME field come first from approved + shared AI pool (instant), live AI only fills the rest in the background */
+const AIQ_CANON=[[/^civil\b/i,"Civil Engineering"],[/^electrical\b/i,"Electrical Engineering"],[/^mechanical\b/i,"Mechanical Engineering"],[/^(general knowledge|gk)\b/i,"General Knowledge"],[/^(information technology|it)$/i,"Information Technology"],[/^acca\b/i,"ACCA"],[/^(chartered accountancy|ca)\b/i,"Chartered Accountancy (CA)"]];
+function aiqCanon(x){x=String(x||"").replace(/\s*\(chapter:.*$/i,"").replace(/\s+/g," ").trim();if(!x)return "";for(const [re,n] of AIQ_CANON)if(re.test(x))return n;return x}
+const AIQ_ALIAS={"Electrical Engineering":["Electrical"],"Mechanical Engineering":["Mechanical"],"General Knowledge":["GK"],"Information Technology":["IT"],"Chartered Accountancy (CA)":["CA","Chartered Accountancy"],"Civil Engineering":["Civil"]};
+function aiqSeenS(){let a=[];try{a=JSON.parse(localStorage.getItem("eg23aiqSeenS")||"[]")}catch(_){}return new Set(Array.isArray(a)?a:[])}
+function aiqMarkS(list){
+  try{const a=Array.from(aiqSeenS());list.forEach(m=>{const k=aiqKey(m);if(a.indexOf(k)<0)a.push(k)});
+    localStorage.setItem("eg23aiqSeenS",JSON.stringify(a.slice(-5000)))}catch(_){}
+}
+async function aiqSubjectQuick(subject){
+  const want=aiqCanon(subject),names=Array.from(new Set([String(subject||"")].concat([want],AIQ_ALIAS[want]||[]).filter(Boolean)));
+  const seen=aiqSeenS(),got=new Map();
+  const jobs=[];
+  for(const coll of ["mcqs","ai_pool"])for(const nm of names){
+    jobs.push(getDocs(query(collection(db,coll),where("subject",">=",nm),where("subject","<",nm+"\uf8ff"),limit(120))).then(sn=>{
+      sn.docs.forEach(x=>{
+        const d=x.data();if(aiqCanon(d.subject)!==want)return;
+        const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
+        if(m.options.length===4&&aiqOk(m)){const k=aiqKey(m);if(!got.has(k))got.set(k,m)}
+      });
+    }).catch(()=>{}));
+  }
+  await Promise.all(jobs);
+  const all=Array.from(got.values());
+  for(let i=all.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[all[i],all[r]]=[all[r],all[i]]}
+  return {fresh:all.filter(m=>!seen.has(aiqKey(m))),old:all.filter(m=>seen.has(aiqKey(m)))};
+}
 window.__aiPlaySubject=async function(subject){
   if(!window.__playAi)return;
   if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
-  const live=await aiqLive(10,subject);
-  if(!live.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
-  aiqPoolSave(live,subject);
   const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
-  const buf=[],seenS=new Set(live.map(aiqKey));let busy=false;
+  let q={fresh:[],old:[]};
+  try{q=await aiqSubjectQuick(subject)}catch(_){}
+  const buf=q.fresh.slice(),seenS=new Set(q.fresh.concat(q.old).map(aiqKey));
+  let first=buf.splice(0,10);
+  if(!first.length){
+    /* nothing ready for this field yet: ask the live AI once, and save the answer so the next student gets it instantly */
+    const live=await aiqLive(10,subject);
+    live.forEach(m=>seenS.add(aiqKey(m)));
+    if(live.length){first=live;aiqPoolSave(live,subject)}
+    else first=q.old.splice(0,10);
+  }
+  if(!first.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
+  aiqMarkS(first);
+  let busy=false;
   const more=async()=>{
     if(busy)return;busy=true;
     try{const r=(await aiqLive(20,subject)).filter(m=>{const k=aiqKey(m);if(seenS.has(k))return false;seenS.add(k);return true});buf.push(...r);aiqPoolSave(r,subject)}catch(_){}
@@ -5742,12 +6130,13 @@ window.__aiPlaySubject=async function(subject){
   };
   window.__aiqNext=()=>{};
   window.__aiqDone=()=>{
-    const add=buf.splice(0,3).map(toQ);
-    if(add.length&&window.__aiAppend)window.__aiAppend(add);
+    if(buf.length<3&&q.old.length)buf.push(...q.old.splice(0,10));
+    const add=buf.splice(0,3);aiqMarkS(add);
+    if(add.length&&window.__aiAppend)window.__aiAppend(add.map(toQ));
     if(buf.length<10)more();
   };
-  more();
-  window.__playAi(subject,live.map(toQ));
+  if(buf.length<10)setTimeout(more,3000);
+  window.__playAi(subject,first.map(toQ));
 };
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
