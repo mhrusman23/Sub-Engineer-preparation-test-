@@ -124,7 +124,7 @@ async function getFacts(label) {
   const ref = db.doc("writer_cache/" + id);
   const sn = await ref.get(), d = sn.exists ? sn.data() : null;
   const at = d && d.at && d.at.toMillis ? d.at.toMillis() : 0;
-  if (d && Array.isArray(d.items) && d.items.length && Date.now() - at < 7 * 24 * 3600 * 1000) return { items: d.items, via: d.via || "" };   // one search per subject per week
+  if (d && Array.isArray(d.items) && d.items.length && Date.now() - at < 4 * 3600 * 1000) return { items: d.items, via: d.via || "" };   // one search per subject per 4 hours = ~2500 searches / month
   const res = await searchWeb(label + " important exam MCQs with answers");
   if (res && res.items.length) await ref.set({ at: FV.serverTimestamp(), items: res.items, via: res.via });
   return res;
