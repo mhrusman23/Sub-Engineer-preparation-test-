@@ -128,8 +128,8 @@ function mergeQueue(bank, rows) {
   for (const r of rows) {
     const key = String(r.question).trim().toLowerCase();
     if (seen.has(key)) continue;
-    let si = bank.SUB.findIndex((y) => y && y.cat === r.cat && y.name === r.subject);
-    if (si < 0) si = bank.SUB.findIndex((y) => y && y.cat !== "__tmp" && y.name === r.subject);
+    let si = bank.SUB.findIndex((y) => y && y.code !== "merged" && y.cat === r.cat && y.name === r.subject);
+    if (si < 0) si = bank.SUB.findIndex((y) => y && y.code !== "merged" && y.cat !== "__tmp" && y.name === r.subject);
     if (si < 0) continue;
     let ci = bank.S.findIndex((c) => c && c.sub === si && c.name === CHAPTER);
     if (ci < 0) { bank.S.push({ sub: si, name: CHAPTER, code: CHAPTER }); ci = bank.S.length - 1; }
