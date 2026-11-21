@@ -7,13 +7,22 @@ function init(_db, _FV) { db = _db; FV = _FV; }
 const F = (u, o) => fetch(u, Object.assign({ signal: AbortSignal.timeout(26000) }, o));
 const PER_RUN = 6;          // MCQs written per minute
 const DAY_CAP = 500;        // stops by itself after this many saved MCQs a day
-const PUBLISH_EVERY_MS = 10 * 60 * 1000;
-const PUBLISH_QUEUE_MIN = 30;
+const PUBLISH_EVERY_MS = 30 * 60 * 1000;
+const PUBLISH_QUEUE_MIN = 100;
 const CHAPTER = "AI Verified";
 
 /* ---------------- AI ---------------- */
 const GEM = "https://generativelanguage.googleapis.com/v1beta/models/";
 async function callAI(cfg, system, prompt, maxOut) {
+  /* main key first; if it fails (limit over, busy, blocked) the extra keys from the admin Settings take over */
+  const list = [cfg].concat(cfg.extra || []);
+  let lastErr;
+  for (const c of list) {
+    try { return await callAI1(c, system, prompt, maxOut); } catch (e) { lastErr = e; }
+  }
+  throw lastErr;
+}
+async function callAI1(cfg, system, prompt, maxOut) {
   const key = cfg.key;
   if (!key) throw new Error("No AI key in Firestore meta/ai. Save the key in Admin -> Settings first.");
   const openaiStyle = cfg.provider === "openai" || cfg.baseUrl || /^sk-/.test(key);
@@ -22,19 +31,16 @@ async function callAI(cfg, system, prompt, maxOut) {
     const r = await F(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-      body: JSON.stringify({ model: cfg.model || "gpt-4o-mini", temperature: 0.4, max_tokens: maxOut,
-        messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }),
+      body: JSON.stringify(Object.assign({ model: cfg.model || "gpt-4o-mini", temperature: 0.4, max_tokens: maxOut,
+        messages: [{ role: "system", content: system }, { role: "user", content: prompt }] },
+        /gpt-oss/i.test(cfg.model || "") ? { reasoning_effort: "low" } : {})),
     });
     if (!r.ok) throw new Error("AI HTTP " + r.status + " " + (await r.text()).slice(0, 160));
     const j = await r.json();
     return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
   }
-  // FIX: gemini-2.5-flash-lite band ho gaya hai, is liye dead models ko hata diya
-  const clean = (cfg.model || "").trim();
-  const dead = ["gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
-  const models = [];
-  if (clean && !dead.includes(clean)) models.push(clean);
-  ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest"].forEach((m) => { if (!models.includes(m)) models.push(m); });
+  const models = [cfg.model || "gemini-flash-latest"];
+  if (!cfg.model) ["gemini-flash-lite-latest", "gemini-2.5-flash-lite"].forEach((m) => models.push(m));
   let lastErr = "";
   for (const m of models) {
     for (const think of [true, false]) {
@@ -150,6 +156,7 @@ function pickTarget(bank, queued, rot) {
   return targets[rot % Math.min(targets.length, 12)];
 }
 
+
 async function runOnce() {
     const logRef = db.doc("meta/autolog");
     const ls = await logRef.get(), d = ls.exists ? ls.data() : {};
@@ -163,7 +170,8 @@ async function runOnce() {
 
     const aiDoc = await db.doc("meta/ai").get();
     const x = aiDoc.exists ? aiDoc.data() : {};
-    const cfg = { key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim() };
+    const cfg = { key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim(),
+      extra: (Array.isArray(x.extra) ? x.extra : []).filter((e) => e && String(e.key || "").trim()).slice(0, 2).map((e) => ({ key: String(e.key).trim(), provider: e.provider || "auto", model: String(e.model || "").trim(), baseUrl: String(e.baseUrl || "").trim() })) };
 
     const lb = await loadBank();
     if (!lb) { await logRef.set({ serverAt: FV.serverTimestamp(), writerLast: "Server: bank not ready, will retry" }, { merge: true }); return { skipped: "bank not ready" }; }
@@ -210,7 +218,7 @@ async function runOnce() {
       serverAt: FV.serverTimestamp(), serverRot: (d.serverRot || 0) + 1,
       ...(published || waiting === 0 ? { serverPubAt: FV.serverTimestamp() } : {}),
       writerDay: today, writerDayN: dayN + saved, writerTotal: (d.writerTotal || 0) + saved,
-      writerLast: "Free server: " + subj + (saved ? " +" + saved : "") + (published ? " | published " + published + " to bank" : "") + (note ? " — " + note : ""),
+      writerLast: "Free server: " + subj + (saved ? " +" + saved : "") + (published ? " | published " + published + " to bank" : "") + (note ? " \u2014 " + note : ""),
     }, { merge: true });
   return { ok: true, saved, published, subject: subj, note };
 }
