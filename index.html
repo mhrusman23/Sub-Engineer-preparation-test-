@@ -1557,7 +1557,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var ADM=!!window.__publishBank&&!document.body.classList.contains("pv");
   var curYear=null;
   function cardOf(k){return YEARS.filter(function(x){return x.k===k})[0]||null}
-  function idsOf(k,all){var r=[];SUB.forEach(function(s,i){if(!s.tmp&&yearOf(i)===k&&(all||subCount(i)))r.push(i)});return r}
+  function idsOf(k,all){var r=[];SUB.forEach(function(s,i){if(!s.tmp&&yearOf(i)===k&&(all||subCount(i)||s.code==="Subject"))r.push(i)});return r}
   function refreshPick(){
     var p=pickedSubs(),n=0;p.forEach(function(i){n+=subCount(i)});
     $("#ySel").textContent=p.length?(p.length+" selected \u00b7 "+n+" Q"):"Nothing selected";
@@ -1581,14 +1581,14 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       ah.appendChild(ab);ac.appendChild(ah);list.appendChild(ac);
     }
     ids.forEach(function(i){
-      var s=SUB[i],n=subCount(i),card=el("div","hcard"),hd=el("div","hhead");
+      var s=SUB[i],n=subCount(i),ai=(s.code==="Subject"),card=el("div","hcard"),hd=el("div","hhead");
       var cb=document.createElement("input");cb.type="checkbox";cb.className="pk";cb.value=String(i);cb.setAttribute("aria-label","Select "+s.name);
       cb.checked=keep?keep.indexOf(i)>=0:false;cb.disabled=!n;cb.addEventListener("change",refreshPick);
       hd.appendChild(cb);
       var chs=[];S.forEach(function(c,ci){if(c.sub===i&&secN[ci])chs.push(ci)});
       var nm=el("div","hname",s.name);
-      nm.appendChild(el("small","",s.code+(pp?"":" \u00b7 "+chs.length+(chs.length===1?" chapter":" chapters"))));
-      hd.appendChild(nm);hd.appendChild(el("span","mt",n+" Q"));
+      nm.appendChild(el("small","",(ai&&!chs.length)?"Subject \u00b7 AI practice":s.code+(pp?"":" \u00b7 "+chs.length+(chs.length===1?" chapter":" chapters"))));
+      hd.appendChild(nm);hd.appendChild(el("span","mt",Math.max(n,ai?10:0)+" Q"));
       var pn=null,multi=(!pp&&chs.length>1);
       if(multi){
         var tg=el("button","btn","Chapters \u25be");tg.type="button";hd.appendChild(tg);
@@ -1611,7 +1611,15 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         });
         tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Chapters \u25be":"Hide \u25b4"});
       }
-      var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n;go.addEventListener("click",function(){start([i])});hd.appendChild(go);
+      var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n&&!ai;go.addEventListener("click",function(){
+        if(ai&&window.__aiPlayBankSub){
+          var own=[];Q.forEach(function(q,qi){if(S[q.sec]&&S[q.sec].sub===i)own.push({text:q.text,opts:(QO[qi]||q.opts).slice(),ans:(QA[qi]!=null?QA[qi]:q.ans)})});
+          go.disabled=true;
+          Promise.resolve(window.__aiPlayBankSub(s.name,courseOf(y),own)).catch(function(){}).then(function(){go.disabled=false});
+          return;
+        }
+        start([i]);
+      });hd.appendChild(go);
       card.appendChild(hd);if(pn)card.appendChild(pn);
       if(ADM){
         /* admin / manager tools in one premium 3-dot menu */
@@ -5653,8 +5661,8 @@ const AIORG_SUBJ={
   "Electrical":["Circuit Theory","Electrical Machines","Power Systems","Power Electronics","Electronics","Digital Electronics","Control Systems","Electrical Measurements","Electromagnetics","Wiring and Safety"],
   "Mechanical":["Thermodynamics","Fluid Mechanics","Machine Design","Heat Transfer","Strength of Materials","Manufacturing Processes","Theory of Machines","Refrigeration and Air Conditioning","Engineering Mechanics","Internal Combustion Engines"],
   "IT":["Programming","Data Structures and Algorithms","Databases","Computer Networks","Operating Systems","Web Development","Computer Architecture","Cyber Security","Software Engineering","MS Office and Basics"],
-  "ACCA":["Financial Accounting","Management Accounting","Corporate Law","Taxation","Audit and Assurance","Financial Reporting","Financial Management","Performance Management","Business and Technology"],
-  "CA":["Financial Accounting","Cost and Management Accounting","Business Law","Taxation","Auditing","Corporate Reporting","Business Finance","Economics","Business Communication and Ethics"]
+  "ACCA":["Business and Technology (BT)","Management Accounting (MA)","Financial Accounting (FA)","Corporate and Business Law (LW)","Performance Management (PM)","Taxation (TX)","Financial Reporting (FR)","Audit and Assurance (AA)","Financial Management (FM)","Strategic Business Leader (SBL)","Strategic Business Reporting (SBR)","Advanced Financial Management (AFM)","Advanced Performance Management (APM)","Advanced Taxation (ATX)","Advanced Audit and Assurance (AAA)"],
+  "CA":["CAF 1 \u2013 Financial Accounting and Reporting","CAF 2 \u2013 Taxation Principles and Compliance","CAF 3 \u2013 Data, Systems and Risks","CAF 4 \u2013 Business Law Dynamics","CAF 5 \u2013 Management Accounting","CAF 6 \u2013 Corporate Reporting","CAF 7 \u2013 Business Insights and Analysis","CAF 8 \u2013 Audit and Assurance Essentials","CFAP 1 \u2013 Advanced Corporate Reporting","CFAP 2 \u2013 Corporate Laws and Governance","CFAP 3 \u2013 Sustainability Reporting and Assurance","CFAP 4 \u2013 Strategic Business Finance","CFAP 5 \u2013 Tax Practices and Planning","CFAP 6 \u2013 Audit, Assurance and Data"]
 };
 function aiOrgSubjText(){
   return "SUBJECT LIST (use the best fitting subject of the chosen course; if an existing subject of the site fits better, reuse its name; only if nothing fits, write a short new subject name): "+
@@ -5700,6 +5708,80 @@ async function aiOrgHold(list){
     await bt.commit();
   }
 }
+/* ---- New Civil folder: AI-made Civil subjects live here, not inside 1st/2nd/3rd year book folders ---- */
+const NEWCIVIL_K="newcivil";
+function ncCard(cur){
+  if(!Array.isArray(cur.CARDS))cur.CARDS=[];
+  let c=cur.CARDS.find(x=>x&&x.k===NEWCIVIL_K);
+  if(!c){c={k:NEWCIVIL_K,t:"New Civil",d:"AI Civil MCQs",course:"Civil"};cur.CARDS.push(c)}
+  return c;
+}
+/* move AI-made Civil subjects (code "Subject") out of the book-wise folders into New Civil; returns how many moved */
+function ncMigrate(cur){
+  if(!cur||!Array.isArray(cur.SUB)||!Array.isArray(cur.CARDS))return 0;
+  const AI=(typeof AIORG_SUBJ!=="undefined"&&AIORG_SUBJ.Civil||[]).map(x=>x.toLowerCase());
+  const ccx=c=>String((c&&c.course)||"").trim()||"Civil";
+  const cardBy={};cur.CARDS.forEach(c=>{if(c)cardBy[c.k]=c});
+  const todo=cur.SUB.filter(y=>{
+    if(!y||y.cat==="__tmp"||y.cat===NEWCIVIL_K||y.code!=="Subject")return false;
+    const cd=cardBy[y.cat];
+    if(!cd||ccx(cd)!=="Civil"||cd.k==="pp"||cd.t==="Past Papers")return false;
+    return AI.indexOf(String(y.name||"").toLowerCase())>=0||y.spq===60&&y.time===60&&!y.short2;
+  });
+  if(!todo.length)return 0;
+  const nc=ncCard(cur);todo.forEach(y=>{y.cat=nc.k});
+  return todo.length;
+}
+
+/* CA and ACCA: every paper/book is a subject with its own name, grouped like the real syllabus */
+const FIELD_PACK={
+  ACCA:[
+    {k:"acca-ak",t:"Applied Knowledge",d:"ACCA \u00b7 Applied Knowledge papers",subs:["Business and Technology (BT)","Management Accounting (MA)","Financial Accounting (FA)"]},
+    {k:"acca-as",t:"Applied Skills",d:"ACCA \u00b7 Applied Skills papers",subs:["Corporate and Business Law (LW)","Performance Management (PM)","Taxation (TX)","Financial Reporting (FR)","Audit and Assurance (AA)","Financial Management (FM)"]},
+    {k:"acca-sp",t:"Strategic Professional",d:"ACCA \u00b7 Strategic Professional papers",subs:["Strategic Business Leader (SBL)","Strategic Business Reporting (SBR)","Advanced Financial Management (AFM)","Advanced Performance Management (APM)","Advanced Taxation (ATX)","Advanced Audit and Assurance (AAA)"]}
+  ],
+  CA:[
+    {k:"ca-caf",t:"CAF",d:"ICAP \u00b7 Certificate in Accounting and Finance",subs:["CAF 1 \u2013 Financial Accounting and Reporting","CAF 2 \u2013 Taxation Principles and Compliance","CAF 3 \u2013 Data, Systems and Risks","CAF 4 \u2013 Business Law Dynamics","CAF 5 \u2013 Management Accounting","CAF 6 \u2013 Corporate Reporting","CAF 7 \u2013 Business Insights and Analysis","CAF 8 \u2013 Audit and Assurance Essentials"]},
+    {k:"ca-cfap",t:"CFAP",d:"ICAP \u00b7 Certified Finance and Accounting Professional",subs:["CFAP 1 \u2013 Advanced Corporate Reporting","CFAP 2 \u2013 Corporate Laws and Governance","CFAP 3 \u2013 Sustainability Reporting and Assurance","CFAP 4 \u2013 Strategic Business Finance","CFAP 5 \u2013 Tax Practices and Planning","CFAP 6 \u2013 Audit, Assurance and Data"]}
+  ],
+  IT:[{k:"it-sub",t:"Subjects",d:"IT subjects",reuse:1,subs:AIORG_SUBJ.IT.slice()}],
+  Mechanical:[{k:"mech-sub",t:"Subjects",d:"Mechanical subjects",reuse:1,subs:AIORG_SUBJ.Mechanical.slice()}],
+  Electrical:[{k:"elec-sub",t:"Subjects",d:"Electrical subjects",reuse:1,subs:AIORG_SUBJ.Electrical.slice()}],
+  "General Knowledge":[{k:"gk-sub",t:"Subjects",d:"General Knowledge subjects",reuse:1,subs:AIORG_SUBJ["General Knowledge"].slice()}]
+};
+/* past papers of the last 5 years (2022-2026) for CA and ACCA: exam-style practice, real papers can be added later by the admin */
+[2026,2025,2024,2023,2022].forEach(function(y){
+  FIELD_PACK.ACCA_PP=FIELD_PACK.ACCA_PP||[{k:"acca-pp",t:"Past Papers",d:"ACCA \u00b7 last 5 years (2022\u20132026) \u00b7 exam-style practice",subs:[]}];
+  FIELD_PACK.CA_PP=FIELD_PACK.CA_PP||[{k:"ca-pp",t:"Past Papers",d:"CA (ICAP) \u00b7 last 5 years (2022\u20132026) \u00b7 exam-style practice",subs:[]}];
+  FIELD_PACK.ACCA_PP[0].subs.push("ACCA Past Paper "+y);
+  FIELD_PACK.CA_PP[0].subs.push("CA Past Paper "+y);
+});
+FIELD_PACK.ACCA=FIELD_PACK.ACCA.concat(FIELD_PACK.ACCA_PP);delete FIELD_PACK.ACCA_PP;
+FIELD_PACK.CA=FIELD_PACK.CA.concat(FIELD_PACK.CA_PP);delete FIELD_PACK.CA_PP;
+function fieldEnsure(cur){
+  if(!Array.isArray(cur.CARDS))cur.CARDS=[];if(!Array.isArray(cur.SUB))cur.SUB=[];
+  let made=0;const lc=x=>String(x).toLowerCase();
+  const cname=c=>String((c&&c.course)||"").trim()||"Civil";
+  const resolve=course=>{
+    const names=Array.from(new Set(cur.CARDS.map(cname)));
+    const alt={"it":"information technology"};
+    return names.find(n=>lc(n)===lc(course)||lc(n).replace(/\s+engineering$/,"")===lc(course)||lc(n)===(alt[lc(course)]||"\u0000"))||course;
+  };
+  Object.keys(FIELD_PACK).forEach(course0=>FIELD_PACK[course0].forEach(cd=>{
+    const course=resolve(course0);let key=cd.k;
+    if(cd.reuse){
+      const ex=cur.CARDS.find(c=>c&&cname(c)===course&&c.k!=="pp"&&c.t!=="Past Papers");
+      if(ex)key=ex.k;
+    }
+    if(!cur.CARDS.some(c=>c&&c.k===key)){cur.CARDS.push({k:key,t:cd.t,d:cd.d,course});made++}
+    cd.subs.forEach(name=>{
+      if(cur.SUB.some(y=>y&&y.cat!=="__tmp"&&lc(y.name)===lc(name)&&(y.cat===key||(cd.reuse&&(()=>{const c=cur.CARDS.find(x=>x&&x.k===y.cat);return !!c&&cname(c)===course})()))))return;
+      cur.SUB.push({name,short:name.length>22?name.slice(0,22)+"\u2026":name,code:"Subject",spq:60,time:60,cat:key});made++;
+    });
+  }));
+  return made;
+}
+function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)}
 const AUTOORG={busy:false,started:false};
 async function aiOrgCommit(items){
   if(!BANK_JSON)throw new Error("There is no question bank yet. Upload a bank first (Questions tab).");
@@ -5714,19 +5796,26 @@ async function aiOrgCommit(items){
   };
   const mkKey=()=>"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   const cardOfCourse=(course,paper)=>{
+    if(!paper&&course==="Civil")return ncCard(cur);
     let c=cur.CARDS.find(x=>cc(x)===course&&(paper?(x.k==="pp"||x.t==="Past Papers"):(x.k!=="pp"&&x.t!=="Past Papers")));
     if(c)return c;
     c={k:mkKey(),t:paper?"Past Papers":"Subjects",d:course+(paper?" past papers":" subjects"),course};
     cur.CARDS.push(c);return c;
   };
   const subIdx=(course,name,paper)=>{
-    const inCourse=y=>{const cd=cur.CARDS.find(x=>x.k===y.cat);return !!cd&&cc(cd)===course};
+    const inCourse=y=>{const cd=cur.CARDS.find(x=>x.k===y.cat);return !!cd&&cc(cd)===course&&(paper||course!=="Civil"||cd.k===NEWCIVIL_K)};
     let si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&lc(y.name)===lc(name)&&inCourse(y));
     if(si>=0)return si;
+    if(!paper&&course!=="Civil"&&name.length>=3){
+      const ln=lc(name);
+      si=cur.SUB.findIndex(y=>y.cat!=="__tmp"&&y.code==="Subject"&&!/-pp$/.test(String(y.cat))&&inCourse(y)&&(lc(y.name).indexOf(ln)>=0||(y.name.length>=5&&ln.indexOf(lc(y.name))>=0)));
+      if(si>=0)return si;
+    }
     const card=cardOfCourse(course,paper);
     cur.SUB.push({name,short:name.length>22?name.slice(0,22)+"\u2026":name,code:paper?"Paper":"Subject",spq:60,time:60,cat:card.k});
     return cur.SUB.length-1;
   };
+  const moved=fieldSetup(cur);
   const seen=new Set(cur.Q0.map(q=>q.text.trim().toLowerCase())),secOf=new Map(),done=new Map();let n=0,d=0;
   for(const it of items){
     const paper=it.kind==="paper",course=courseName(it.course),sname=cut(it.subject,80)||"General",cname=paper?sname:(cut(it.chapter,80)||"Chapter 1");
@@ -5738,7 +5827,7 @@ async function aiOrgCommit(items){
     cur.Q0.push({text,opts:it.options.map(x=>String(x).trim().slice(0,300)),ans:it.correct,sec:ci,test:cname});n++;
     const dk=course+" \u2192 "+(paper?"Past Papers \u2192 ":sname+" \u2192 ")+cname;done.set(dk,(done.get(dk)||0)+1);
   }
-  if(n)await publishBank(cur);
+  if(n||moved)await publishBank(cur);
   return {n,d,done};
 }
 async function aimcqAutoClassify(cfg,rows,subs){
@@ -5846,7 +5935,8 @@ function aimcqAutoPanel(host){
   const rv=el("input"),rvRow=el("label","label","");rv.type="checkbox";rv.checked=true;rvRow.style.cssText="display:flex;gap:8px;align-items:center;margin:10px 0";
   rvRow.append(rv,document.createTextNode("Admin approval first: AI MCQs that users practise come to the waiting list below; you tap Approve, then Run now saves them in the bank, sorted in order"));
   const now=el("button","btn primary","Run now");now.type="button";
-  host.append(h,row,rvRow,now,st,list);
+  const mv=el("button","btn","Organize folders: New Civil, CA, ACCA, IT, Mechanical, Electrical, GK");mv.type="button";mv.style.marginLeft="8px";
+  host.append(h,row,rvRow,now,mv,st,list);
   const say=t=>{st.textContent=t};
   async function load(){
     try{
@@ -5868,6 +5958,16 @@ function aimcqAutoPanel(host){
     const r=await aimcqAutoRun(true);
     say(r.skip?(r.note||"Nothing to do."):(r.saved+" MCQs saved."+(r.sent?" "+r.sent+" sent to your review list (AI MCQs, waiting for approval).":"")+(r.held?" \u26A0 "+r.held+" need your review ("+(r.repeat||0)+" repeated, "+(r.answer||0)+" answer doubtful) in the waiting list below.":"")+(r.note?" "+r.note:"")+(r.saved?" Reload the app to see them.":"")));
     now.disabled=false;await load();
+  };
+  mv.onclick=async()=>{
+    if(!BANK_JSON){say("There is no question bank yet.");return}
+    mv.disabled=true;say("Moving\u2026");
+    try{
+      const cur=JSON.parse(BANK_JSON),n=fieldSetup(cur);
+      if(!n){say("Everything is already organized.")}
+      else{await publishBank(cur);say(n+" change(s) saved: New Civil, CA/ACCA subjects + 5-year past papers, IT, Mechanical, Electrical and GK subjects are in place. Reload the app to see it.")}
+    }catch(e){say(e&&e.code?admDeny(e):String((e&&e.message)||e))}
+    mv.disabled=false;
   };
   window.__autoOrgRefresh=load;load();
   return load;
@@ -6096,7 +6196,7 @@ function aimcqPool(host){
           cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat});return cur.SUB.length-1;
         }
         const card=cardFor(s);
-        cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:card.k});
+        cur.SUB.push({name:s,short,code:"Subject",spq:60,time:60,cat:(courseOfC(card)==="Civil"&&card.k!=="pp"&&card.t!=="Past Papers")?ncCard(cur).k:card.k});
         return cur.SUB.length-1;
       };
       const done=[];let n=0,d=0;
@@ -6194,6 +6294,47 @@ window.__aiPlaySubject=async function(subject){
   };
   if(buf.length<10)setTimeout(more,3000);
   window.__playAi(subject,first.map(toQ));
+};
+
+/* subject practice for AI-type subjects (New Civil, CA, ACCA ...): opens with 10 MCQs of this subject (own bank MCQs first, AI fills the rest); every answered MCQ brings 3 new */
+window.__aiPlayBankSub=async function(label,course,own){
+  if(!window.__playAi)return;
+  if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
+  const field=String(course||"Civil").trim()||"Civil";
+  const lb0=String(label||"").trim();
+  const subject=/past paper/i.test(lb0)
+    ?field+": exam-style MCQs in the style of recent past papers (mixed papers, "+lb0.replace(/^.*past paper\s*/i,"")+" sitting)"
+    :(/^civil/i.test(field)?"Civil Engineering":field)+": "+lb0;
+  const toM=x=>({question:String(x.text||""),question_urdu:"",options:Array.isArray(x.opts)?x.opts.map(String):[],correct:x.ans,explanation:""});
+  const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
+  const seen=aiqSeenS(),seenS=new Set(Array.from(seen)),mine=(own||[]).map(toM).filter(aiqOk);
+  for(let i=mine.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[mine[i],mine[r]]=[mine[r],mine[i]]}
+  const fresh=mine.filter(m=>!seen.has(aiqKey(m))),old=mine.filter(m=>seen.has(aiqKey(m)));
+  mine.forEach(m=>seenS.add(aiqKey(m)));
+  const buf=fresh.slice();let first=buf.splice(0,10);
+  if(first.length<10){
+    let live=[];try{live=await aiqLive(10-first.length,subject)}catch(_){}
+    live=live.filter(m=>{const k=aiqKey(m);if(seenS.has(k))return false;seenS.add(k);return true});
+    if(live.length){first=first.concat(live);aiqPoolSave(live,subject)}
+  }
+  if(first.length<10&&old.length)first=first.concat(old.splice(0,10-first.length));
+  if(!first.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
+  aiqMarkS(first);
+  let busy=false;
+  const more=async()=>{
+    if(busy)return;busy=true;
+    try{const r=(await aiqLive(20,subject)).filter(m=>{const k=aiqKey(m);if(seenS.has(k))return false;seenS.add(k);return true});buf.push(...r);aiqPoolSave(r,subject)}catch(_){}
+    busy=false;
+  };
+  window.__aiqNext=()=>{};
+  window.__aiqDone=()=>{
+    if(buf.length<3&&old.length)buf.push(...old.splice(0,10));
+    const add=buf.splice(0,3);aiqMarkS(add);
+    if(add.length&&window.__aiAppend)window.__aiAppend(add.map(toQ));
+    if(buf.length<10)more();
+  };
+  if(buf.length<10)setTimeout(more,3000);
+  window.__playAi(String(label||subject),first.map(toQ));
 };
 function buildReports(host){
   const st=el("div","label st"),bar=el("div"),list=el("div");
