@@ -1373,7 +1373,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var TOTAL=0, NEG=0.25, LET=["A","B","C","D","E","F","G","H"];
   var bv=0;
   function validQ(q){return q&&typeof q.text==="string"&&q.text.trim()&&Array.isArray(q.opts)&&q.opts.length>=2&&q.opts.length<=8&&q.opts.every(function(o){return typeof o==="string"&&o.trim()})&&Number.isInteger(q.ans)&&q.ans>=0&&q.ans<q.opts.length&&(Number.isInteger(q.sec)&&q.sec>=0&&q.sec<S.length)}
-  function cleanQ(q){return {text:q.text.trim(),opts:q.opts.map(function(o){return o.trim()}),ans:q.ans,sec:q.sec,test:(typeof q.test==="string"&&q.test.trim())?q.test.trim():"Custom"}}
+  function cleanQ(q){var o={text:q.text.trim(),opts:q.opts.map(function(o){return o.trim()}),ans:q.ans,sec:q.sec,test:(typeof q.test==="string"&&q.test.trim())?q.test.trim():"Custom"};if(q.src==="ai"||q.src==="search"){o.src=q.src;if(typeof q.via==="string"&&q.via)o.via=q.via.slice(0,30)}return o}
   var BKEY="ppsc-civil-allinone-qbank-v1";
   /* question bank comes from the server (Firestore); no local override */
   
@@ -1691,7 +1691,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     /* freeze where every subject lives so heuristics never move it later */
     SUB.forEach(function(s,i){if(!s.cat||!YEARS.some(function(y){return y.k===s.cat}))s.cat=yearOf(i)});
     return {S:S,SUB:SUB,CARDS:YEARS.map(function(y){return {k:y.k,t:y.t,d:y.d||"",course:y.course||""}}),
-      Q0:Q.map(function(q,i){return {text:q.text,opts:(QO[i]||q.opts).slice(),ans:(QA[i]!=null?QA[i]:q.ans),sec:q.sec,test:q.test}})};
+      Q0:Q.map(function(q,i){var o={text:q.text,opts:(QO[i]||q.opts).slice(),ans:(QA[i]!=null?QA[i]:q.ans),sec:q.sec,test:q.test};if(q.src==="ai"||q.src==="search"){o.src=q.src;if(q.via)o.via=q.via}return o})};
   }
   function publishNow(){
     if(!window.__publishBank)return Promise.reject(new Error("Only an admin or manager can publish."));
@@ -2497,6 +2497,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     try{urRefresh(id)}catch(e){}
     $("#qno").textContent="Question "+(pos+1)+" of "+order.length;
     $("#qmeta").textContent=S[q.sec].code+" · "+q.test;
+    try{
+      var bd=document.getElementById("srcBadge");
+      if(!bd){bd=document.createElement("span");bd.id="srcBadge";document.getElementById("qmeta").parentNode.appendChild(bd)}
+      if(q.src==="search"){bd.className="label srcb srcb-s";bd.textContent="\uD83D\uDD0E AI + Web search"+(q.via?" \u00b7 "+q.via:"");bd.hidden=false}
+      else if(q.src==="ai"){bd.className="label srcb srcb-a";bd.textContent="\uD83E\uDD16 AI generated";bd.hidden=false}
+      else{bd.hidden=true}
+    }catch(e){}
     $("#qtext").textContent=q.text;
     var box=$("#opts");box.textContent="";
     q.opts.forEach(function(o,i){
@@ -5915,7 +5922,7 @@ async function aiOrgCommit(items){
     const si=subIdx(course,sname,paper),sk=si+"\u0001"+cname;
     let ci=secOf.get(sk);
     if(ci==null){ci=cur.S.findIndex(y=>y.sub===si&&y.name===cname);if(ci<0){cur.S.push({sub:si,name:cname,code:cname.slice(0,20)});ci=cur.S.length-1}secOf.set(sk,ci)}
-    cur.Q0.push({text,opts:it.options.map(x=>String(x).trim().slice(0,300)),ans:it.correct,sec:ci,test:cname});n++;
+    cur.Q0.push(Object.assign({text,opts:it.options.map(x=>String(x).trim().slice(0,300)),ans:it.correct,sec:ci,test:cname},{src:it.src==="search"?"search":"ai"},it.via?{via:String(it.via).slice(0,30)}:{}));n++;
     const dk=course+" \u2192 "+(paper?"Past Papers \u2192 ":sname+" \u2192 ")+cname;done.set(dk,(done.get(dk)||0)+1);
   }
   if(n||moved)await publishBank(cur);
@@ -6103,7 +6110,8 @@ function aimcqAutoPanel(host){
       cb.checked=d.enabled!==false;rv.checked=d.review!==false;wr.checked=d.writer===true;list.textContent="";
       const tdy=new Date().toISOString().slice(0,10);
       const sv=d.serverAt&&d.serverAt.toMillis&&Date.now()-d.serverAt.toMillis()<3*60*1000;
-      wst.textContent=(d.writer===true?(sv?"AI Writer is ON (running on the server, works even when the site is closed)":"AI Writer is ON"):"AI Writer is OFF")+" \u00b7 today "+(d.writerDay===tdy?(d.writerDayN||0):0)+" \u00b7 total "+(d.writerTotal||0)+(d.writerLast?" \u00b7 last: "+d.writerLast:"");
+      let cA=0,cS=0;try{const bb=JSON.parse(BANK_JSON||"null");(bb&&bb.Q0||[]).forEach(q=>{if(q.src==="search")cS++;else if(q.src==="ai")cA++})}catch(_){}
+      wst.textContent="In the bank: "+cS+" AI + web search \u00b7 "+cA+" AI only.  "+(d.writer===true?(sv?"AI Writer is ON (running on the server, works even when the site is closed)":"AI Writer is ON"):"AI Writer is OFF")+" \u00b7 today "+(d.writerDay===tdy?(d.writerDayN||0):0)+" \u00b7 total "+(d.writerTotal||0)+(d.writerLast?" \u00b7 last: "+d.writerLast:"");
       const log=Array.isArray(d.log)?d.log:[];
       if(!log.length){list.appendChild(el("div","label","No reports yet."));return}
       log.slice(0,12).forEach(r=>{
@@ -8009,7 +8017,14 @@ el.innerHTML='<div class="orb"><i></i><i></i><i></i><i></i><b></b></div><div cla
 document.body.appendChild(el);t=el.querySelector(".st");sub=el.querySelector(".sb")}
 window.__siri={show:function(a,b){mk();t.textContent=a||"Loading\u2026";sub.textContent=b||"";el.classList.add("on");clearTimeout(timer);timer=setTimeout(function(){window.__siri.hide()},60000)},
 set:function(a,b){if(!el)return;if(a!=null)t.textContent=a;if(b!=null)sub.textContent=b},
-hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</script><style id="fitCss">
+hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</script><style id="srcCss">
+.srcb{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap}
+.srcb[hidden]{display:none}
+.srcb-s{background:rgba(37,99,235,.14);color:#1d4ed8;border:1px solid rgba(37,99,235,.35)}
+.srcb-a{background:rgba(124,58,237,.13);color:#6d28d9;border:1px solid rgba(124,58,237,.35)}
+@media (prefers-color-scheme:dark){.srcb-s{color:#93c5fd}.srcb-a{color:#c4b5fd}}
+</style>
+<style id="fitCss">
 /* phone: the whole question (statement, options, Previous/Next) fits on one screen; Next stays pinned at the bottom */
 .optsBtn{display:none}
 @media (max-width:720px){
