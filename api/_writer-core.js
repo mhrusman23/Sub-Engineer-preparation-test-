@@ -72,11 +72,78 @@ function parseArr(text) {
 }
 const cut = (x, k) => String(x == null ? "" : x).replace(/\s+/g, " ").trim().slice(0, k);
 
-async function generate(cfg, label, n, have) {
+/* ---- web search: uses whichever search keys exist in the environment (Vercel Environment Variables) ----
+   order: TAVILY_API_KEY, EXA_API_KEY, FIRECRAWL_API_KEY, BRAVE_API_KEY, SERPER_API_KEY. If one fails or its quota is over, the next one is used.
+   The AI only learns which FACTS are tested; it writes NEW questions with NEW wrong options. */
+const clip = (x) => String(x || "").replace(/\s+/g, " ").trim().slice(0, 700);
+const SEARCH = [
+  { name: "Tavily", env: "TAVILY_API_KEY", async run(q, k) {
+      const r = await F("https://api.tavily.com/search", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + k }, body: JSON.stringify({ query: q, search_depth: "basic", max_results: 6 }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return ((await r.json()).results || []).map((x) => clip(x.content));
+  } },
+  { name: "Exa", env: "EXA_API_KEY", async run(q, k) {
+      const r = await F("https://api.exa.ai/search", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": k }, body: JSON.stringify({ query: q, numResults: 6, contents: { text: { maxCharacters: 700 } } }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return ((await r.json()).results || []).map((x) => clip(x.text || (x.highlights || []).join(" ")));
+  } },
+  { name: "Firecrawl", env: "FIRECRAWL_API_KEY", async run(q, k) {
+      const r = await F("https://api.firecrawl.dev/v2/search", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + k }, body: JSON.stringify({ query: q, limit: 6 }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json(), arr = (j.data && (j.data.web || j.data)) || [];
+      return (Array.isArray(arr) ? arr : []).map((x) => clip(x.description || x.markdown || x.title));
+  } },
+  { name: "Brave", env: "BRAVE_API_KEY", async run(q, k) {
+      const r = await F("https://api.search.brave.com/res/v1/web/search?count=6&q=" + encodeURIComponent(q), { headers: { Accept: "application/json", "X-Subscription-Token": k } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return (((await r.json()).web || {}).results || []).map((x) => clip([x.description].concat(x.extra_snippets || []).join(" ")));
+  } },
+  { name: "Serper", env: "SERPER_API_KEY", async run(q, k) {
+      const r = await F("https://google.serper.dev/search", { method: "POST", headers: { "Content-Type": "application/json", "X-API-KEY": k }, body: JSON.stringify({ q, num: 6 }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return ((await r.json()).organic || []).map((x) => clip(x.snippet));
+  } },
+];
+async function searchWeb(query) {
+  const errs = [];
+  for (const p of SEARCH) {
+    const k = String(process.env[p.env] || "").trim();
+    if (!k) continue;
+    try {
+      const items = (await p.run(query, k)).filter(Boolean).map((text) => ({ text }));
+      if (items.length) return { items, via: p.name };
+      errs.push(p.name + ": no results");
+    } catch (e) { errs.push(p.name + ": " + String((e && e.message) || e).slice(0, 40)); }
+  }
+  if (errs.length) throw new Error(errs.join(" | "));
+  return null;   // no search key at all
+}
+async function getFacts(label) {
+  if (!SEARCH.some((p) => String(process.env[p.env] || "").trim())) return null;
+  const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 100);
+  const ref = db.doc("writer_cache/" + id);
+  const sn = await ref.get(), d = sn.exists ? sn.data() : null;
+  const at = d && d.at && d.at.toMillis ? d.at.toMillis() : 0;
+  if (d && Array.isArray(d.items) && d.items.length && Date.now() - at < 7 * 24 * 3600 * 1000) return { items: d.items, via: d.via || "" };   // one search per subject per week
+  const res = await searchWeb(label + " important exam MCQs with answers");
+  if (res && res.items.length) await ref.set({ at: FV.serverTimestamp(), items: res.items, via: res.via });
+  return res;
+}
+async function generate(cfg, label, n, have, examples, facts) {
   const system = "You write exam MCQs for Pakistani competitive tests (PPSC, FPSC, NTS, Sub Engineer) in engineering, IT, accounting and finance (ACCA, CA) and general knowledge. Write MCQs only for the subject the user names. Reply with ONLY a valid JSON array, no markdown and no other text.";
   const avoid = have.slice(-20).map((x) => String(x).slice(0, 60)).join(" | ");
   const prompt = "Write exactly " + n + " new multiple-choice questions for the subject: " + label + ".\n" +
-    "Focus on important, frequently tested exam topics. Write every question in your own original wording (never copy from books or past papers). Each question must have exactly one clearly correct option; double-check the answer before writing it.\n" +
+    "Focus on important, frequently tested exam topics. Each question must have exactly one clearly correct option; double-check the answer before writing it.\n" +
+    (examples && examples.length
+      ? "Real exam-style sample questions from this site (use them ONLY as a guide for topic, difficulty and style):\n" +
+        examples.map((e, i) => (i + 1) + ". " + e.question + " | " + e.options.map((o, j) => "ABCD".charAt(j) + ") " + o).join("  ") + " | answer: " + "ABCD".charAt(e.correct)).join("\n") +
+        "\nWrite NEW questions in the same exam style that test the same kind of concepts, but change the wording, numbers, names and scenario, and write fresh options. Never reuse a sample's text or its options.\n"
+      : "Write every question in your own original wording (never copy from books or past papers).\n") +
+    (facts && facts.length
+      ? "Reference material found on the web (it may contain exam MCQs or notes). Use it ONLY to learn which facts and answers are commonly tested:\n" +
+        facts.map((x, i) => "[" + (i + 1) + "] " + x.text).join("\n") +
+        "\nFor every question: pick one fact from the material, write the question in YOUR OWN WORDS (never copy a source sentence), keep the correct answer as that fact, and INVENT 3 new plausible wrong options of your own. Never copy any source question or any of its options. Skip anything you are not sure is correct.\n"
+      : "") +
     (avoid ? "Do not repeat these: " + avoid + "\n" : "") +
     'Each array item must have exactly these keys: "question" (English), "options" (array of exactly 4 short strings), "correct" (number, 0-based index of the right option), "explanation" (1-2 simple English sentences).';
   const arr = parseArr(await callAI(cfg, system, prompt, 4096));
@@ -89,10 +156,11 @@ async function generate(cfg, label, n, have) {
   });
   return out.slice(0, n);
 }
-async function verify(cfg, label, rows) {
+async function verify(cfg, label, rows, facts) {
   const system = "You are a strict exam reviewer. Reply with ONLY a valid JSON array, no markdown and no other text.";
   const list = rows.map((r, i) => i + ". " + r.question + " | " + r.options.map((o, j) => "ABCD".charAt(j) + ") " + o).join("  ") + " | marked answer: " + "ABCD".charAt(r.correct)).join("\n");
-  const prompt = "Subject: " + label + '. Check each MCQ independently, solving it yourself first. For each return {"i":number,"ok":true or false,"answer":0-based index of the one option you believe is correct}. ok is true ONLY if exactly one option is clearly correct, it is the marked answer, the wording is unambiguous, and the fact is standard textbook knowledge (not a rate, date, limit or rule that changes by year or country).\n\nMCQs:\n' + list;
+  const ctx = facts && facts.length ? "Reference excerpts that may help you judge (they can be wrong too):\n" + facts.map((x, i) => "[" + (i + 1) + "] " + x.text.slice(0, 300)).join("\n") + "\n\n" : "";
+  const prompt = ctx + "Subject: " + label + '. Check each MCQ independently, solving it yourself first. For each return {"i":number,"ok":true or false,"answer":0-based index of the one option you believe is correct}. ok is true ONLY if exactly one option is clearly correct, it is the marked answer, the wording is unambiguous, and the fact is standard textbook knowledge (not a rate, date, limit or rule that changes by year or country).\n\nMCQs:\n' + list;
   const arr = parseArr(await callAI(cfg, system, prompt, 1500));
   return rows.filter((r, i) => {
     const m = (Array.isArray(arr) ? arr : []).find((x) => x && x.i === i);
@@ -133,10 +201,27 @@ function mergeQueue(bank, rows) {
     if (si < 0) continue;
     let ci = bank.S.findIndex((c) => c && c.sub === si && c.name === CHAPTER);
     if (ci < 0) { bank.S.push({ sub: si, name: CHAPTER, code: CHAPTER }); ci = bank.S.length - 1; }
-    bank.Q0.push({ text: r.question, opts: r.options.slice(), ans: r.correct, sec: ci, test: CHAPTER });
+    bank.Q0.push(Object.assign({ text: r.question, opts: r.options.slice(), ans: r.correct, sec: ci, test: CHAPTER }, r.src ? { src: r.src } : {}, r.via ? { via: r.via } : {}));
     seen.add(key); n++;
   }
   return n;
+}
+/* sample questions from the site's own bank (same subject first, then the course's past papers): used only as a style guide */
+function pickExamples(bank, pick) {
+  const S = bank.S || [], lc = (x) => String(x).toLowerCase();
+  const cardBy = {}; (bank.CARDS || []).forEach((c) => { if (c) cardBy[c.k] = c; });
+  const own = [], paper = [];
+  bank.Q0.forEach((q) => {
+    const s = S[q.sec]; if (!s) return;
+    const y = bank.SUB[s.sub]; if (!y || y.code === "merged") return;
+    if (s.sub === pick.i) { if (s.name !== CHAPTER) own.push(q); return; }
+    const cd = cardBy[y.cat];
+    if (cd && (cd.k === "pp" || cd.t === "Past Papers" || /-pp$/.test(String(cd.k))) && lc(String(cd.course || "Civil")) === lc(pick.course)) paper.push(q);
+  });
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  let pool = shuffle(own).slice(0, 4);
+  if (pool.length < 3) pool = pool.concat(shuffle(paper).slice(0, 4 - pool.length));
+  return pool.map((q) => ({ question: String(q.text).slice(0, 240), options: (q.opts || []).map((o) => String(o).slice(0, 80)), correct: q.ans }));
 }
 function pickTarget(bank, queued, rot) {
   const cardBy = {};
@@ -187,10 +272,12 @@ async function runOnce() {
       try {
         const have = lb.bank.Q0.filter((q) => lb.bank.S[q.sec] && lb.bank.S[q.sec].sub === pick.i).map((q) => q.text)
           .concat(queued.filter((r) => r.subject === pick.y.name).map((r) => r.question));
-        const rows = await generate(cfg, label, PER_RUN, have);
-        const good = rows.length ? await verify(cfg, label, rows) : [];
+        let facts = null, via = "";
+        try { const fx = await getFacts(label); if (fx && fx.items && fx.items.length) { facts = fx.items; via = fx.via || ""; } } catch (e) { note = "Search: " + String((e && e.message) || e).slice(0, 100); }
+        const rows = await generate(cfg, label, PER_RUN, have, pickExamples(lb.bank, pick), facts);
+        const good = rows.length ? await verify(cfg, label, rows, facts) : [];
         const b = db.batch();
-        good.forEach((r) => b.set(db.collection("writer_queue").doc(), { subject: pick.y.name, cat: pick.cat, course: pick.course, question: r.question, options: r.options, correct: r.correct, createdAt: FV.serverTimestamp() }));
+        good.forEach((r) => b.set(db.collection("writer_queue").doc(), { subject: pick.y.name, cat: pick.cat, course: pick.course, question: r.question, options: r.options, correct: r.correct, src: facts ? "search" : "ai", via: facts ? via : "", createdAt: FV.serverTimestamp() }));
         if (good.length) await b.commit();
         saved = good.length;
         if (!good.length) note = "No MCQ passed the check.";
@@ -222,4 +309,4 @@ async function runOnce() {
     }, { merge: true });
   return { ok: true, saved, published, subject: subj, note };
 }
-module.exports = { init, runOnce, _test: { mergeQueue, pickTarget, parseArr } };
+module.exports = { init, runOnce, _test: { mergeQueue, pickTarget, parseArr, pickExamples } };
