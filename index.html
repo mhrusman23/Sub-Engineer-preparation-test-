@@ -4106,7 +4106,7 @@ function aiKey(){
     try{const c=await getDoc(doc(db,"meta","config"));if(c.exists()&&c.data().aiFree===false)bk=false}catch(e){}
     if(!IS_ADMIN)return {key:"",provider:"proxy",model:"",baseUrl:"",backup:bk};
     const d=await getDoc(doc(db,"meta","ai")),x=d.exists()?d.data():{},k=String(x.key||"").trim();
-    const extra=(Array.isArray(x.extra)?x.extra:[]).filter(e=>e&&String(e.key||"").trim()).slice(0,2).map(e=>({key:String(e.key).trim(),provider:e.provider||"auto",model:String(e.model||"").trim(),baseUrl:String(e.baseUrl||"").trim()}));
+    const extra=(Array.isArray(x.extra)?x.extra:[]).filter(e=>e&&String(e.key||"").trim()).slice(0,10).map(e=>({key:String(e.key).trim(),provider:e.provider||"auto",model:String(e.model||"").trim(),baseUrl:String(e.baseUrl||"").trim()}));
     return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim(),backup:bk,extra};
   })().catch(e=>{aiKeyP=null;throw e});
   return aiKeyP;
@@ -4724,17 +4724,18 @@ function userbar(){
   br.style.cursor="pointer";br.title="Home / Dashboard";br.onclick=()=>{goHomeHard()};
   cols.appendChild(br);cols.appendChild(el("span","em",(P.name||ME)+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"")));
   lf.appendChild(avb);lf.appendChild(cols);u.appendChild(lf);
-  const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center";
-  if(window.__VISITOR){const lb=el("button","btn primary","\u{1F510} Login");lb.type="button";lb.onclick=()=>goLogin();r.appendChild(lb)}
+  const r=el("span");r.style.cssText="display:flex;gap:8px;align-items:center;flex:1 1 100%;flex-wrap:nowrap;min-width:0";
+  const fitBtn=b=>{b.style.cssText+=";flex:1 1 0;min-width:0;justify-content:center;white-space:nowrap;padding:4px 8px;overflow:hidden;text-overflow:ellipsis"};
+  if(window.__VISITOR){const lb=el("button","btn primary","\u{1F510} Login");lb.type="button";lb.onclick=()=>goLogin();fitBtn(lb);r.appendChild(lb)}
   if(IS_ADMIN||REAL_OWNER){
     const cur=PV?"user":(PM?"manager":(REAL_OWNER?"admin":"manager"));
     const lab={admin:"\u{1F6E0}\uFE0F Admin",manager:"\u{1F9D1}\u200D\u{1F4BC} Manager",user:"\u{1F441}\uFE0F User"};
     const md=el("button","btn",lab[cur]+" \u25BE");md.type="button";md.title="Mode badlein: Admin / Manager / User";
     md.onclick=()=>openModeChooser();
-    r.appendChild(md);
+    fitBtn(md);r.appendChild(md);
   }
-  {const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"Premium"));lk.type="button";lk.title="Look badlein: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};lk.style.cssText="position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:14px;padding:4px 14px;z-index:3";u.appendChild(lk)}
-  const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();r.appendChild(mb);
+  {const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"Premium"));lk.type="button";lk.title="Look badlein: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};lk.style.cssText="position:static!important;top:auto!important;right:auto!important;flex:1 1 0;min-width:0;justify-content:center;white-space:nowrap;padding:4px 8px";r.appendChild(lk)}
+  const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();fitBtn(mb);r.appendChild(mb);
   u.appendChild(r);document.body.appendChild(u);
 }
 /* ---- ☰ menu drawer + account settings panel (v3.3.0) ---- */
@@ -4806,6 +4807,7 @@ function openMenu(){
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if(IS_ADMIN&&!PV)mi("\u{1F916} AI MCQs (approve / pool)",()=>openAdmin("aimcq"));
   if(IS_OWNER&&!PV)mi("\u2699\uFE0F Settings (important)",()=>openAdmin("settings"));
+  if(IS_OWNER&&!PV)mi("\u{1F511} AI backup keys (3 + add more)",()=>openAiBackup());
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
   if(IS_OWNER&&!PV&&!JOKES_OFF)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
@@ -4820,6 +4822,71 @@ function openMenu(){
   bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
   dl.appendChild(bx);
   document.body.appendChild(dl);
+}
+/* ===== AI backup keys: 3 slots + "Add more" (saved in meta/ai.extra, used one after another if the main key hits its limit) ===== */
+function openAiBackup(){
+  const old=document.getElementById("aibk");if(old){old.remove();return}
+  const ov=el("div");ov.id="aibk";ov.setAttribute("role","dialog");
+  ov.style.cssText="position:fixed;inset:0;z-index:100003;background:rgba(8,12,26,.55);overflow:auto;-webkit-overflow-scrolling:touch";
+  ov.addEventListener("click",e=>{if(e.target===ov)ov.remove()});
+  const bx=el("div");bx.style.cssText="max-width:520px;margin:0 auto;min-height:100%;background:#fff;color:#13222d;padding:max(14px,env(safe-area-inset-top)) 14px 28px;box-sizing:border-box";
+  const hd=el("div");hd.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px";
+  const ti=el("b","","\u{1F511} AI backup keys");ti.style.fontSize="18px";
+  const cl=el("button","btn","\u2715 Close");cl.type="button";cl.onclick=()=>ov.remove();
+  hd.append(ti,cl);
+  const info=el("div","label","If the main key (Settings) hits its limit, these keys are used one after another. The free AI is the last backup.");
+  const list=el("div");
+  const blocks=[];
+  const OPTS=[["auto","Provider: Auto-detect"],["gemini","Google Gemini - AI Studio key"],["vertex","Google Cloud Vertex AI Express key only"],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]];
+  function addBlock(e){
+    e=e||{};const n=blocks.length+1;
+    const box=el("div");box.style.cssText="border:1px solid #dde3ee;border-radius:14px;padding:10px;margin:10px 0;background:#f7f9fd";
+    const lab=el("div","label","Backup key "+n);lab.style.fontWeight="800";
+    const w=el("div");w.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px";
+    const k=el("input");k.type="password";k.placeholder="Paste API key "+n;k.autocomplete="off";k.spellcheck=false;k.style.flex="1 1 200px";k.value=e.key||"";k.setAttribute("aria-label","Backup AI key "+n);
+    const sh=el("button","btn","Show");sh.type="button";sh.onclick=()=>{k.type=k.type==="password"?"text":"password";sh.textContent=k.type==="password"?"Show":"Hide"};
+    const tt=el("button","btn","Test");tt.type="button";
+    const cx=el("button","btn","Clear");cx.type="button";
+    w.append(k,sh,tt,cx);
+    const p=el("select");p.style.cssText="width:100%;margin-top:6px";p.setAttribute("aria-label","Provider of backup key "+n);
+    OPTS.forEach(o=>{const op=el("option","",o[1]);op.value=o[0];p.appendChild(op)});p.value=e.provider||"auto";
+    const m=el("input");m.type="text";m.placeholder="Model (optional)";m.style.cssText="width:100%;margin-top:6px";m.value=e.model||"";
+    const b=el("input");b.type="text";b.placeholder="Base URL, OpenAI-compatible only (e.g. https://api.groq.com/openai/v1)";b.style.cssText="width:100%;margin-top:6px";b.value=e.baseUrl||"";
+    const s2=el("div","label");
+    const sync=()=>{b.style.display=p.value==="openai"?"":"none"};p.onchange=sync;sync();
+    tt.onclick=async()=>{
+      const kk=k.value.trim();if(!kk){s2.textContent="Paste a key first.";return}
+      tt.disabled=true;s2.textContent="Testing...";
+      try{const r=await window.__aiTest({key:kk,provider:p.value,model:m.value.trim(),baseUrl:b.value.trim()});s2.textContent=r?"Key works \u2714 AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
+      catch(er){s2.textContent=window.__aiErr(er)}
+      tt.disabled=false;
+    };
+    cx.onclick=()=>{k.value="";m.value="";b.value="";p.value="auto";sync();s2.textContent="Cleared. Tap Save keys to apply."};
+    box.append(lab,w,p,m,b,s2);list.appendChild(box);
+    blocks.push({k,p,m,b});
+  }
+  const more=el("button","btn","\uFF0B Add more");more.type="button";more.style.cssText="width:100%;justify-content:center;margin:4px 0 10px";
+  more.onclick=()=>{addBlock();const l=list.lastChild;if(l&&l.scrollIntoView)l.scrollIntoView({behavior:"smooth",block:"center"})};
+  const sv=el("button","btn primary","Save keys");sv.type="button";sv.style.cssText="width:100%;justify-content:center";
+  const st=el("div","label");st.style.marginTop="8px";
+  bx.append(hd,info,list,more,sv,st);ov.appendChild(bx);document.body.appendChild(ov);
+  st.textContent="Loading...";
+  (async()=>{
+    let ex=[];
+    try{const d=await getDoc(doc(db,"meta","ai"));const x=d.exists()?d.data():{};ex=(Array.isArray(x.extra)?x.extra:[]).filter(e=>e&&String(e.key||"").trim());st.textContent=""}
+    catch(e){st.textContent="Error: "+(e.code||e.message)}
+    for(let i=0;i<Math.max(3,ex.length);i++)addBlock(ex[i]);
+  })();
+  sv.onclick=async()=>{
+    sv.disabled=true;st.textContent="Saving...";
+    try{
+      const extra=blocks.map(x=>({key:x.k.value.trim(),provider:x.p.value,model:x.m.value.trim(),baseUrl:x.b.value.trim()})).filter(e=>e.key);
+      await setDoc(doc(db,"meta","ai"),{extra,updatedAt:serverTimestamp()},{merge:true});
+      aiKeyP=null;aiFeatP=null;aiGood=null;
+      st.textContent="Saved \u2714 ("+extra.length+" backup key"+(extra.length===1?"":"s")+")";
+    }catch(e){st.textContent="Error: "+(e.code||e.message)}
+    sv.disabled=false;
+  };
 }
 /* ===== Jokes: shared list in sitedata/jokes (admin/manager edit; AI can add new ones every day) ===== */
 const JK_BAD=/[ऀ-ॿ]/;
@@ -6972,7 +7039,7 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,am,urWrap,hiWrap,lb6,lb5,kl,kw,ps,mi,bi,kst,fkWrap,...exBlocks.flatMap(x=>[x.lab,x.w,x.p,x.m,x.b,x.s2]),sv,st);
+  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,am,urWrap,hiWrap,lb6,lb5,kl,kw,ps,mi,bi,kst,fkWrap,(()=>{const n=el("div","label","Backup AI keys (3 + add more): open Menu \u2192 \u{1F511} AI backup keys.");n.style.marginTop="10px";return n})(),sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
   if(!IS_ADMIN){[kl,kw,kst,fkWrap].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null;exBlocks.forEach(x=>{[x.lab,x.w,x.p,x.m,x.b,x.s2].forEach(y=>{y.style.display="none"});x.p.onchange=null})}
   tabs.settings.load=async()=>{
@@ -6985,7 +7052,7 @@ function buildSettings(host){
     sv.disabled=true;
     try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",aiMcq:am.value,urduCourses:urBoxes.filter(c=>c.checked).map(c=>c.value),hintCourses:hiBoxes.filter(c=>c.checked).map(c=>c.value),hintLang:hiLang.value,library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
       await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,showInstall:cbI.checked,browse:cbB.checked,seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim(),updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;SHOW_INST=cbI.checked;SEO_CFG={seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim()};if(window.__applyOpen)window.__applyOpen();
-      if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),extra:exBlocks.map(b=>({key:b.k.value.trim(),provider:b.p.value,model:b.m.value.trim(),baseUrl:b.b.value.trim()})).filter(e=>e.key),updatedAt:serverTimestamp()});
+      if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),updatedAt:serverTimestamp()},{merge:true});
       if(IS_ADMIN){const o={updatedAt:serverTimestamp()};AI_FEATS.forEach(F=>{const c=fk[F[0]];o[F[0]]={key:c.k.value.trim(),provider:c.p.value,model:c.m.value.trim(),baseUrl:c.b.value.trim()}});await setDoc(doc(db,"meta","aikeys"),o)}
       aiKeyP=null;aiFeatP=null;aiGood=null;window.__URDU_ON=urBoxes.filter(c=>c.checked).map(c=>c.value);window.__HINT_ON=hiBoxes.filter(c=>c.checked).map(c=>c.value);window.__HINT_LANG=hiLang.value;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
