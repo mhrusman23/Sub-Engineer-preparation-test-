@@ -2729,7 +2729,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var r=find(inp.value),hits=r.list,sg=subjSuggest(inp.value);sg.forEach(function(s){res.appendChild(subjRow(s))});
       if(!hits.length){res.hidden=!sg.length;cnt.textContent=sg.length?"Subjects matching your search \u2014 tap one.":"No matching question found.";return}
       var SHOW=40;
-      cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to open it";
+      cnt.textContent=hits.length+" match"+(hits.length===1?"":"es")+(hits.length>SHOW?" (showing first "+SHOW+" - type more words to narrow)":"")+" - tap a question to see its answer";
       hits.slice(0,SHOW).forEach(function(h){
         var q=Q[h.id],li=document.createElement("li");li.className="gs";
         var yk=yearOf(S[q.sec].sub),yc=cardOf(yk);
@@ -2739,7 +2739,20 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         li.appendChild(n);li.appendChild(t);
         var ar=el("span","","\u203A");ar.style.cssText="font-size:22px;line-height:1;color:var(--accent);align-self:center";li.appendChild(ar);
         if(ADM){var eb=el("button","btn","\u270e Edit");eb.type="button";eb.style.cssText="padding:4px 10px;font-size:12px;align-self:center;margin-left:6px";eb.addEventListener("click",function(e){e.stopPropagation();quickEdit(h.id)});li.appendChild(eb)}
-        li.addEventListener("click",function(){openMcq(h.id)});
+        li.addEventListener("click",function(e){
+          if(e.target.closest&&e.target.closest(".gsd"))return;
+          var d=li.querySelector(".gsd");
+          if(d){d.remove();ar.style.transform="";return}
+          d=el("div","gsd");
+          var o=opts(h.id),k=key(h.id);
+          o.forEach(function(txt,oi){
+            var r=el("div","go"+(oi===k?" right":""));
+            r.appendChild(el("b","",String.fromCharCode(65+oi)+"."));
+            r.appendChild(el("span","",txt+(oi===k?" \u2713":"")));
+            d.appendChild(r);
+          });
+          li.appendChild(d);ar.style.transform="rotate(90deg)";
+        });
         res.appendChild(li);
       });
       res.hidden=false;
@@ -8195,4 +8208,90 @@ hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</scr
  function start(){setup();try{new MutationObserver(sched).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]})}catch(e){setInterval(setup,1000)}}
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();</script>
-<script src="vip-addon.js" defer></script><section id="seoInfo" style="max-width:720px;margin:24px auto;padding:16px;font:13px/1.7 sans-serif;color:#456"><h2 id="seoT" style="font-size:16px;margin:0 0 8px">PPSC Civil Past Papers &amp; Solved MCQs</h2><div id="seoB"><p><span data-sn>Engrgroup23</span> gives free online practice for Punjab Public Service Commission (PPSC) and other Punjab jobs tests, for <strong>Civil</strong>: <strong>Sub Engineer Civil past papers</strong>, <strong>Building Inspector past papers</strong> and Civil Diploma 1st, 2nd and 3rd year subject MCQs. Every paper has solved MCQs with the correct answer, so you can practise subject-wise, take mock tests, and resume where you stopped.</p><p><strong>Coming soon:</strong> Assistant Engineer, Technician, Electrical and Mechanical past papers.</p></div><div id="seoL"><p><a href="/papers/"><strong>All PPSC Sub Engineer &amp; Building Inspector past papers</strong></a></p><p><strong>Important past papers:</strong> <a href="/papers/sub-engineer-civil-clubbed-test-c-and-w-rda-wasa-gda-2025.html">Sub Engineer Civil-Clubbed Test-C&amp;W+RDA+ WASA GDA-2025</a> · <a href="/papers/sub-engineer-civil-clubbed-test-pid-psc-sda-gda-2024.html">Sub Engineer Civil – Clubbed Test - PID+PSC+SDA+GDA - 2024</a> · <a href="/papers/sub-engineer-civil-clubbed-test-mda-mtn-fda-fsd-2023.html">Sub Engineer Civil – Clubbed Test MDA Mtn + FDA Fsd-2023</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2023.html">Sub Engineer Civil – Punjab Irrigation Department - 2023</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2023.html">Sub Engineer Civil – BDA Bahawalpur - 2023</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2022.html">Sub Engineer Civil – HUD &amp; PHED - 2022</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2021.html">Sub Engineer Civil - C&amp;W Department - 2021</a> · <a href="/papers/building-inspector-lg-and-cd-2020.html">Building Inspector – LG &amp; CD-2020</a></p><details><summary><strong>More past papers</strong></summary><p><a href="/papers/sub-engineer-civil-gda-gujranwala-2018.html">Sub Engineer Civil – GDA Gujranwala - 2018</a> · <a href="/papers/sub-engineer-civil-wasa-lda-lahore-2019.html">Sub Engineer Civil - WASA-LDA Lahore-2019</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2019.html">Sub Engineer Civil - C&amp;W Department-2019</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2019.html">Sub Engineer Civil - HUD &amp; PHED-2019</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2020.html">Sub Engineer Civil - Punjab Irrigation Department-2020</a> · <a href="/papers/sub-engineer-civil-rda-rawalpindi-2021.html">Sub Engineer Civil – RDA Rawalpindi - 2021</a> · <a href="/papers/sub-engineer-civil-fda-faisalabad-2021.html">Sub Engineer Civil – FDA Faisalabad - 2021</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2021.html">Sub Engineer Civil – BDA Bahawalpur - 2021</a> · <a href="/papers/sub-engineer-civil-parks-and-horticulture-authority-faisalabad-2023.html">Sub Engineer Civil - Parks &amp; Horticulture Authority Faisalabad-2023</a> · <a href="/papers/documentation-officer-punjab-seed-corporation-2023.html">Documentation Officer - Punjab Seed Corporation - 2023</a></p></details><details><summary><strong>Civil Diploma subject MCQs</strong></summary><p><a href="/papers/advanced-civil-engineering-surveying-mcqs.html">Advanced Civil Engineering Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/engineering-mechanics-mcqs.html">Engineering Mechanics (Diploma Civil 2nd Year)</a> · <a href="/papers/advanced-construction-techniques-mcqs.html">Advanced Construction Techniques (Diploma Civil 2nd Year)</a> · <a href="/papers/quantity-surveying-mcqs.html">Quantity Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/civil-engineering-drawing-and-autocad-mcqs.html">Civil Engineering Drawing and AutoCAD (Diploma Civil 2nd Year)</a> · <a href="/papers/public-health-technology-mcqs.html">Public Health Technology (Diploma Civil 2nd Year)</a> · <a href="/papers/basic-surveying-1st-year-mcqs.html">Basic Surveying (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/engineering-materials-and-construction-1st-year-mcqs.html">Engineering Materials &amp; Construction (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/basic-civil-drawing-1st-year-mcqs.html">Basic Civil Drawing (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/advance-quantity-surveying-mcqs.html">Advance Quantity Surveying (Diploma Civil 3rd Year)</a> · <a href="/papers/construction-project-planning-and-management-mcqs.html">Construction Project Planning and Management (Diploma Civil 3rd Year)</a> · <a href="/papers/environment-health-and-safety-3rd-year-mcqs.html">Environment, Health &amp; Safety (3rd Year) (Diploma Civil 3rd Year)</a> · <a href="/papers/hydraulics-and-irrigation-engineering-mcqs.html">Hydraulics and Irrigation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/transportation-engineering-mcqs.html">Transportation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/concrete-technology-and-r-c-c-design-mcqs.html">Concrete Technology and R.C.C. Design (Diploma Civil 3rd Year)</a> · <a href="/papers/soil-mechanics-and-bridge-engineering-mcqs.html">Soil Mechanics and Bridge Engineering (Diploma Civil 3rd Year)</a></p></details></div></section><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("/sw.js").catch(function(){})}catch(e){}})}</script></body></html>
+<script src="vip-addon.js" defer></script><section id="seoInfo" style="max-width:720px;margin:24px auto;padding:16px;font:13px/1.7 sans-serif;color:#456"><h2 id="seoT" style="font-size:16px;margin:0 0 8px">PPSC Civil Past Papers &amp; Solved MCQs</h2><div id="seoB"><p><span data-sn>Engrgroup23</span> gives free online practice for Punjab Public Service Commission (PPSC) and other Punjab jobs tests, for <strong>Civil</strong>: <strong>Sub Engineer Civil past papers</strong>, <strong>Building Inspector past papers</strong> and Civil Diploma 1st, 2nd and 3rd year subject MCQs. Every paper has solved MCQs with the correct answer, so you can practise subject-wise, take mock tests, and resume where you stopped.</p><p><strong>Coming soon:</strong> Assistant Engineer, Technician, Electrical and Mechanical past papers.</p></div><div id="seoL"><p><a href="/papers/"><strong>All PPSC Sub Engineer &amp; Building Inspector past papers</strong></a></p><p><strong>Important past papers:</strong> <a href="/papers/sub-engineer-civil-clubbed-test-c-and-w-rda-wasa-gda-2025.html">Sub Engineer Civil-Clubbed Test-C&amp;W+RDA+ WASA GDA-2025</a> · <a href="/papers/sub-engineer-civil-clubbed-test-pid-psc-sda-gda-2024.html">Sub Engineer Civil – Clubbed Test - PID+PSC+SDA+GDA - 2024</a> · <a href="/papers/sub-engineer-civil-clubbed-test-mda-mtn-fda-fsd-2023.html">Sub Engineer Civil – Clubbed Test MDA Mtn + FDA Fsd-2023</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2023.html">Sub Engineer Civil – Punjab Irrigation Department - 2023</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2023.html">Sub Engineer Civil – BDA Bahawalpur - 2023</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2022.html">Sub Engineer Civil – HUD &amp; PHED - 2022</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2021.html">Sub Engineer Civil - C&amp;W Department - 2021</a> · <a href="/papers/building-inspector-lg-and-cd-2020.html">Building Inspector – LG &amp; CD-2020</a></p><details><summary><strong>More past papers</strong></summary><p><a href="/papers/sub-engineer-civil-gda-gujranwala-2018.html">Sub Engineer Civil – GDA Gujranwala - 2018</a> · <a href="/papers/sub-engineer-civil-wasa-lda-lahore-2019.html">Sub Engineer Civil - WASA-LDA Lahore-2019</a> · <a href="/papers/sub-engineer-civil-c-and-w-department-2019.html">Sub Engineer Civil - C&amp;W Department-2019</a> · <a href="/papers/sub-engineer-civil-hud-and-phed-2019.html">Sub Engineer Civil - HUD &amp; PHED-2019</a> · <a href="/papers/sub-engineer-civil-punjab-irrigation-department-2020.html">Sub Engineer Civil - Punjab Irrigation Department-2020</a> · <a href="/papers/sub-engineer-civil-rda-rawalpindi-2021.html">Sub Engineer Civil – RDA Rawalpindi - 2021</a> · <a href="/papers/sub-engineer-civil-fda-faisalabad-2021.html">Sub Engineer Civil – FDA Faisalabad - 2021</a> · <a href="/papers/sub-engineer-civil-bda-bahawalpur-2021.html">Sub Engineer Civil – BDA Bahawalpur - 2021</a> · <a href="/papers/sub-engineer-civil-parks-and-horticulture-authority-faisalabad-2023.html">Sub Engineer Civil - Parks &amp; Horticulture Authority Faisalabad-2023</a> · <a href="/papers/documentation-officer-punjab-seed-corporation-2023.html">Documentation Officer - Punjab Seed Corporation - 2023</a></p></details><details><summary><strong>Civil Diploma subject MCQs</strong></summary><p><a href="/papers/advanced-civil-engineering-surveying-mcqs.html">Advanced Civil Engineering Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/engineering-mechanics-mcqs.html">Engineering Mechanics (Diploma Civil 2nd Year)</a> · <a href="/papers/advanced-construction-techniques-mcqs.html">Advanced Construction Techniques (Diploma Civil 2nd Year)</a> · <a href="/papers/quantity-surveying-mcqs.html">Quantity Surveying (Diploma Civil 2nd Year)</a> · <a href="/papers/civil-engineering-drawing-and-autocad-mcqs.html">Civil Engineering Drawing and AutoCAD (Diploma Civil 2nd Year)</a> · <a href="/papers/public-health-technology-mcqs.html">Public Health Technology (Diploma Civil 2nd Year)</a> · <a href="/papers/basic-surveying-1st-year-mcqs.html">Basic Surveying (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/engineering-materials-and-construction-1st-year-mcqs.html">Engineering Materials &amp; Construction (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/basic-civil-drawing-1st-year-mcqs.html">Basic Civil Drawing (1st Year) (Diploma Civil 1st Year)</a> · <a href="/papers/advance-quantity-surveying-mcqs.html">Advance Quantity Surveying (Diploma Civil 3rd Year)</a> · <a href="/papers/construction-project-planning-and-management-mcqs.html">Construction Project Planning and Management (Diploma Civil 3rd Year)</a> · <a href="/papers/environment-health-and-safety-3rd-year-mcqs.html">Environment, Health &amp; Safety (3rd Year) (Diploma Civil 3rd Year)</a> · <a href="/papers/hydraulics-and-irrigation-engineering-mcqs.html">Hydraulics and Irrigation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/transportation-engineering-mcqs.html">Transportation Engineering (Diploma Civil 3rd Year)</a> · <a href="/papers/concrete-technology-and-r-c-c-design-mcqs.html">Concrete Technology and R.C.C. Design (Diploma Civil 3rd Year)</a> · <a href="/papers/soil-mechanics-and-bridge-engineering-mcqs.html">Soil Mechanics and Bridge Engineering (Diploma Civil 3rd Year)</a></p></details></div></section><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("/sw.js").catch(function(){})}catch(e){}})}</script><style id="accaTheme">
+/* ACCA-style premium MCQ card (test view only) */
+#test{--ac-ink:#2a0e3d;--ac-yel:#fdc92f;--ac-red:#ff4d4d;--ac-card:#fff;--ac-txt:#1b0b2a;--ac-peach:#fff0d6}
+:root[data-theme="dark"] #test{--ac-ink:#0d0418;--ac-card:#1e1230;--ac-txt:#f6efff;--ac-peach:#3a2a14}
+#test .card.q{background:var(--ac-card)!important;color:var(--ac-txt);border:3px solid var(--ac-ink);border-radius:28px;padding:22px 18px 18px;box-shadow:7px 7px 0 var(--ac-ink)!important;overflow:visible}
+#test .card.q::before{content:"Question " attr(data-qn);position:static;display:block;height:auto;background:none;font:800 clamp(30px,8vw,44px)/1.1 var(--brand-font,Montserrat,system-ui,sans-serif);letter-spacing:-.01em;color:var(--ac-ink);margin:2px 0 14px}
+:root[data-theme="dark"] #test .card.q::before{color:var(--ac-txt)}
+#test .qmeta{order:-1;align-items:center}
+#test #qno{background:none;padding:0;border-radius:0;color:var(--ac-txt);font:600 15px/1.3 var(--brand-font,system-ui,sans-serif);letter-spacing:.02em;text-transform:none;opacity:.8}
+#test #qmeta{background:var(--ac-peach);color:var(--ac-txt);padding:4px 10px;border-radius:999px;font-weight:700}
+#test .qtext{font-size:clamp(17px,4.6vw,21px);font-weight:500;line-height:1.55;color:var(--ac-txt);margin:0 0 20px}
+#test .opts{gap:16px;background-image:none;padding:0 6px 6px 0}
+#test .opt{background:var(--ac-yel)!important;color:#2a0e3d!important;border:2.5px solid var(--ac-ink)!important;border-radius:999px;min-height:58px;padding:12px 18px;justify-content:center;text-align:center;font:700 clamp(16px,4.4vw,19px)/1.3 var(--brand-font,system-ui,sans-serif);box-shadow:5px 6px 0 var(--ac-ink)!important;transform:translate(0,0);transition:transform .12s ease,box-shadow .12s ease,background .15s}
+#test .opt .ltr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#test .opt .txt{flex:1;padding:0;font-weight:700}
+#test .opt:hover:not([aria-disabled="true"]){transform:translate(-1px,-2px);box-shadow:6px 8px 0 var(--ac-ink)!important;border-color:var(--ac-ink)!important}
+#test .opt:active:not([aria-disabled="true"]){transform:translate(5px,6px);box-shadow:0 0 0 var(--ac-ink)!important}
+#test .opt.right{background:#7be495!important;color:#06361a!important}
+#test .opt.right .txt::after{content:"  \2713";font-weight:800}
+#test .opt.wrong{background:#ff8a8a!important;color:#4a0606!important}
+#test .opt.wrong .txt::after{content:"  \2717";font-weight:800}
+#test .opt[aria-disabled="true"]:not(.right):not(.wrong){background:#f2e6b8!important;opacity:.75;box-shadow:3px 4px 0 var(--ac-ink)!important}
+#test .nav{margin-top:22px;gap:12px}
+#test .nav .btn{border:2.5px solid var(--ac-ink);border-radius:999px;font-weight:800;padding:10px 20px;background:#fff;color:var(--ac-ink);box-shadow:4px 4px 0 var(--ac-ink)}
+#test .nav .btn:active{transform:translate(4px,4px);box-shadow:none}
+#test .nav .btn.primary{background:var(--ac-red);color:#fff}
+#test #nextUn{background:var(--ac-peach)}
+#test .qtools .btn{border:2px solid var(--ac-ink);border-radius:999px;font-weight:700;background:#fff;color:var(--ac-ink)}
+@media (prefers-reduced-motion:reduce){#test .opt,#test .nav .btn{transition:none}}
+</style>
+<script>
+(function(){
+  function sync(){var n=document.getElementById("qno"),c=document.querySelector("#test .card.q");if(!n||!c)return;
+    var m=/Question\s+(\d+)/i.exec(n.textContent||"");if(m)c.setAttribute("data-qn",m[1])}
+  var n=document.getElementById("qno");if(!n)return;
+  try{new MutationObserver(sync).observe(n,{childList:true,characterData:true,subtree:true})}catch(e){}
+  sync();
+})();
+</script>
+<style id="accaTheme2">
+/* ACCA-style premium look: home cards, Civil/PPSC subject list, chapters, result */
+:root{--ac-ink:#2a0e3d;--ac-yel:#fdc92f;--ac-red:#ff4d4d;--ac-peach:#fff0d6;--ac-card:#fff;--ac-txt:#1b0b2a}
+:root[data-theme="dark"]{--ac-ink:#0d0418;--ac-card:#1e1230;--ac-txt:#f6efff;--ac-peach:#3a2a14}
+#start .ycard{background:var(--ac-card)!important;color:var(--ac-txt)!important;border:3px solid var(--ac-ink)!important;border-radius:26px!important;box-shadow:6px 6px 0 var(--ac-ink)!important;transform:none!important;transition:transform .12s ease,box-shadow .12s ease!important}
+#start .ycard:hover:not(:disabled){transform:translate(-1px,-2px)!important;box-shadow:7px 8px 0 var(--ac-ink)!important}
+#start .ycard:active:not(:disabled){transform:translate(6px,6px)!important;box-shadow:0 0 0 var(--ac-ink)!important}
+#start .ycard .yt{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);font-weight:800;color:var(--ac-txt)}
+#yearView .ytitle{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);font-weight:800;font-size:clamp(26px,7vw,36px);color:var(--ac-txt)}
+#yearView .hcard{background:var(--ac-card)!important;color:var(--ac-txt);border:3px solid var(--ac-ink)!important;border-radius:24px!important;box-shadow:6px 6px 0 var(--ac-ink)!important;padding:14px 14px 16px;margin:0 6px 18px 0}
+#yearView .hname{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);font-weight:800;color:var(--ac-txt)}
+#yearView .hname small{font-weight:600;opacity:.75}
+#yearView .hcard .mt{background:var(--ac-peach)!important;color:var(--ac-txt)!important;border:2px solid var(--ac-ink);border-radius:999px;padding:3px 10px;font-weight:800}
+#yearView .hrow{border-radius:18px;background:color-mix(in srgb,var(--ac-peach) 60%,transparent);padding:8px 10px}
+#yearView .btn,#start .btn{border:2.5px solid var(--ac-ink)!important;border-radius:999px!important;font-weight:800;background:#fff;color:var(--ac-ink)!important;box-shadow:4px 4px 0 var(--ac-ink)!important;transition:transform .12s ease,box-shadow .12s ease}
+#yearView .btn:active,#start .btn:active{transform:translate(4px,4px);box-shadow:none!important}
+#yearView .btn.primary,#start .btn.primary{background:var(--ac-yel)!important;color:#2a0e3d!important}
+#yearView .btn:disabled,#start .btn:disabled{opacity:.5;box-shadow:2px 2px 0 var(--ac-ink)!important}
+#yearView .chip{border:2px solid var(--ac-ink);border-radius:999px;background:var(--ac-peach);color:var(--ac-txt);font-weight:700}
+#yearView .ybar{border:3px solid var(--ac-ink);border-radius:22px 22px 0 0;background:var(--ac-card);color:var(--ac-txt);font-weight:700}
+#yearView .ybar .btn.primary{background:var(--ac-red)!important;color:#fff!important}
+#result .card,#result .panel{border:3px solid var(--ac-ink)!important;border-radius:26px!important;box-shadow:6px 6px 0 var(--ac-ink)!important;background:var(--ac-card)!important;color:var(--ac-txt)}
+#result .btn{border:2.5px solid var(--ac-ink)!important;border-radius:999px!important;font-weight:800;box-shadow:4px 4px 0 var(--ac-ink)!important;color:var(--ac-ink)!important;background:#fff}
+#result .btn.primary{background:var(--ac-yel)!important;color:#2a0e3d!important}
+#result h1,#result h2{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);font-weight:800}
+@media (prefers-reduced-motion:reduce){#start .ycard,#yearView .btn,#start .btn{transition:none!important}}
+</style>
+<button type="button" id="lookBtn" aria-label="Switch look" style="position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;padding:8px 14px;border:2.5px solid #2a0e3d;border-radius:999px;background:#fdc92f;color:#2a0e3d;font:800 13px system-ui,sans-serif;box-shadow:3px 3px 0 #2a0e3d;cursor:pointer"></button>
+<script>
+(function(){
+  var K="lookMode",a=document.getElementById("accaTheme"),b=document.getElementById("accaTheme2"),btn=document.getElementById("lookBtn");
+  if(!a||!b||!btn)return;
+  function get(){try{return localStorage.getItem(K)||"premium"}catch(e){return "premium"}}
+  function apply(m){
+    var on=(m==="premium");
+    a.media=on?"all":"not all";b.media=on?"all":"not all";
+    document.documentElement.setAttribute("data-look",m);
+    btn.textContent=on?"\u2728 Premium \u00b7 tap for Classic":"Classic \u00b7 tap for \u2728 Premium";
+  }
+  btn.addEventListener("click",function(){
+    var m=get()==="premium"?"classic":"premium";
+    try{localStorage.setItem(K,m)}catch(e){}
+    apply(m);
+  });
+  apply(get());
+})();
+</script>
+</body></html>
