@@ -6,6 +6,7 @@ let db, FV;
 function init(_db, _FV) { db = _db; FV = _FV; }
 const F = (u, o) => fetch(u, Object.assign({ signal: AbortSignal.timeout(26000) }, o));
 const PER_RUN = 6;          // MCQs written per minute
+const SEARCH_SHARE = Math.min(1, Math.max(0, Number(process.env.SEARCH_SHARE) || 0.8));   // 0.8 = 80% of runs use web search, 20% are AI only (change with the SEARCH_SHARE variable)
 const DAY_CAP = 500;        // stops by itself after this many saved MCQs a day
 const PUBLISH_EVERY_MS = 30 * 60 * 1000;
 const PUBLISH_QUEUE_MIN = 100;
@@ -13,6 +14,7 @@ const CHAPTER = "AI Verified";
 
 /* ---------------- AI ---------------- */
 const GEM = "https://generativelanguage.googleapis.com/v1beta/models/";
+let LAST_FREE = false;   // true when the free server wrote/checked something in this run
 async function callAI(cfg, system, prompt, maxOut) {
   /* main key first; if it fails (limit over, busy, blocked) the extra keys from the admin Settings take over */
   const list = [cfg].concat(cfg.extra || []);
@@ -20,9 +22,21 @@ async function callAI(cfg, system, prompt, maxOut) {
   for (const c of list) {
     try { return await callAI1(c, system, prompt, maxOut); } catch (e) { lastErr = e; }
   }
+  /* every key failed (limit over, busy, blocked): connect to the free no-key server, if the admin Settings allow it */
+  if (cfg.backup) {
+    try { const out = await callAI1({ free: true }, system, prompt, maxOut); LAST_FREE = true; return out; }
+    catch (e) { lastErr = new Error("All AI keys are at their limit and the free server is busy too. It will try again next minute."); }
+  }
   throw lastErr;
 }
 async function callAI1(cfg, system, prompt, maxOut) {
+  if (cfg.free) {
+    const r = await F("https://text.pollinations.ai/openai", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openai", temperature: 0.4, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) });
+    if (!r.ok) throw new Error("Free AI HTTP " + r.status);
+    const j = await r.json();
+    return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+  }
   const key = cfg.key;
   if (!key) throw new Error("No AI key in Firestore meta/ai. Save the key in Admin -> Settings first.");
   const openaiStyle = cfg.provider === "openai" || cfg.baseUrl || /^sk-/.test(key);
@@ -124,7 +138,7 @@ async function getFacts(label) {
   const ref = db.doc("writer_cache/" + id);
   const sn = await ref.get(), d = sn.exists ? sn.data() : null;
   const at = d && d.at && d.at.toMillis ? d.at.toMillis() : 0;
-  if (d && Array.isArray(d.items) && d.items.length && Date.now() - at < 4 * 3600 * 1000) return { items: d.items, via: d.via || "" };   // one search per subject per 4 hours = ~2500 searches / month
+  if (d && Array.isArray(d.items) && d.items.length && Date.now() - at < 4 * 3600 * 1000) return { items: d.items, via: d.via || "" };   // one search per subject per 4 hours (about 2,000-2,500 searches a month)
   const res = await searchWeb(label + " important exam MCQs with answers");
   if (res && res.items.length) await ref.set({ at: FV.serverTimestamp(), items: res.items, via: res.via });
   return res;
@@ -253,9 +267,12 @@ async function runOnce() {
     const dayN = d.writerDay === today ? d.writerDayN || 0 : 0;
     if (dayN >= DAY_CAP) return { skipped: "daily cap reached" };
 
+    LAST_FREE = false;
+    const cfgDoc = await db.doc("meta/config").get();
+    const backup = !(cfgDoc.exists && cfgDoc.data().aiFree === false);   // same "AI backup (free, no key)" switch as the Settings page
     const aiDoc = await db.doc("meta/ai").get();
     const x = aiDoc.exists ? aiDoc.data() : {};
-    const cfg = { key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim(),
+    const cfg = { backup, key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim(),
       extra: (Array.isArray(x.extra) ? x.extra : []).filter((e) => e && String(e.key || "").trim()).slice(0, 2).map((e) => ({ key: String(e.key).trim(), provider: e.provider || "auto", model: String(e.model || "").trim(), baseUrl: String(e.baseUrl || "").trim() })) };
 
     const lb = await loadBank();
@@ -273,18 +290,19 @@ async function runOnce() {
         const have = lb.bank.Q0.filter((q) => lb.bank.S[q.sec] && lb.bank.S[q.sec].sub === pick.i).map((q) => q.text)
           .concat(queued.filter((r) => r.subject === pick.y.name).map((r) => r.question));
         let facts = null, via = "";
-        try { const fx = await getFacts(label); if (fx && fx.items && fx.items.length) { facts = fx.items; via = fx.via || ""; } } catch (e) { note = "Search: " + String((e && e.message) || e).slice(0, 100); }
+        const rot = d.serverRot || 0, wantSearch = Math.floor((rot + 1) * SEARCH_SHARE) > Math.floor(rot * SEARCH_SHARE);   // exact 80/20 pattern
+        if (wantSearch) { try { const fx = await getFacts(label); if (fx && fx.items && fx.items.length) { facts = fx.items; via = fx.via || ""; } } catch (e) { note = "Search: " + String((e && e.message) || e).slice(0, 100); } }
         const rows = await generate(cfg, label, PER_RUN, have, pickExamples(lb.bank, pick), facts);
         const good = rows.length ? await verify(cfg, label, rows, facts) : [];
         const b = db.batch();
-        good.forEach((r) => b.set(db.collection("writer_queue").doc(), { subject: pick.y.name, cat: pick.cat, course: pick.course, question: r.question, options: r.options, correct: r.correct, src: facts ? "search" : "ai", via: facts ? via : "", createdAt: FV.serverTimestamp() }));
+        good.forEach((r) => b.set(db.collection("writer_queue").doc(), { subject: pick.y.name, cat: pick.cat, course: pick.course, question: r.question, options: r.options, correct: r.correct, src: facts ? "search" : "ai", via: [facts ? via : "", LAST_FREE ? "Free AI" : ""].filter(Boolean).join(" + "), createdAt: FV.serverTimestamp() }));
         if (good.length) await b.commit();
         saved = good.length;
         if (!good.length) note = "No MCQ passed the check.";
-      } catch (e) { note = String((e && e.message) || e).slice(0, 160); }
+      } catch (e) { const m = String((e && e.message) || e); note = /429|rate limit|quota/i.test(m) ? "AI limit reached on all keys (waiting for the limit to reset)" : m.slice(0, 160); }
     }
 
-    /* merge the queue into the bank: every 10 minutes or when 30+ are waiting */
+    /* merge the queue into the bank: every 30 minutes or when 100+ are waiting */
     let published = 0;
     const waiting = queued.length + saved;
     const lastPub = d.serverPubAt && d.serverPubAt.toMillis ? d.serverPubAt.toMillis() : 0;
