@@ -9461,6 +9461,7 @@ details>summary:hover{color:var(--accent)}
 #accaCaCentre .acViewBar{display:flex;gap:8px;background:#fff;border:2px solid #2A0A39;border-radius:999px;padding:5px;margin:0 0 14px;box-shadow:4px 4px 0 #2A0A39}
 #accaCaCentre .acViewBar button{flex:1;border:0;border-radius:999px;padding:10px 8px;font:800 14px system-ui,sans-serif;background:transparent;color:#2A0A39;cursor:pointer}
 #accaCaCentre .acViewBar button.on{background:#FECB2E;box-shadow:inset 0 0 0 2px #2A0A39}
+body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 #accaCaCentre.acClassic .acc-tabs,
 #accaCaCentre.acClassic .acc-search,
 #accaCaCentre.acClassic .acc-card,
@@ -9495,9 +9496,10 @@ details>summary:hover{color:var(--accent)}
     var c=centre(),m=getMode(),open=isOpen(c);
     if(open)ensureBar(c);
     if(c)c.classList.toggle("acClassic",open&&m==="classic");
+    document.body.classList.toggle("acNewMode",open&&m==="new");
     if(open&&m==="new"){
       var yv=document.getElementById("yearView");
-      if(yv&&!yv.hidden){var yb=document.getElementById("yBack");if(yb)yb.click()}
+      if(yv&&!yv.hidden&&!(window.__accGoUntil&&Date.now()<window.__accGoUntil)){var yb=document.getElementById("yBack");if(yb)yb.click()}
     }
     if(c){
       var bar=c.querySelector(".acViewBar");
@@ -9578,6 +9580,7 @@ details>summary:hover{color:var(--accent)}
   }
   function go(name){
     if(!name)return;
+    window.__accGoUntil=Date.now()+3500;
     toast("Opening "+name+"...");
     var row=findRow(name);
     if(row){startRow(row);return}
@@ -9602,6 +9605,64 @@ details>summary:hover{color:var(--accent)}
     e.stopPropagation();e.preventDefault();
     go(t.getAttribute("data-name")||"");
   },true);
+})();
+</script>
+
+
+<style id="exitGuardCss">
+#exitAsk{position:fixed;inset:0;z-index:140000;background:rgba(9,14,28,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+#exitAsk[hidden]{display:none!important}
+#exitAsk .exBox{background:#fff;color:#16233c;border-radius:20px;max-width:340px;width:100%;padding:22px 20px;text-align:center;font:15px/1.55 system-ui,sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+#exitAsk .exBox h3{margin:0 0 6px;font-size:18px}
+#exitAsk .exBox p{margin:0 0 16px;color:#5a6b85;font-size:14px}
+#exitAsk .exRow{display:flex;gap:10px}
+#exitAsk button{flex:1;border-radius:999px;padding:12px;font:800 15px system-ui,sans-serif;cursor:pointer}
+#exitAsk .exStay{border:1.5px solid #c9d4e6;background:#eef2f9;color:#16233c}
+#exitAsk .exOk{border:0;background:#d33;color:#fff}
+</style>
+<script>
+/* ===== EXIT GUARD (2026-11-22) =====
+   Mobile back dabane par website foran band ho jati thi. Ab jab back se
+   website se bahar jane wala ho, pehle confirm ayega: OK = bahar jayein,
+   Stay = website par hi rahen. Website ke andar ki back navigation
+   (subject list, test waghera) pehle ki tarah hi chalegi. */
+(function(){
+  "use strict";
+  var allow=false,shown=false,box=null;
+  function push(){try{history.pushState({egGuard:1},"",location.href)}catch(e){}}
+  function atHome(){
+    var gate=document.getElementById("gate");
+    if(gate&&!gate.hidden)return true;
+    var st=document.getElementById("start");
+    var yv=document.getElementById("yearView");
+    if(!st||st.hidden)return false;
+    if(yv&&!yv.hidden)return false;
+    return true;
+  }
+  function ensureBox(){
+    if(box)return box;
+    box=document.createElement("div");box.id="exitAsk";box.hidden=true;
+    box.innerHTML='<div class="exBox"><h3>Leave Engrgroup23?</h3><p>You pressed Back. Do you want to close the website?</p><div class="exRow"><button type="button" class="exStay">Stay</button><button type="button" class="exOk">OK</button></div></div>';
+    document.body.appendChild(box);
+    box.querySelector(".exStay").addEventListener("click",function(){box.hidden=true;shown=false});
+    box.querySelector(".exOk").addEventListener("click",function(){
+      box.hidden=true;shown=false;allow=true;
+      try{history.go(-2)}catch(e){}
+      setTimeout(function(){if(allow)history.back()},450);
+    });
+    return box;
+  }
+  window.addEventListener("popstate",function(){
+    if(allow)return;
+    setTimeout(function(){
+      if(allow||shown)return;
+      if(!atHome())return;
+      push();
+      ensureBox();box.hidden=false;shown=true;
+    },60);
+  });
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",push);
+  else push();
 })();
 </script>
 
