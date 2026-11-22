@@ -9455,4 +9455,154 @@ details>summary:hover{color:var(--accent)}
 })();
 </script>
 
+
+<style id="acViewCss">
+/* ===== ACCA/CA VIEW SWITCH (2026-11-22): New Template ya Classic, aik time par aik ===== */
+#accaCaCentre .acViewBar{display:flex;gap:8px;background:#fff;border:2px solid #2A0A39;border-radius:999px;padding:5px;margin:0 0 14px;box-shadow:4px 4px 0 #2A0A39}
+#accaCaCentre .acViewBar button{flex:1;border:0;border-radius:999px;padding:10px 8px;font:800 14px system-ui,sans-serif;background:transparent;color:#2A0A39;cursor:pointer}
+#accaCaCentre .acViewBar button.on{background:#FECB2E;box-shadow:inset 0 0 0 2px #2A0A39}
+#accaCaCentre.acClassic .acc-tabs,
+#accaCaCentre.acClassic .acc-search,
+#accaCaCentre.acClassic .acc-card,
+#accaCaCentre.acClassic .acc-empty,
+#accaCaCentre.acClassic .acc-note,
+#accaCaCentre.acClassic .acc-kick,
+#accaCaCentre.acClassic>h2,
+#accaCaCentre.acClassic>h3{display:none!important}
+</style>
+<script>
+/* ACCA/CA folder ke andar New Template / Classic ka switch.
+   New Template: sirf Exam Centre cards, classic list chhupi hui.
+   Classic: sirf purani subject list, centre cards chhupe hue.
+   Choice yaad rehti hai (localStorage). Take the exam dabane par khud
+   Classic khul jata hai taake Start selected wala hissa nazar aye. */
+(function(){
+  "use strict";
+  function getMode(){try{return localStorage.getItem("eg23acView")==="classic"?"classic":"new"}catch(e){return "new"}}
+  function setMode(m){try{localStorage.setItem("eg23acView",m)}catch(e){}apply()}
+  function centre(){return document.getElementById("accaCaCentre")}
+  function isOpen(c){return !!c&&c.style.display!=="none"&&!!c.querySelector(".acc-card")}
+  function ensureBar(c){
+    if(c.querySelector(".acViewBar"))return;
+    var bar=document.createElement("div");bar.className="acViewBar";
+    bar.innerHTML='<button type="button" data-m="new">\u2728 New Template</button><button type="button" data-m="classic">\uD83D\uDCCB Classic</button>';
+    bar.querySelectorAll("button").forEach(function(b){
+      b.addEventListener("click",function(){setMode(b.getAttribute("data-m"))});
+    });
+    c.insertBefore(bar,c.firstChild);
+  }
+  function apply(){
+    var c=centre(),m=getMode(),open=isOpen(c);
+    if(open)ensureBar(c);
+    if(c)c.classList.toggle("acClassic",open&&m==="classic");
+    if(open&&m==="new"){
+      var yv=document.getElementById("yearView");
+      if(yv&&!yv.hidden){var yb=document.getElementById("yBack");if(yb)yb.click()}
+    }
+    if(c){
+      var bar=c.querySelector(".acViewBar");
+      if(bar)bar.querySelectorAll("button").forEach(function(b){
+        b.classList.toggle("on",b.getAttribute("data-m")===m);
+      });
+    }
+  }
+  var t=null;
+  function kick(){clearTimeout(t);t=setTimeout(apply,250)}
+  function watch(){
+    var hc=document.getElementById("homeCards");
+    if(hc&&!hc.__acWatched){hc.__acWatched=1;new MutationObserver(kick).observe(hc,{childList:true,subtree:true})}
+    var c=centre();
+    if(c&&!c.__acWatched){c.__acWatched=1;new MutationObserver(kick).observe(c,{attributes:true,attributeFilter:["style","class"]})}
+  }
+  setInterval(function(){watch();apply()},1500);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){watch();apply()});
+  else{watch();apply()}
+})();
+</script>
+
+
+<style id="accGoFixCss">
+#accGoToast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#2A0A39;color:#fff;font:700 14px system-ui,sans-serif;padding:12px 20px;border-radius:999px;box-shadow:0 12px 30px rgba(42,10,57,.4);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:130000;max-width:88vw;text-align:center}
+#accGoToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<script>
+/* ===== TAKE THE EXAM FIX (2026-11-22) =====
+   Purana button sirf tab kaam karta tha jab usi category ki subject list
+   pehle se khuli ho - warna click par kuch nahi hota tha.
+   Ab: pehle list me subject dhundta hai; na mile to sahi category
+   (Applied Knowledge / Skills / Strategic / CAF / CFAP) khud kholta hai,
+   phir us subject ka Start button khud dabata hai. Test aik tap me khulta hai. */
+(function(){
+  "use strict";
+  var CAT={"BT":"Applied Knowledge","MA":"Applied Knowledge","FA":"Applied Knowledge",
+    "LW":"Applied Skills","PM":"Applied Skills","TX":"Applied Skills","FR":"Applied Skills","AA":"Applied Skills","FM":"Applied Skills",
+    "SBL":"Strategic Professional","SBR":"Strategic Professional","AFM":"Strategic Professional","APM":"Strategic Professional","ATX":"Strategic Professional","AAA":"Strategic Professional"};
+  var toastEl=null,toastT=null;
+  function toast(msg){
+    if(!toastEl){toastEl=document.createElement("div");toastEl.id="accGoToast";document.body.appendChild(toastEl)}
+    toastEl.textContent=msg;toastEl.classList.add("show");
+    clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove("show")},2600);
+  }
+  function findRow(name){
+    var code=(name.match(/\(([^)]+)\)\s*$/)||[])[1]||"";
+    var plain=name.replace(/\s*\([^)]+\)\s*$/,"");
+    var rows=document.querySelectorAll("#yList .subj");
+    for(var i=0;i<rows.length;i++){
+      var t=rows[i].textContent||"";
+      if(t.indexOf(name)>=0||t.indexOf(plain)>=0||(code&&t.indexOf("("+code+")")>=0))return rows[i];
+    }
+    return null;
+  }
+  function startRow(row){
+    var b=row.querySelector("[data-go]");
+    if(b){b.click();return true}
+    var cb=row.querySelector("input[type=checkbox]");
+    if(cb&&!cb.checked)cb.click();
+    var st=document.getElementById("btnStart");
+    if(st){setTimeout(function(){if(!st.disabled)st.click()},150);return true}
+    return false;
+  }
+  function catTitle(name){
+    if(/^CFAP/.test(name))return "CFAP";
+    if(/^CAF/.test(name))return "CAF";
+    var code=(name.match(/\(([^)]+)\)\s*$/)||[])[1]||"";
+    return CAT[code]||"";
+  }
+  function openCat(title,done){
+    var cards=document.querySelectorAll("#homeCards .ycard");
+    for(var i=0;i<cards.length;i++){
+      var yt=cards[i].querySelector(".yt");
+      if(yt&&(yt.textContent||"").trim()===title){cards[i].click();setTimeout(done,600);return true}
+    }
+    return false;
+  }
+  function go(name){
+    if(!name)return;
+    toast("Opening "+name+"...");
+    var row=findRow(name);
+    if(row){startRow(row);return}
+    var title=catTitle(name);
+    function afterOpen(){
+      var r=findRow(name);
+      if(r)startRow(r);
+      else toast("Please open the subject list and press Start on "+name+".");
+    }
+    if(title&&openCat(title,afterOpen))return;
+    var yv=document.getElementById("yearView"),yb=document.getElementById("yBack");
+    if(yv&&!yv.hidden&&yb){
+      yb.click();
+      setTimeout(function(){if(!(title&&openCat(title,afterOpen)))afterOpen()},500);
+      return;
+    }
+    afterOpen();
+  }
+  document.addEventListener("click",function(e){
+    var t=(e.target&&e.target.closest)?e.target.closest("#accaCaCentre .acc-btn"):null;
+    if(!t)return;
+    e.stopPropagation();e.preventDefault();
+    go(t.getAttribute("data-name")||"");
+  },true);
+})();
+</script>
+
 </body></html>
