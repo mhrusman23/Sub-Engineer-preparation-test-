@@ -4733,6 +4733,7 @@ function userbar(){
     md.onclick=()=>openModeChooser();
     r.appendChild(md);
   }
+  {const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"\u2728 Premium"));lk.type="button";lk.title="Look badlein: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};r.appendChild(lk);r.style.flexWrap="wrap";r.style.justifyContent="flex-end"}
   const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();r.appendChild(mb);
   u.appendChild(r);document.body.appendChild(u);
 }
@@ -8274,24 +8275,131 @@ hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</scr
 #result h1,#result h2{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);font-weight:800}
 @media (prefers-reduced-motion:reduce){#start .ycard,#yearView .btn,#start .btn{transition:none!important}}
 </style>
-<button type="button" id="lookBtn" aria-label="Switch look" style="position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;padding:8px 14px;border:2.5px solid #2a0e3d;border-radius:999px;background:#fdc92f;color:#2a0e3d;font:800 13px system-ui,sans-serif;box-shadow:3px 3px 0 #2a0e3d;cursor:pointer"></button>
 <script>
 (function(){
-  var K="lookMode",a=document.getElementById("accaTheme"),b=document.getElementById("accaTheme2"),btn=document.getElementById("lookBtn");
-  if(!a||!b||!btn)return;
+  var K="lookMode",a=document.getElementById("accaTheme"),b=document.getElementById("accaTheme2");
+  if(!a||!b)return;
   function get(){try{return localStorage.getItem(K)||"premium"}catch(e){return "premium"}}
+  function label(){return get()==="premium"?"\u2728 Premium":"\uD83C\uDFA8 Classic"}
+  function paint(){[].forEach.call(document.querySelectorAll(".lookbtn"),function(x){x.textContent=label();x.setAttribute("aria-pressed",get()==="premium"?"true":"false")})}
   function apply(m){
     var on=(m==="premium");
     a.media=on?"all":"not all";b.media=on?"all":"not all";
     document.documentElement.setAttribute("data-look",m);
-    btn.textContent=on?"\u2728 Premium \u00b7 tap for Classic":"Classic \u00b7 tap for \u2728 Premium";
+    paint();
+  }
+  window.__lookLabel=label;
+  window.__lookToggle=function(){var m=get()==="premium"?"classic":"premium";try{localStorage.setItem(K,m)}catch(e){}apply(m)};
+  apply(get());
+})();
+</script>
+<style id="ddTheme">
+#ddBtn{display:none;position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;padding:8px 14px;border:2.5px solid #2a0e3d;border-radius:999px;background:#fff0d6;color:#2a0e3d;font:800 13px system-ui,sans-serif;box-shadow:3px 3px 0 #2a0e3d;cursor:pointer}
+body:has(#test:not([hidden])) #ddBtn{display:block}
+#test .card.q.ddmode #qtext,#test .card.q.ddmode #opts{display:none!important}
+#ddBox{font-family:var(--brand-font,Montserrat,system-ui,sans-serif);color:var(--ac-txt,inherit)}
+#ddBox .dd-sent{font-size:clamp(17px,4.6vw,21px);line-height:2.1;font-weight:500;margin:0 0 14px;overflow-wrap:anywhere}
+#ddBox .dd-ask{font-weight:800;margin:0 0 14px;font-size:clamp(16px,4.4vw,19px)}
+#ddBox .dd-hint{display:flex;align-items:center;gap:8px;font-size:14px;opacity:.8;margin:0 0 12px}
+#ddBox .dd-blank{display:inline-block;vertical-align:middle;min-width:130px;min-height:40px;padding:4px 6px;border-radius:10px;background:#e7e2ea;border:2px dashed transparent;box-sizing:border-box;line-height:1.2;transition:background .12s,border-color .12s}
+#ddBox .dd-blank.over{border-color:#2a0e3d;background:#ddd5e6}
+#ddBox .dd-chip{display:inline-block;padding:9px 16px;border-radius:12px;background:#fff0d6;color:#2a0e3d;font-family:inherit;font-weight:600;font-size:clamp(15px,4.2vw,18px);line-height:1.3;border:2px solid #f0d9ad;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;text-align:left;overflow-wrap:anywhere;max-width:100%}
+#ddBox .dd-chip:hover{background:#fdc92f;border-color:#2a0e3d}
+#ddBox .dd-blank .dd-chip{background:#fdc92f;border-color:#2a0e3d;cursor:pointer;padding:5px 12px}
+#ddBox .dd-toks{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 22px}
+#ddBox .dd-toks .dd-chip.gone{background:#e7e2ea;border-color:transparent;color:transparent;pointer-events:none}
+#ddBox .dd-ghost,body>.dd-ghost{position:fixed;z-index:9999;pointer-events:none;box-shadow:5px 6px 0 #2a0e3d;transform:rotate(-2deg);background:#fdc92f;border-color:#2a0e3d;max-width:80vw}
+#ddBox .dd-blank.right .dd-chip{background:#7be495;border-color:#06361a;color:#06361a}
+#ddBox .dd-blank.wrong .dd-chip{background:#ff8a8a;border-color:#4a0606;color:#4a0606}
+#ddBox .dd-toks .dd-chip.key{background:#7be495;border-color:#06361a;color:#06361a}
+#ddBox .dd-toks .dd-chip.lock{cursor:default;pointer-events:none;opacity:.85}
+#ddBox .dd-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#ddBox .dd-submit{min-width:180px;padding:14px 28px;border-radius:999px;border:2.5px solid #2a0e3d;background:#d9d6de;color:#7d7886;font-family:inherit;font-weight:800;font-size:18px;line-height:1;box-shadow:4px 5px 0 #2a0e3d;cursor:not-allowed}
+#ddBox .dd-submit:not(:disabled){background:#ff4d4d;color:#fff;cursor:pointer}
+#ddBox .dd-submit:not(:disabled):active{transform:translate(4px,5px);box-shadow:none}
+#ddBox .dd-mark{font-weight:600;text-decoration:underline;font-size:15px}
+body>.dd-ghost{position:fixed;z-index:9999;pointer-events:none;padding:9px 16px;border-radius:12px;background:#fdc92f;color:#2a0e3d;border:2px solid #2a0e3d;box-shadow:5px 6px 0 #2a0e3d;transform:rotate(-2deg);font-weight:700;max-width:80vw}
+</style>
+<button type="button" id="ddBtn" aria-pressed="true"></button>
+<script>
+(function(){
+  var K="qStyleDD",LS=function(){try{return localStorage.getItem(K)}catch(e){return null}};
+  var on=(LS()!=="off");
+  var card=document.querySelector("#test .card.q"),opts=document.getElementById("opts"),qt=document.getElementById("qtext"),btn=document.getElementById("ddBtn");
+  if(!card||!opts||!qt||!btn)return;
+  var box=null;
+  function paintBtn(){btn.textContent="\uD83E\uDDE9 Drag & drop: "+(on?"On":"Off");btn.setAttribute("aria-pressed",on?"true":"false")}
+  function cleanup(){card.classList.remove("ddmode");if(box&&box.parentNode)box.parentNode.removeChild(box);box=null}
+  function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function build(){
+    var btns=[].slice.call(opts.querySelectorAll(".opt"));
+    if(!on||!btns.length){cleanup();return}
+    var texts=btns.map(function(b){var t=b.querySelector(".txt");return t?t.textContent:b.textContent});
+    var answered=btns.some(function(b){return b.getAttribute("aria-disabled")==="true"});
+    var rightI=-1,wrongI=-1;btns.forEach(function(b,i){if(b.classList.contains("right"))rightI=i;if(b.classList.contains("wrong"))wrongI=i});
+    var selI=answered?(wrongI>=0?wrongI:rightI):-1;
+    cleanup();
+    box=mk("div");box.id="ddBox";
+    var text=qt.textContent||"",m=/(\.{3,}|_{2,}|\u2026+)/.exec(text);
+    var blank=mk("span","dd-blank");blank.setAttribute("aria-label","Answer box");
+    var sent=mk("p","dd-sent");
+    if(m){sent.appendChild(document.createTextNode(text.slice(0,m.index)+" "));sent.appendChild(blank);sent.appendChild(document.createTextNode(" "+text.slice(m.index+m[0].length)));box.appendChild(sent)}
+    else{sent.textContent=text;box.appendChild(sent);var ask=mk("p","dd-ask","Which answer correctly completes this question?");box.appendChild(ask);var row=mk("p","dd-sent");row.style.marginBottom="6px";row.appendChild(blank);box.appendChild(row)}
+    box.appendChild(mk("div","dd-hint","\u21C5 Drag and drop (or tap) a token into the box"));
+    var toks=mk("div","dd-toks"),chips=[],sel=selI;
+    var submit=mk("button","dd-submit","Submit");submit.type="button";
+    var mark=mk("span","dd-mark","1 mark available");
+    function paint(){
+      blank.textContent="";blank.className="dd-blank";
+      if(sel>=0){
+        var c=mk("button","dd-chip",texts[sel]);c.type="button";blank.appendChild(c);
+        if(answered){blank.classList.add(sel===rightI?"right":"wrong")}
+        else c.addEventListener("click",function(){sel=-1;paint()});
+      }
+      chips.forEach(function(c,i){
+        c.classList.toggle("gone",sel===i);
+        if(answered){c.classList.add("lock");c.classList.toggle("key",i===rightI)}
+      });
+      submit.disabled=answered||sel<0;
+      if(answered){mark.textContent=(sel===rightI)?"Correct \u00B7 +1 mark":"Wrong \u00B7 see the green answer";mark.style.textDecoration="none"}
+    }
+    texts.forEach(function(t,i){
+      var c=mk("button","dd-chip",t);c.type="button";chips.push(c);toks.appendChild(c);
+      if(answered)return;
+      var sx=0,sy=0,drag=false,ghost=null,pid=null;
+      function inBlank(x,y){var r=blank.getBoundingClientRect();return x>=r.left-12&&x<=r.right+12&&y>=r.top-12&&y<=r.bottom+12}
+      c.addEventListener("pointerdown",function(e){if(e.button>0)return;sx=e.clientX;sy=e.clientY;drag=false;pid=e.pointerId;try{c.setPointerCapture(pid)}catch(_){}});
+      c.addEventListener("pointermove",function(e){
+        if(pid===null)return;
+        if(!drag&&Math.hypot(e.clientX-sx,e.clientY-sy)>6){drag=true;ghost=mk("div","dd-chip dd-ghost",t);ghost.style.fontFamily="inherit";document.body.appendChild(ghost)}
+        if(drag&&ghost){ghost.style.left=(e.clientX-30)+"px";ghost.style.top=(e.clientY-22)+"px";blank.classList.toggle("over",inBlank(e.clientX,e.clientY))}
+      });
+      function end(e,ok){
+        if(pid===null)return;pid=null;
+        var wasDrag=drag,hit=ok&&inBlank(e.clientX,e.clientY);
+        if(ghost&&ghost.parentNode)ghost.parentNode.removeChild(ghost);ghost=null;drag=false;blank.classList.remove("over");
+        if(ok&&(!wasDrag||hit)){sel=i;paint()}
+      }
+      c.addEventListener("pointerup",function(e){end(e,true)});
+      c.addEventListener("pointercancel",function(e){end(e,false)});
+    });
+    box.appendChild(toks);
+    var foot=mk("div","dd-foot");foot.appendChild(submit);foot.appendChild(mark);box.appendChild(foot);
+    submit.addEventListener("click",function(){
+      if(sel<0||answered)return;
+      var real=opts.querySelectorAll(".opt")[sel];if(real)real.click();
+    });
+    qt.parentNode.insertBefore(box,qt);
+    card.classList.add("ddmode");
+    paint();
   }
   btn.addEventListener("click",function(){
-    var m=get()==="premium"?"classic":"premium";
-    try{localStorage.setItem(K,m)}catch(e){}
-    apply(m);
+    on=!on;try{localStorage.setItem(K,on?"on":"off")}catch(e){}
+    paintBtn();build();
   });
-  apply(get());
+  paintBtn();
+  try{new MutationObserver(function(){build()}).observe(opts,{childList:true})}catch(e){}
+  build();
 })();
 </script>
 </body></html>
