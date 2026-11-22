@@ -9650,9 +9650,9 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   }
   function track(){
     var t=$("test"),yv=$("yearView");
-    if(vis(t))testWas=true;
-    if(vis(yv)){
-      yvWas=true;
+    testWas=vis(t);
+    yvWas=vis(yv);
+    if(yvWas){
       var c=folderCourse();if(c)ctx.course=c;
       var yt=$("yTitle");if(yt)ctx.cat=(yt.textContent||"").trim();
     }
@@ -9693,14 +9693,13 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   }
   window.addEventListener("popstate",function(){
     if(allow)return;
+    var wasTest=testWas,wasYv=yvWas;
     setTimeout(function(){
       if(allow||shown)return;
       var start=$("start"),test=$("test"),yv=$("yearView");
-      var wasTest=testWas,wasYv=yvWas;
-      testWas=false;yvWas=false;
       /* Jo step website ne khud sambhala (test band / list band), wahan sirf dobara arm karo */
       if(wasTest&&!vis(test)){
-        if(vis(start)&&!vis(yv)&&ctx.course){restoreCtx()}
+        if(vis(start)&&!vis(yv)&&ctx.course&&!folderCourse()){restoreCtx()}
         push();return;
       }
       if(wasYv&&!vis(yv)){push();return}
@@ -10014,6 +10013,10 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       /* Menu abhi khula/bana nahi - header wala button CSS se chhupa rehta hai */
       return;
     }
+    if(!all.length){
+      var nb=document.createElement("button");nb.type="button";nb.className="btn lookbtn";
+      box.appendChild(nb);all=[nb];
+    }
     var inMenu=box.querySelector(".lookbtn");
     all.forEach(function(b){
       if(b===inMenu)return;
@@ -10034,6 +10037,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       }
       if(!inMenu.__egLookBound){
         inMenu.__egLookBound=true;
+        inMenu.onclick=null;
         inMenu.addEventListener("click",function(){
           try{if(window.__lookToggle)window.__lookToggle()}catch(e){}
           setTimeout(function(){label(inMenu)},120);
