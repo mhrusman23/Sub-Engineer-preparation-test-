@@ -54,7 +54,7 @@ async function callAI1(cfg, system, prompt, maxOut) {
     return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
   }
   const models = [cfg.model || "gemini-flash-latest"];
-  if (!cfg.model) ["gemini-flash-lite-latest", "gemini-2.5-flash-lite"].forEach((m) => models.push(m));
+  if (!cfg.model) ["gemini-flash-lite-latest", "gemini-flash-latest"].forEach((m) => models.push(m));
   let lastErr = "";
   for (const m of models) {
     for (const think of [true, false]) {
@@ -270,7 +270,11 @@ async function runOnce() {
     LAST_FREE = false;
     const cfgDoc = await db.doc("meta/config").get();
     const backup = !(cfgDoc.exists && cfgDoc.data().aiFree === false);   // same "AI backup (free, no key)" switch as the Settings page
-    const aiDoc = await db.doc("meta/ai").get();
+    // Admin -> Settings -> "AI keys for each feature": the "Web-search AI Writer" key (meta/aikeys.writer); empty = the main key (meta/ai)
+    const kd = await db.doc("meta/aikeys").get();
+    const wk = (kd.exists && kd.data().writer) || {};
+    const useOwn = String(wk.key || "").trim() !== "";
+    const aiDoc = useOwn ? { exists: true, data: () => wk } : await db.doc("meta/ai").get();
     const x = aiDoc.exists ? aiDoc.data() : {};
     const cfg = { backup, key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim(),
       extra: (Array.isArray(x.extra) ? x.extra : []).filter((e) => e && String(e.key || "").trim()).slice(0, 2).map((e) => ({ key: String(e.key).trim(), provider: e.provider || "auto", model: String(e.model || "").trim(), baseUrl: String(e.baseUrl || "").trim() })) };

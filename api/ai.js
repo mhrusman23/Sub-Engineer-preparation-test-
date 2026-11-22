@@ -1,15 +1,26 @@
 // Vercel serverless function: /api/ai   (upload this file to GitHub as  api/ai.js)
 //
 // Secure AI proxy for Engrgroup23 (normal Node.js function, no special settings needed).
-//  - Gemini key stays on the server: Vercel > Project > Settings > Environment Variables > GEMINI_API_KEY
+//  - Main Gemini key stays on the server: Vercel > Project > Settings > Environment Variables > GEMINI_API_KEY
+//  - NEW: separate key per feature (AI Tutor, Ask AI, Urdu AI, Hint AI, AI Generator). The admin pastes them in the
+//    site: Admin panel > Settings > "AI keys for each feature" (saved in Firestore meta/aikeys, admin-only).
+//    This server reads that document with a service account (see SERVICE ACCOUNT below), so students never see a key.
+//    A feature with no key of its own, or whose key fails (limit over, blocked...), uses the main GEMINI_API_KEY.
 //  - Only logged-in, ADMIN-APPROVED users can use it (checked through your Firestore rules, cached 60 s)
 //  - Same-origin only, fixed system prompt + model, size limits, per-user rate limit
 //  - Optional env: GEMINI_MODEL (default gemini-flash-latest = always the current Flash model)
+//
+// SERVICE ACCOUNT (needed only for the per-feature keys): add ONE of these in Vercel > Environment Variables
+//   FIREBASE_SERVICE_ACCOUNT = the whole service-account JSON (or the same JSON as base64)
+//   or FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY  (the names the AI Writer API often uses)
+// Optional per feature (instead of the site Settings): GEMINI_API_KEY_TUTOR, _ASKAI, _URDU, _HINT, _GENERATOR
+
+const crypto = require("crypto");
 
 const PROJECT = process.env.FIREBASE_PROJECT_ID || "engrgroup23";
 const MODEL = (process.env.GEMINI_MODEL || "gemini-flash-latest").replace(/[^\w.\-]/g, "");
 // if the main model is busy (503), retired (404) or over quota (429) the next one is tried
-const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"].filter((m, i, arr) => arr.indexOf(m) === i);
+const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-flash-latest"].filter((m, i, arr) => arr.indexOf(m) === i);
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const PER_MINUTE = 12;
@@ -20,6 +31,9 @@ const MAX_TOTAL = 24000;
 
 const OWNER = "maherusman1947@gmail.com";
 const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents/";
+
+// features that can have their own key (same names as in the site Settings)
+const FEATS = ["tutor", "askai", "urdu", "hint", "generator"];
 
 // Admin panel > AI MCQs (admins only): fixed prompt, bigger reply so the JSON is not cut
 const MCQ_SYS =
@@ -148,6 +162,73 @@ async function authorize(token) {
   return who;
 }
 
+// ---- per-feature keys (Firestore meta/aikeys, read with a service account) ----
+function serviceAccount() {
+  const names = ["FIREBASE_SERVICE_ACCOUNT", "FIREBASE_SERVICE_ACCOUNT_KEY", "FIREBASE_ADMIN_KEY", "FIREBASE_ADMIN", "GOOGLE_SERVICE_ACCOUNT", "SERVICE_ACCOUNT"];
+  for (const n of names) {
+    const v = process.env[n];
+    if (!v) continue;
+    try {
+      const t = v.trim();
+      const j = t[0] === "{" ? JSON.parse(t) : JSON.parse(Buffer.from(t, "base64").toString("utf8"));
+      if (j && j.client_email && j.private_key) return { email: j.client_email, key: String(j.private_key).replace(/\\n/g, "\n") };
+    } catch (e) {}
+  }
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
+    return { email: process.env.FIREBASE_CLIENT_EMAIL, key: String(process.env.FIREBASE_PRIVATE_KEY).replace(/\\n/g, "\n") };
+  return null;
+}
+let adm = { tok: "", exp: 0 };
+async function adminToken() {
+  const now = Date.now();
+  if (adm.tok && adm.exp > now + 60000) return adm.tok;
+  const sa = serviceAccount();
+  if (!sa) return "";
+  const iat = Math.floor(now / 1000);
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const h = b64({ alg: "RS256", typ: "JWT" });
+  const c = b64({ iss: sa.email, scope: "https://www.googleapis.com/auth/datastore", aud: "https://oauth2.googleapis.com/token", iat, exp: iat + 3600 });
+  const sig = crypto.createSign("RSA-SHA256").update(h + "." + c).sign(sa.key).toString("base64url");
+  const r = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + h + "." + c + "." + sig,
+  });
+  if (!r.ok) return "";
+  const j = await r.json().catch(() => ({}));
+  if (!j.access_token) return "";
+  adm = { tok: j.access_token, exp: now + (j.expires_in || 3600) * 1000 };
+  return adm.tok;
+}
+let fkCache = { at: 0, data: null };
+async function featureCfg(feature) {
+  if (!FEATS.includes(feature)) return null;
+  const now = Date.now();
+  if (!fkCache.data || now - fkCache.at > 60000) {
+    const data = {};
+    try {
+      const t = await adminToken();
+      if (t) {
+        const r = await fetch(FS + "meta/aikeys", { headers: { Authorization: "Bearer " + t } });
+        if (r.ok) {
+          const f = ((await r.json().catch(() => ({}))).fields) || {};
+          for (const k of FEATS) {
+            const m = f[k] && f[k].mapValue && f[k].mapValue.fields;
+            if (!m) continue;
+            const g = (n) => String((m[n] && m[n].stringValue) || "");
+            const key = g("key").trim();
+            if (key) data[k] = { key, provider: g("provider") || "auto", model: g("model").trim(), baseUrl: g("baseUrl").trim() };
+          }
+        }
+      }
+    } catch (e) {}
+    fkCache = { at: now, data };
+  }
+  if (fkCache.data[feature]) return fkCache.data[feature];
+  const ev = String(process.env["GEMINI_API_KEY_" + feature.toUpperCase()] || "").trim();
+  return ev ? { key: ev, provider: "gemini", model: "", baseUrl: "" } : null;
+}
+
 // ---- per-user rate limit (best effort) ----
 const hits = new Map();
 const days = new Map();
@@ -204,13 +285,18 @@ async function readBody(req) {
 }
 
 // waits at most 8 s for Google to start answering, then the next model is tried
-async function gemini(model, body) {
+// key defaults to the main GEMINI_API_KEY; vertex = Google Cloud Vertex AI Express key
+async function gemini(model, body, key, vertex) {
   const ac = new AbortController();
   const tm = setTimeout(() => ac.abort(), 8000);
+  const k = key || process.env.GEMINI_API_KEY;
+  const url = vertex
+    ? "https://aiplatform.googleapis.com/v1/publishers/google/models/" + model + ":streamGenerateContent?alt=sse&key=" + encodeURIComponent(k)
+    : "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse";
   try {
-    return await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse", {
+    return await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+      headers: vertex ? { "Content-Type": "application/json" } : { "Content-Type": "application/json", "x-goog-api-key": k },
       body: JSON.stringify(body),
       signal: ac.signal,
     });
@@ -221,10 +307,57 @@ async function gemini(model, body) {
   }
 }
 
+// OpenAI-compatible key (OpenAI, Groq, OpenRouter, DeepSeek...): the reply is converted to the Gemini stream shape the site already reads
+async function openaiStyle(fc, body, system, contents, maxOut) {
+  const base = (fc.baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
+  if (!/^https:\/\//i.test(base)) return new Response("bad base url", { status: 400 });
+  const msgs = [{ role: "system", content: system }].concat(
+    contents.map((c) => ({ role: c.role === "model" ? "assistant" : "user", content: c.parts.map((p) => p.text || "").join("") }))
+  );
+  const ac = new AbortController();
+  const tm = setTimeout(() => ac.abort(), 12000);
+  try {
+    const r = await fetch(base + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + fc.key },
+      body: JSON.stringify(
+        Object.assign(
+          { model: fc.model || "gpt-4o-mini", messages: msgs, stream: true, temperature: 0.4, max_tokens: maxOut },
+          /gpt-oss/i.test(fc.model || "") ? { reasoning_effort: "low" } : {}
+        )
+      ),
+      signal: ac.signal,
+    });
+    r.__oa = true;
+    return r;
+  } catch (e) {
+    return new Response("timeout", { status: 503 });
+  } finally {
+    clearTimeout(tm);
+  }
+}
+
+// the feature's own key; any failure returns a not-ok response and the main key takes over
+async function withFeatureKey(fc, body, system, contents, maxOut) {
+  const p = fc.provider || "auto";
+  if (p === "openai" || fc.baseUrl || /^sk-/.test(fc.key)) return openaiStyle(fc, body, system, contents, maxOut);
+  const models = fc.model ? [fc.model.replace(/[^\w.\-]/g, "")] : MODELS;
+  let up;
+  for (const m of models) {
+    const nb = JSON.parse(JSON.stringify(body));
+    up = await gemini(m, nb, fc.key, p === "vertex");
+    if (up.status === 400 && nb.generationConfig.thinkingConfig) {
+      delete nb.generationConfig.thinkingConfig;
+      up = await gemini(m, nb, fc.key, p === "vertex");
+    }
+    if (up.ok || ![404, 429, 500, 503].includes(up.status)) break;
+  }
+  return up;
+}
+
 module.exports = async function handler(req, res) {
   try {
     if (req.method !== "POST") return fail(res, 405, "METHOD_NOT_ALLOWED", "POST only");
-    if (!process.env.GEMINI_API_KEY) return fail(res, 500, "FAILED_PRECONDITION", "AI is not configured on the server (add GEMINI_API_KEY in Vercel).");
 
     const origin = req.headers.origin;
     if (origin) {
@@ -261,21 +394,42 @@ module.exports = async function handler(req, res) {
       if (mcq && !who.admin) return fail(res, 403, "PERMISSION_DENIED", "Only admins can write AI MCQs");
     }
 
+    const system = mcq ? MCQ_SYS : SYS;
+    const maxOut = mcq ? MCQ_MAX_OUT : 1200;
     const body = {
-      systemInstruction: { parts: [{ text: mcq ? MCQ_SYS : SYS }] },
+      systemInstruction: { parts: [{ text: system }] },
       contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: mcq ? MCQ_MAX_OUT : 1200, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.4, maxOutputTokens: maxOut, thinkingConfig: { thinkingBudget: 0 } },
     };
 
-    let up;
-    for (const m of MODELS) {
-      up = await gemini(m, body);
-      if (up.status === 400 && body.generationConfig.thinkingConfig) {
-        // some models do not accept thinkingBudget: retry once without it
-        delete body.generationConfig.thinkingConfig;
-        up = await gemini(m, body);
+    // which feature is asking (only fixed names are accepted); admin MCQ writing counts as "generator"
+    let feat = String((b && b.feature) || "").toLowerCase();
+    if (!FEATS.includes(feat)) feat = mcq ? "generator" : "";
+
+    let up = null;
+    // 1) the feature's own key (set in the site Settings), if there is one
+    if (feat) {
+      let fc = null;
+      try { fc = await featureCfg(feat); } catch (e) {}
+      if (fc) {
+        try { up = await withFeatureKey(fc, body, system, contents, maxOut); } catch (e) { up = null; }
       }
-      if (up.ok || ![404, 429, 500, 503].includes(up.status)) break;
+    }
+    // 2) otherwise (or if that key failed: limit over, blocked, busy) the main key from Vercel
+    if (!up || !up.ok) {
+      if (process.env.GEMINI_API_KEY) {
+        for (const m of MODELS) {
+          up = await gemini(m, body);
+          if (up.status === 400 && body.generationConfig.thinkingConfig) {
+            // some models do not accept thinkingBudget: retry once without it
+            delete body.generationConfig.thinkingConfig;
+            up = await gemini(m, body);
+          }
+          if (up.ok || ![404, 429, 500, 503].includes(up.status)) break;
+        }
+      } else if (!up) {
+        return fail(res, 500, "FAILED_PRECONDITION", "AI is not configured on the server (add GEMINI_API_KEY in Vercel).");
+      }
     }
     if (!up.ok) {
       if (up.status === 429) return fail(res, 429, "RESOURCE_EXHAUSTED", "AI limit reached, try again later");
@@ -293,10 +447,27 @@ module.exports = async function handler(req, res) {
     if (res.flushHeaders) res.flushHeaders();
     const reader = up.body.getReader();
     req.on("close", () => { try { reader.cancel(); } catch (e) {} });
+    const conv = !!up.__oa;
+    const dec = new TextDecoder();
+    let buf = "";
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
-      res.write(Buffer.from(value));
+      if (!conv) { res.write(Buffer.from(value)); continue; }
+      // OpenAI-style stream -> Gemini-style events
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("data:")) continue;
+        const rawj = line.slice(5).trim();
+        if (!rawj || rawj === "[DONE]") continue;
+        let j;
+        try { j = JSON.parse(rawj); } catch (e) { continue; }
+        const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+        if (d) res.write("data: " + JSON.stringify({ candidates: [{ content: { parts: [{ text: d }] } }] }) + "\n\n");
+      }
     }
     res.end();
   } catch (e) {
