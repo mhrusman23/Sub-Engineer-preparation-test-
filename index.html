@@ -8677,12 +8677,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
       setTimeout(function(){
         var code=(name.match(/\(([^)]+)\)\s*$/)||[])[1]||"";
         var plain=name.replace(/\s*\([^)]+\)\s*$/,"");
-        var items=document.querySelectorAll(".subj");
+        var items=document.querySelectorAll("#yList .hcard");
         for(var i=0;i<items.length;i++){
           var t=items[i].textContent||"";
           if(t.indexOf(plain)>=0||(code&&t.indexOf("("+code+")")>=0)){
             var cb=items[i].querySelector("input[type=checkbox]");
             if(cb&&!cb.checked)cb.click();
+            var gb=items[i].querySelector(".hhead .btn.primary");
+            if(gb){gb.click();return}
             items[i].classList.add("acc-flash");items[i].scrollIntoView({behavior:"smooth",block:"center"});
             return;
           }
@@ -9548,7 +9550,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   function findRow(name){
     var code=(name.match(/\(([^)]+)\)\s*$/)||[])[1]||"";
     var plain=name.replace(/\s*\([^)]+\)\s*$/,"");
-    var rows=document.querySelectorAll("#yList .subj");
+    var rows=document.querySelectorAll("#yList .hcard");
     for(var i=0;i<rows.length;i++){
       var t=rows[i].textContent||"";
       if(t.indexOf(name)>=0||t.indexOf(plain)>=0||(code&&t.indexOf("("+code+")")>=0))return rows[i];
@@ -9556,7 +9558,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     return null;
   }
   function startRow(row){
-    var b=row.querySelector("[data-go]");
+    var b=row.querySelector(".hhead .btn.primary")||row.querySelector("[data-go]");
     if(b){b.click();return true}
     var cb=row.querySelector("input[type=checkbox]");
     if(cb&&!cb.checked)cb.click();
@@ -9610,61 +9612,105 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 
 
 <style id="exitGuardCss">
-#exitAsk{position:fixed;inset:0;z-index:140000;background:rgba(9,14,28,.55);display:flex;align-items:center;justify-content:center;padding:20px}
-#exitAsk[hidden]{display:none!important}
-#exitAsk .exBox{background:#fff;color:#16233c;border-radius:20px;max-width:340px;width:100%;padding:22px 20px;text-align:center;font:15px/1.55 system-ui,sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-#exitAsk .exBox h3{margin:0 0 6px;font-size:18px}
-#exitAsk .exBox p{margin:0 0 16px;color:#5a6b85;font-size:14px}
-#exitAsk .exRow{display:flex;gap:10px}
-#exitAsk button{flex:1;border-radius:999px;padding:12px;font:800 15px system-ui,sans-serif;cursor:pointer}
-#exitAsk .exStay{border:1.5px solid #c9d4e6;background:#eef2f9;color:#16233c}
-#exitAsk .exOk{border:0;background:#d33;color:#fff}
+/* ===== BACK MANAGER + EXIT CONFIRM (2026-11-22, purane exit guard ki jagah) ===== */
+#egExit{position:fixed;inset:0;z-index:99990;background:rgba(10,16,30,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+#egExit .bx{background:#fff;color:#1B2A4A;border-radius:20px;box-shadow:0 24px 50px rgba(27,42,74,.35);max-width:340px;width:100%;padding:22px 20px;text-align:center;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#egExit .t{font-size:19px;font-weight:800;margin:0 0 6px}
+#egExit .s{font-size:14px;opacity:.75;margin:0 0 18px}
+#egExit .row{display:flex;gap:10px}
+#egExit button{flex:1;border-radius:12px;padding:12px;font:800 15px system-ui,sans-serif;cursor:pointer}
+#egExit .stay{background:#fff;color:#1B2A4A;border:1.5px solid #C9D6EE}
+#egExit .ok{background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border:1.5px solid #E04A28}
 </style>
 <script>
-/* ===== EXIT GUARD (2026-11-22) =====
-   Mobile back dabane par website foran band ho jati thi. Ab jab back se
-   website se bahar jane wala ho, pehle confirm ayega: OK = bahar jayein,
-   Stay = website par hi rahen. Website ke andar ki back navigation
-   (subject list, test waghera) pehle ki tarah hi chalegi. */
+/* Mobile Back ab seedha chale ga:
+   Test -> wapis usi folder/category ki list (jahan se test khula tha)
+   Category list -> folder, Folder -> dashboard, Dashboard/Login -> "Leave?" confirm.
+   Website ke apne back system ({y:1}/{t:1} states) ke sath mil kar chalta hai:
+   jo step website khud sambhal le, wahan ye kuch nahi karta, sirf peeche
+   aik hifazati state dobara laga deta hai taake agli Back press bhi kaam kare. */
 (function(){
   "use strict";
   var allow=false,shown=false,box=null;
+  var testWas=false,yvWas=false,ctx={course:"",cat:""};
+  function $(id){return document.getElementById(id)}
+  function vis(el){return !!el&&!el.hidden&&el.getClientRects().length>0}
   function push(){try{history.pushState({egGuard:1},"",location.href)}catch(e){}}
-  function atHome(){
-    var gate=document.getElementById("gate");
-    if(gate&&!gate.hidden)return true;
-    var st=document.getElementById("start");
-    var yv=document.getElementById("yearView");
-    if(!st||st.hidden)return false;
-    if(yv&&!yv.hidden)return false;
-    return true;
+  function folderCourse(){
+    var yd=document.querySelector("#homeCards .ycard.add .yd");
+    if(!yd)return "";
+    var m=/All courses \u00B7 (.+?)\s*$/.exec(yd.textContent||"");
+    return m?m[1].trim():"";
+  }
+  function track(){
+    var t=$("test"),yv=$("yearView");
+    if(vis(t))testWas=true;
+    if(vis(yv)){
+      yvWas=true;
+      var c=folderCourse();if(c)ctx.course=c;
+      var yt=$("yTitle");if(yt)ctx.cat=(yt.textContent||"").trim();
+    }
+  }
+  function openFolder(course,done){
+    var btns=document.querySelectorAll("#start button");
+    for(var i=0;i<btns.length;i++){
+      if((btns[i].textContent||"").trim()===course&&btns[i].getClientRects().length){btns[i].click();setTimeout(done,550);return}
+    }
+    done();
+  }
+  function openCat(cat){
+    if(!cat)return;
+    var cards=document.querySelectorAll("#homeCards .ycard");
+    for(var i=0;i<cards.length;i++){
+      var yt=cards[i].querySelector(".yt");
+      var tx=yt?(yt.textContent||"").trim():"";
+      if(tx&&(cat.indexOf(tx)>=0||tx.indexOf(cat)>=0)){cards[i].click();return}
+    }
+  }
+  function restoreCtx(){
+    if(!ctx.course)return;
+    var cat=ctx.cat;
+    openFolder(ctx.course,function(){openCat(cat)});
   }
   function ensureBox(){
     if(box)return box;
-    box=document.createElement("div");box.id="exitAsk";box.hidden=true;
-    box.innerHTML='<div class="exBox"><h3>Leave Engrgroup23?</h3><p>You pressed Back. Do you want to close the website?</p><div class="exRow"><button type="button" class="exStay">Stay</button><button type="button" class="exOk">OK</button></div></div>';
-    document.body.appendChild(box);
-    box.querySelector(".exStay").addEventListener("click",function(){box.hidden=true;shown=false});
-    box.querySelector(".exOk").addEventListener("click",function(){
-      box.hidden=true;shown=false;allow=true;
+    box=document.createElement("div");box.id="egExit";box.hidden=true;
+    box.innerHTML='<div class="bx"><p class="t">Leave Engrgroup23?</p><p class="s">Press OK to close the website, or Stay to keep studying.</p><div class="row"><button type="button" class="stay">Stay</button><button type="button" class="ok">OK</button></div></div>';
+    box.querySelector(".stay").addEventListener("click",function(){box.hidden=true;shown=false});
+    box.querySelector(".ok").addEventListener("click",function(){
+      allow=true;box.hidden=true;
       try{history.go(-2)}catch(e){}
-      setTimeout(function(){if(allow)history.back()},450);
+      setTimeout(function(){if(!document.hidden)try{history.back()}catch(e){}},450);
     });
+    document.body.appendChild(box);
     return box;
   }
   window.addEventListener("popstate",function(){
     if(allow)return;
     setTimeout(function(){
       if(allow||shown)return;
-      if(!atHome())return;
-      push();
-      ensureBox();box.hidden=false;shown=true;
-    },60);
+      var start=$("start"),test=$("test"),yv=$("yearView");
+      var wasTest=testWas,wasYv=yvWas;
+      testWas=false;yvWas=false;
+      /* Jo step website ne khud sambhala (test band / list band), wahan sirf dobara arm karo */
+      if(wasTest&&!vis(test)){
+        if(vis(start)&&!vis(yv)&&ctx.course){restoreCtx()}
+        push();return;
+      }
+      if(wasYv&&!vis(yv)){push();return}
+      if(vis(test)||vis(yv))return;
+      /* Folder khula hai to dashboard par jao */
+      var bc=document.querySelector("#homeCards .ycard.add");
+      if(vis(start)&&bc&&folderCourse()){bc.click();push();return}
+      /* Sab se upar: dashboard ya login - confirm dikhao */
+      if(vis(start)||vis($("gate"))){push();ensureBox();box.hidden=false;shown=true}
+    },90);
   });
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",push);
-  else push();
+  push();
+  setInterval(track,800);
 })();
 </script>
+
 
 
 <style id="freshLookCss">
@@ -9837,7 +9883,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       row=findRowByIdx(idx);
     }
     if(row){
-      var go=row.querySelector("[data-go]");
+      var go=row.querySelector(".hhead .btn.primary")||row.querySelector("[data-go]");
       if(go){go.click();return}
       var cb=row.querySelector("input.pk");
       if(cb&&!cb.checked)cb.click();
@@ -9884,6 +9930,106 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
   setInterval(function(){watch();apply()},1500);
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){watch();apply()});
   else{watch();apply()}
+})();
+</script>
+
+
+<style id="testTplCss">
+/* ===== TEST SCREEN ME BHI NEW TEMPLATE / CLASSIC (2026-11-22) ===== */
+#test .testTplBar{display:flex;gap:8px;background:#fff;border:1.5px solid #C9D6EE;border-radius:999px;padding:5px;margin:0 0 12px;box-shadow:0 8px 18px rgba(27,42,74,.12);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#test .testTplBar button{flex:1;border:0;border-radius:999px;padding:9px 6px;font:800 13.5px system-ui,sans-serif;background:transparent;color:#1B2A4A;cursor:pointer}
+#test .testTplBar button.on{background:#FF5A3C;color:#fff}
+#test.freshTest .bar{background:linear-gradient(150deg,#16294D,#1B2A4A 60%,#274b73);border-radius:18px;box-shadow:0 14px 30px rgba(27,42,74,.25)}
+#test.freshTest .stat{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:12px}
+#test.freshTest .card.q{border:1.5px solid #D3DEEF;border-radius:18px;box-shadow:0 12px 26px rgba(27,42,74,.12)}
+#test.freshTest .card{border-radius:18px}
+#test.freshTest .btn{border-radius:12px}
+#test.freshTest #next{background:linear-gradient(135deg,#FF7A59,#FF5A3C);border-color:#E04A28;color:#fff}
+#test.freshTest #btnFinish{background:linear-gradient(135deg,#12B5A5,#0E9594);border-color:#0B7C7B;color:#fff}
+#test.freshTest .opts button{border-radius:14px;border:1.5px solid #D3DEEF}
+#test.freshTest .opts button:hover{border-color:#FF5A3C}
+#test.freshTest .prog{border-radius:99px;overflow:hidden}
+</style>
+<script>
+/* Test wali screen ke upar bhi wahi New Template / Classic switch.
+   Choice sab jagah aik hi hai (eg23acView): New = test screen ka naya
+   navy/coral look, Classic = purana look. */
+(function(){
+  "use strict";
+  function mode(){try{return localStorage.getItem("eg23acView")==="classic"?"classic":"new"}catch(e){return "new"}}
+  function apply(){
+    var t=document.getElementById("test");
+    if(!t)return;
+    var bar=t.querySelector(".testTplBar");
+    if(!bar){
+      bar=document.createElement("div");bar.className="testTplBar";
+      bar.innerHTML='<button type="button" data-m="new">\u2728 New Template</button><button type="button" data-m="classic">\uD83D\uDCCB Classic</button>';
+      bar.querySelectorAll("button").forEach(function(b){
+        b.addEventListener("click",function(){
+          try{localStorage.setItem("eg23acView",b.getAttribute("data-m"))}catch(e){}
+          apply();
+        });
+      });
+      t.insertBefore(bar,t.firstChild);
+    }
+    var m=mode();
+    t.classList.toggle("freshTest",m==="new");
+    bar.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-m")===m)});
+  }
+  setInterval(apply,1200);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply);else apply();
+})();
+</script>
+
+
+<style id="lookMenuCss">
+/* ===== OPTION 4: Look (Premium/Classic) button header se hata kar Menu me (2026-11-22) ===== */
+.lookbtn{display:none!important}
+#appmenu .lookbtn{display:flex!important;width:100%;justify-content:flex-start;flex:none!important}
+</style>
+<script>
+/* Header wala Premium/Classic (look) button ab header me nahi ayega -
+   wo Menu (#appmenu) ke andar "Website Look" heading ke neeche milega.
+   Button wahi asal wala hai, sirf jagah badli hai: us ka click (look
+   badalna) pehle ki tarah hi chalega. */
+(function(){
+  "use strict";
+  function label(btn){
+    var cur="Premium";
+    try{if(window.__lookLabel)cur=window.__lookLabel()}catch(e){}
+    var want="\uD83C\uDFA8 Website look: "+cur+" (tap to change)";
+    if(btn.textContent!==want)btn.textContent=want;
+    btn.title="Change look: Premium / Classic";
+  }
+  function move(){
+    var box=document.querySelector("#appmenu .mnbox");
+    var all=document.querySelectorAll(".lookbtn");
+    if(!box){
+      /* Menu abhi khula/bana nahi - header wala button CSS se chhupa rehta hai */
+      return;
+    }
+    var inMenu=box.querySelector(".lookbtn");
+    all.forEach(function(b){
+      if(b===inMenu)return;
+      if(inMenu){b.remove();return}
+      inMenu=b;
+    });
+    if(inMenu){
+      /* Sab se upar: menu ke header ke foran baad label + button */
+      var lb=document.getElementById("lkMenuLbl");
+      if(!lb){
+        lb=document.createElement("div");lb.className="mnlbl";lb.id="lkMenuLbl";lb.textContent="Website Look";
+      }
+      var head=box.querySelector(".mnhead");
+      var anchor=head?head.nextSibling:box.firstChild;
+      if(lb.nextSibling!==inMenu||inMenu.parentNode!==box){
+        box.insertBefore(lb,anchor);
+        box.insertBefore(inMenu,lb.nextSibling);
+      }
+      label(inMenu);
+    }
+  }
+  setInterval(move,900);
 })();
 </script>
 
