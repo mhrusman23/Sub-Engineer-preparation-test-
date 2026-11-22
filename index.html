@@ -9482,7 +9482,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   function getMode(){try{return localStorage.getItem("eg23acView")==="classic"?"classic":"new"}catch(e){return "new"}}
   function setMode(m){try{localStorage.setItem("eg23acView",m)}catch(e){}apply()}
   function centre(){return document.getElementById("accaCaCentre")}
-  function isOpen(c){return !!c&&c.style.display!=="none"&&!!c.querySelector(".acc-card")}
+  function isOpen(c){return !!c&&!c.hidden&&c.getClientRects().length>0&&!!c.querySelector(".acc-card")}/* durusti 2026-11-22: centre hidden property se chhupta hai, style.display se nahi - ghalat check se dashboard ke cards gaib ho rahe thay */
   function ensureBar(c){
     if(c.querySelector(".acViewBar"))return;
     var bar=document.createElement("div");bar.className="acViewBar";
@@ -9663,6 +9663,227 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   });
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",push);
   else push();
+})();
+</script>
+
+
+<style id="freshLookCss">
+/* ===== FRESH LOOK (2026-11-22): Engrgroup23 ki apni pehchan =====
+   Purana pink/plum/yellow wala andaaz badal diya gaya hai taake design
+   kisi aur website ke template jaisa na lage. Ab: gehra navy + coral +
+   teal, naram (soft) shadows, gol-kinare cards - bilkul apna style. */
+:root{--cow-plum:#1B2A4A;--cow-pink:#E8F1FF;--cow-lilac:#DCE9FF;--cow-yellow:#FFB03A;--cow-mint:#12B5A5;--cow-blue:#2E7CF6;--cow-red:#FD4250}
+#accaCaCentre{--plum:#1B2A4A;--pink:#EAF2FF;--lilac:#DCE9FF;--yellow:#FF6A3D;--mint:#12B5A5;--blue:#2E7CF6;--violet:#7C6CF0;
+  background:linear-gradient(165deg,#E8F1FF 0%,#E9F9F1 100%);border:1.5px solid #C9D6EE;border-radius:22px;box-shadow:0 18px 40px rgba(27,42,74,.16)}
+#accaCaCentre h2{text-transform:none;letter-spacing:0}
+#accaCaCentre .acc-tab{border:1.5px solid #C9D6EE;box-shadow:0 6px 14px rgba(27,42,74,.10)}
+#accaCaCentre .acc-tab:hover{box-shadow:0 8px 18px rgba(27,42,74,.14)}
+#accaCaCentre .acc-tab.on{color:#fff}
+#accaCaCentre .acc-search{border:1.5px solid #C9D6EE;border-radius:14px}
+#accaCaCentre .acc-search:focus{box-shadow:0 0 0 4px rgba(46,124,246,.18)}
+#accaCaCentre .acc-card{border:1.5px solid #D3DEEF;border-radius:18px;box-shadow:0 10px 24px rgba(27,42,74,.10)}
+#accaCaCentre .acc-pill{border:1.5px solid #B9CBE8}
+#accaCaCentre .acc-btn{background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border:1.5px solid #E04A28;border-radius:14px;box-shadow:0 10px 20px rgba(255,90,60,.30)}
+#accaCaCentre .rexBtn{border:1.5px solid #1B2A4A!important;color:#1B2A4A!important;border-radius:14px!important;box-shadow:0 8px 16px rgba(27,42,74,.12)!important;background:#fff!important}
+#accaCaCentre .yunl{background:linear-gradient(135deg,#12B5A5,#0E9594)!important;color:#fff!important;border:none!important}
+#accaCaCentre .acViewBar{border:1.5px solid #C9D6EE;box-shadow:0 8px 18px rgba(27,42,74,.12)}
+#accaCaCentre .acViewBar button.on{background:#FF5A3C;color:#fff;box-shadow:none}
+#accGoToast{background:#1B2A4A}
+#gate{background:radial-gradient(520px 320px at 88% -40px,rgba(124,108,240,.30),transparent 60%),radial-gradient(460px 300px at -60px 108%,rgba(18,181,165,.25),transparent 60%),linear-gradient(165deg,#DCEBFF,#E4F7EF)!important}
+#gate .gbox{border:1.5px solid #C9D6EE!important;border-radius:22px!important;box-shadow:0 24px 50px rgba(27,42,74,.20)!important}
+#gate .gbox::before{background:linear-gradient(90deg,#FF6A3D,#FFB03A)!important}
+#gate .gbrand b{color:#FF5A3C!important;-webkit-text-fill-color:#FF5A3C;text-shadow:none}
+#gate button{background:linear-gradient(135deg,#FFB03A,#FF8A3C)!important;color:#1B2A4A!important;border:1.5px solid #E07F28!important;border-radius:14px!important;box-shadow:0 10px 20px rgba(255,138,60,.28)!important}
+#gate button:hover:not([disabled]){box-shadow:0 12px 24px rgba(255,138,60,.34)!important}
+#gate .g3d .ic{filter:drop-shadow(0 10px 14px rgba(27,42,74,.25))}
+</style>
+
+
+<style id="courseCentreCss">
+/* ===== SAB FOLDERS KE LIYE NEW TEMPLATE / CLASSIC (2026-11-22) ===== */
+#courseCentre{background:linear-gradient(165deg,#E8F1FF 0%,#E9F9F1 100%);color:#1B2A4A;border:1.5px solid #C9D6EE;border-radius:22px;box-shadow:0 18px 40px rgba(27,42,74,.16);padding:22px 18px 26px;margin:26px auto;max-width:1080px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#courseCentre .acViewBar{display:flex;gap:8px;background:#fff;border:1.5px solid #C9D6EE;border-radius:999px;padding:5px;margin:0 0 14px;box-shadow:0 8px 18px rgba(27,42,74,.12)}
+#courseCentre .acViewBar button{flex:1;border:0;border-radius:999px;padding:10px 8px;font:800 14px system-ui,sans-serif;background:transparent;color:#1B2A4A;cursor:pointer}
+#courseCentre .acViewBar button.on{background:#FF5A3C;color:#fff}
+#courseCentre .cc2Kick{display:inline-block;background:#1B2A4A;color:#fff;font-weight:800;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:7px 16px;border-radius:999px}
+#courseCentre h2{font-size:clamp(26px,5.4vw,38px);font-weight:800;line-height:1.12;margin:12px 0 6px;color:#1B2A4A}
+#courseCentre .cc2Sub{font-size:15.5px;margin:0 0 16px;opacity:.85}
+#courseCentre .cc2Search{width:100%;box-sizing:border-box;border:1.5px solid #C9D6EE;border-radius:14px;padding:12px 18px;font:600 15px system-ui,sans-serif;color:#1B2A4A;background:#fff;margin:0 0 18px;outline:none}
+#courseCentre .cc2Search:focus{box-shadow:0 0 0 4px rgba(46,124,246,.18)}
+#courseCentre .cc2Cat{font:800 13px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#33507E;margin:18px 0 10px}
+#courseCentre .cc2Card{background:#fff;border:1.5px solid #D3DEEF;border-radius:18px;box-shadow:0 10px 24px rgba(27,42,74,.10);padding:16px 18px;margin:0 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#courseCentre .cc2Main{flex:1;min-width:200px}
+#courseCentre .cc2Name{font-size:18.5px;font-weight:800;line-height:1.25;color:#1B2A4A}
+#courseCentre .cc2Type{font-size:13.5px;opacity:.75;margin-top:2px}
+#courseCentre .cc2Pill{display:inline-block;background:#DCE9FF;color:#1B2A4A;font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px;border:1.5px solid #B9CBE8}
+#courseCentre .cc2Btn{border:1.5px solid #E04A28;background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border-radius:14px;padding:12px 24px;font:800 15.5px system-ui,sans-serif;cursor:pointer;box-shadow:0 10px 20px rgba(255,90,60,.30)}
+#courseCentre .cc2Btn:disabled{opacity:.55}
+#courseCentre .cc2Note{font-size:13.5px;opacity:.75;margin:12px 0 0}
+#courseCentre.cc2Classic .cc2Body{display:none}
+body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
+</style>
+<script>
+/* Har course folder (ACCA/CA ke ilawa) me bhi New Template / Classic switch.
+   New Template: folder ke tamam subjects saaf cards me, har card par Start -
+   aik tap me test khulta hai (sahi category khud khul kar subject ka Start
+   khud dabta hai). Classic: purana tareeqa. Choice sab folders ke liye aik
+   hi yaad rehti hai (eg23acView). Subjects ki list folder ki categories ko
+   aik dafa khol kar khud tayyar hoti hai aur yaad (cache) rehti hai. */
+(function(){
+  "use strict";
+  var SKIP={"ACCA":1,"CA":1};
+  var cache={},builtFor="",building=false,curCourseName="";
+  function savedMode(){try{var v=localStorage.getItem("eg23acView");return v==="new"||v==="classic"?v:null}catch(e){return null}}
+  function effMode(){return savedMode()||"classic"}
+  function setMode(m){try{localStorage.setItem("eg23acView",m)}catch(e){}apply()}
+  function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+  function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+  function folderCourse(){
+    var yd=document.querySelector("#homeCards .ycard.add .yd");
+    if(!yd)return "";
+    var m=/All courses \u00B7 (.+?)\s*$/.exec(yd.textContent||"");
+    if(!m)return "";
+    var c=m[1].trim();
+    return SKIP[c]?"":c;
+  }
+  var sec=null,listEl=null,titleEl=null,subEl=null,kickEl=null,searchEl=null;
+  function ensureSec(){
+    if(sec)return sec;
+    sec=document.createElement("section");sec.id="courseCentre";sec.hidden=true;
+    sec.innerHTML='<div class="acViewBar"><button type="button" data-m="new">\u2728 New Template</button><button type="button" data-m="classic">\uD83D\uDCCB Classic</button></div>'
+      +'<div class="cc2Body"><span class="cc2Kick"></span><h2></h2><p class="cc2Sub">All subjects of this course with solved MCQs. Pick a subject and start in one tap.</p>'
+      +'<input class="cc2Search" type="search" placeholder="Search a subject...">'
+      +'<div class="cc2List"></div>'
+      +'<p class="cc2Note">Tip: Pressing Start opens that subject\'s test right away - new AI MCQs keep coming as you answer.</p></div>';
+    sec.querySelectorAll(".acViewBar button").forEach(function(b){
+      b.addEventListener("click",function(){setMode(b.getAttribute("data-m"))});
+    });
+    listEl=sec.querySelector(".cc2List");titleEl=sec.querySelector("h2");kickEl=sec.querySelector(".cc2Kick");
+    searchEl=sec.querySelector(".cc2Search");
+    searchEl.addEventListener("input",function(){
+      var q=searchEl.value.toLowerCase();
+      sec.querySelectorAll(".cc2Card").forEach(function(c){
+        c.style.display=(!q||c.getAttribute("data-nm").indexOf(q)>=0)?"":"none";
+      });
+    });
+    return sec;
+  }
+  function render(){
+    if(!cache[curCourseName]){listEl.innerHTML='<p class="cc2Note">Preparing subjects...</p>';return}
+    var html="";
+    cache[curCourseName].forEach(function(g){
+      if(!g.subjects.length)return;
+      html+='<div class="cc2Cat">'+esc(g.title)+'</div>';
+      g.subjects.forEach(function(s){
+        html+='<div class="cc2Card" data-nm="'+esc(s.name.toLowerCase())+'"><div class="cc2Main"><div class="cc2Name">'+esc(s.name)+'</div><div class="cc2Type">'+esc(curCourseName)+' \u00B7 Solved MCQs'+(s.n?' \u00B7 '+s.n+' Q':'')+'</div></div>'
+          +'<span class="cc2Pill">Subject</span>'
+          +'<button type="button" class="cc2Btn" data-cat="'+esc(g.title)+'" data-idx="'+s.idx+'">Start</button></div>';
+      });
+    });
+    listEl.innerHTML=html||'<p class="cc2Note">No subjects in this folder yet.</p>';
+    listEl.querySelectorAll(".cc2Btn").forEach(function(b){
+      b.addEventListener("click",function(){startSubject(b.getAttribute("data-cat"),b.getAttribute("data-idx"),b)});
+    });
+  }
+  async function scrape(course){
+    if(building||cache[course])return;
+    building=true;render();
+    var groups=[];
+    var cards=Array.prototype.slice.call(document.querySelectorAll("#homeCards .ycard:not(.add)"));
+    for(var ci=0;ci<cards.length;ci++){
+      var yt=cards[ci].querySelector(".yt");
+      var title=yt?(yt.textContent||"").trim():"";
+      if(!title)continue;
+      cards[ci].click();
+      await wait(420);
+      var subs=[];
+      document.querySelectorAll("#yList .hcard").forEach(function(r){
+        var pk=r.querySelector("input.pk");if(!pk)return;
+        var hn=r.querySelector(".hname");
+        var nm=hn&&hn.childNodes.length?(hn.childNodes[0].textContent||"").trim():"";
+        if(!nm)return;
+        var mt=r.querySelector(".mt"),n="";
+        if(mt){var mm=/(\d+)\s*Q/.exec(mt.textContent||"");if(mm)n=mm[1]}
+        subs.push({name:nm,idx:pk.value,n:n});
+      });
+      groups.push({title:title,subjects:subs});
+      var yb=document.getElementById("yBack");
+      if(yb)yb.click();
+      await wait(320);
+    }
+    cache[course]=groups;building=false;
+    if(curCourseName===course)render();
+    apply();
+  }
+  function findRowByIdx(idx){
+    var rows=document.querySelectorAll("#yList .hcard");
+    for(var i=0;i<rows.length;i++){
+      var pk=rows[i].querySelector("input.pk");
+      if(pk&&pk.value===String(idx))return rows[i];
+    }
+    return null;
+  }
+  async function startSubject(catTitle,idx,btn){
+    window.__accGoUntil=Date.now()+4000;
+    if(btn){btn.disabled=true;setTimeout(function(){btn.disabled=false},2500)}
+    var row=findRowByIdx(idx);
+    if(!row){
+      var cards=document.querySelectorAll("#homeCards .ycard");
+      for(var i=0;i<cards.length;i++){
+        var yt=cards[i].querySelector(".yt");
+        if(yt&&(yt.textContent||"").trim()===catTitle){cards[i].click();break}
+      }
+      await wait(650);
+      row=findRowByIdx(idx);
+    }
+    if(row){
+      var go=row.querySelector("[data-go]");
+      if(go){go.click();return}
+      var cb=row.querySelector("input.pk");
+      if(cb&&!cb.checked)cb.click();
+      var st=document.getElementById("btnStart");
+      if(st)setTimeout(function(){if(!st.disabled)st.click()},150);
+    }
+  }
+  function apply(){
+    var course=folderCourse();
+    var hc=document.getElementById("homeCards");
+    if(!course||!hc||!hc.parentNode){
+      if(sec)sec.hidden=true;
+      document.body.classList.remove("acNewMode2");
+      curCourseName="";
+      return;
+    }
+    ensureSec();
+    if(sec.parentNode!==hc.parentNode||sec.nextSibling!==hc)hc.parentNode.insertBefore(sec,hc);
+    sec.hidden=false;
+    curCourseName=course;
+    var m=effMode();
+    sec.classList.toggle("cc2Classic",m==="classic");
+    document.body.classList.toggle("acNewMode2",m==="new");
+    sec.querySelectorAll(".acViewBar button").forEach(function(b){
+      b.classList.toggle("on",b.getAttribute("data-m")===m);
+    });
+    if(m==="new"){
+      kickEl.textContent=course+" Centre";
+      titleEl.textContent=course+" Subjects";
+      if(!cache[course]&&!building)scrape(course);
+      else if(cache[course]&&builtFor!==course){builtFor=course;render()}
+      var yv=document.getElementById("yearView");
+      if(yv&&!yv.hidden&&!(window.__accGoUntil&&Date.now()<window.__accGoUntil)){
+        var yb=document.getElementById("yBack");if(yb)yb.click();
+      }
+    }
+  }
+  var t=null;
+  function kick(){clearTimeout(t);t=setTimeout(apply,250)}
+  function watch(){
+    var hc=document.getElementById("homeCards");
+    if(hc&&!hc.__cc2Watched){hc.__cc2Watched=1;new MutationObserver(kick).observe(hc,{childList:true,subtree:true})}
+  }
+  setInterval(function(){watch();apply()},1500);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",function(){watch();apply()});
+  else{watch();apply()}
 })();
 </script>
 
