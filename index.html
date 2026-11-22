@@ -1,5 +1,5 @@
 <!doctype html><!-- redeploy: 2026-11-05 v3.6.0-urdu -->
-<html lang="en"><head><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="google-adsense-account" content="ca-pub-3320891722819230"><script>window.__bip=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e;try{dispatchEvent(new Event("bipready"))}catch(_){}});</script><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* SEO title block: dashboard (home) only, not inside tests / option lists / mock folders */#seoInfo[data-off]{display:none!important}
+<html lang="en"><head><meta charset="utf8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="google-adsense-account" content="ca-pub-3320891722819230"><script>window.__bip=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e;try{dispatchEvent(new Event("bipready"))}catch(_){}});</script><style>html.nojokes #jokeCard{display:none!important}:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}/* SEO title block: dashboard (home) only, not inside tests / option lists / mock folders */#seoInfo[data-off]{display:none!important}
 #browse{position:fixed;inset:0;z-index:99990;overflow:auto;background:var(--grad-hero,#0B1530);color:#fff;font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-overflow-scrolling:touch}
 #browse,#browse[hidden]{display:none!important}
 #browse .bw{max-width:560px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 14px 40px}
@@ -2022,8 +2022,18 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       return a.some(function(x){return String(x).toLowerCase()===cn});
     }catch(e){return true}
   }
+  /* Hint button: shown only in the courses ticked in Admin > Settings (default: all) */
+  function hintAllowed(id){
+    try{
+      var a=window.__HINT_ON;if(!Array.isArray(a))return true;
+      var q=Q[id],sc=q&&S[q.sec],y=sc&&SUB[sc.sub];if(!y)return true;
+      var card=YEARS.filter(function(c){return c.k===y.cat})[0],cn=courseOf(card).toLowerCase();
+      return a.some(function(x){return String(x).toLowerCase()===cn});
+    }catch(e){return true}
+  }
   function urRefresh(id){
     var b=$("#qUrBox"),bt=$("#qUr");if(!b)return;
+    try{var hbt=$("#qHint");if(hbt){var hok=!!window.__AI_ON&&hintAllowed(id);hbt.hidden=!hok;if(!hok){var hb0=$("#qHintBox");if(hb0){hb0.hidden=true;hb0.dataset.shown=""}}}}catch(e){}
     var okU=urduAllowed(id);if(bt)bt.hidden=!okU;if(!okU){b.hidden=true;b.textContent="";return}
     var hb=$("#qHintBox");if(hb&&hb.dataset.q!==String(id))hb.hidden=true;
     if(urOpen[id]){var tr=urGet(id);if(tr){urShow(id,tr);if(bt)bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}}
@@ -2061,7 +2071,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var pre=window.__urGet?window.__urGet(key):Promise.resolve(null);
     return pre.then(function(rem){
       if(rem&&rem.q&&rem.o&&rem.o.length){var rr={q:rem.q,o:rem.o};urSet(id,rr);return rr}   /* already translated by the admin: instant */
-      return window.__aiStart("Translate MCQs into Urdu script.").then(function(sx){
+      return window.__aiStart("Translate MCQs into Urdu script.","urdu").then(function(sx){
         return sx.send(urMsg(id),onPart?function(t){try{var p=urPartial(t||"",n);if(p)onPart(p)}catch(e){}}:null);
       }).then(function(full){
         var r=/[\u0900-\u097F]/.test(full||"")?null:urParse(full||"",n);
@@ -2116,8 +2126,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     box.textContent="\u{1F4A1} ... ";
     var q=Q[id],ctx="LANGUAGE RULE: English and/or Urdu in Urdu script only (never Hindi letters). Technical terms and numbers stay in English.\n\nMCQ:\n"+q.text+"\n";
     q.opts.forEach(function(x,j){ctx+=LET[j]+". "+x+"\n"});
-    ctx+="\nYOU ONLY GIVE A HINT. Never say or imply which option is correct, never quote the answer value. Point to the concept, formula or rule to think about, in at most 2 short sentences. Then write the same hint in Urdu. Use exactly this format:\nEN: <hint>\nUR: <hint in Urdu>\nNo follow-up questions.";
-    window.__aiStart(ctx).then(function(sx){
+    ctx+="\nYOU ONLY GIVE A HINT. Never say or imply which option is correct, never quote the answer value. Point to the concept, formula or rule to think about, in at most 2 short sentences. "+(window.__HINT_LANG==="en"?"Write the hint in English only. Reply with only the hint text (no EN:/UR: labels).":window.__HINT_LANG==="ur"?"Write the hint in Urdu script only (technical terms and numbers stay in English). Reply with only the hint text (no EN:/UR: labels).":"Then write the same hint in Urdu. Use exactly this format:\nEN: <hint>\nUR: <hint in Urdu>")+"\nNo follow-up questions.";
+    window.__aiStart(ctx,"hint").then(function(sx){
       return sx.send("Give me the hint now.",function(t){try{if(box.dataset.shown===String(id))box.textContent=aiSplit(t||"").body.trim()}catch(e){}});
     }).then(function(full){
       var t=aiSplit(full||"").body.trim()||"No hint available.";
@@ -2232,7 +2242,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var raf=0,last="";
     function paint(){raf=0;b.innerHTML=aiMd(aiSplit(last).body);aiScroll()}
     function stop(){if(raf){cancelAnimationFrame(raf);raf=0}}
-    var p=aiSess?Promise.resolve(aiSess):window.__aiStart(aiCtx(id)).then(function(s){if(aiCur===id)aiSess=s;return s});
+    var p=aiSess?Promise.resolve(aiSess):window.__aiStart(aiCtx(id),id===-2?"tutor":"askai").then(function(s){if(aiCur===id)aiSess=s;return s});
     var HINDI=/[\u0900-\u097F]/;
     p.then(function(s){return s.send(text+aiKeyNote(id)+aiLangNote(),function(full){last=full;if(!raf)raf=requestAnimationFrame(paint)}).then(function(full){
         /* the model slipped into Hindi: ask once for the same answer in Urdu script / English only */
@@ -2582,6 +2592,26 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function go(p){if(p<0||p>=order.length)return;cancelAuto();var fwd=p>pos;pos=p;renderQ();$("#confirm").hidden=true;if(started)save();if(fwd&&TMP&&TMP.ai&&window.__aiqNext)try{window.__aiqNext(order.length-pos-1)}catch(e){}}
 
+  /* ---- smarter search: whole words / word starts only (no hits in the middle of a word), exact phrase first ---- */
+  function sqEsc(r){return r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+  function sqHit(h,tk,isLast){return h.indexOf(" "+tk+((tk.length<=3&&!isLast)?" ":""))>=0}
+  function sqScore(t,o,n,toks){
+    var L=toks.length,h=" "+t+" ",ho=" "+o+" ",inT=true,inAll=true,k,hit;
+    for(k=0;k<L;k++){
+      hit=sqHit(h,toks[k],k===L-1);
+      if(!hit){inT=false;if(!sqHit(ho,toks[k],k===L-1))inAll=false}
+    }
+    var whole=h.indexOf(" "+n+" ")>=0,pre=h.indexOf(" "+n)>=0;
+    if(!(whole||pre||inT||inAll))return null;
+    var sc=whole?0:(pre?20:(inT?100:1000));
+    if(h.indexOf(" "+n)===0)sc-=5;
+    return {sc:sc,inT:whole||pre||inT,ph:whole||pre};
+  }
+  function sqRe(toks,text){
+    var L=toks.length,parts=toks.map(function(t,k){return sqEsc(t)+((t.length<=3&&k<L-1)?"\\b":"")}),re=null;
+    if(L>1){var pr=new RegExp("\\b"+parts.join("[^a-z0-9\\u00b0\\u00b2]+"),"i");if(pr.test(text))re=new RegExp(pr.source,"ig")}
+    return re||new RegExp("\\b(?:"+parts.join("|")+")","ig");
+  }
   /* ---- search by statement ---- */
   (function(){
     var inp=$("#srchIn"),res=$("#srchRes"),cnt=$("#srchCnt"),clr=$("#srchClr"),hits=[],act=-1,tmr=null;
@@ -2590,7 +2620,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function esc(r){return r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
     function hl(node,text,toks){
       if(!toks.length){node.appendChild(document.createTextNode(text));return}
-      var re=new RegExp("("+toks.map(esc).join("|")+")","ig"),last=0,m;
+      var re=sqRe(toks,text),last=0,m;
       while((m=re.exec(text))){
         if(m.index>last)node.appendChild(document.createTextNode(text.slice(last,m.index)));
         var mk=document.createElement("mark");mk.textContent=m[0];node.appendChild(mk);
@@ -2600,19 +2630,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     }
     function find(qr){var idx=mkIdx();
       var n=norm(qr);if(!n)return {list:[],toks:[]};
-      var toks=n.split(" ").filter(Boolean),out=[];
+      var toks=n.split(" ").filter(Boolean),out=[],ph=false;
       for(var i=0;i<Q.length;i++){
         if(order.indexOf(i)<0)continue;
-        var st=idx[i],inT=true,inAll=true;
-        for(var k=0;k<toks.length;k++){
-          if(st.t.indexOf(toks[k])<0)inT=false;
-          if(st.t.indexOf(toks[k])<0&&st.o.indexOf(toks[k])<0)inAll=false;
-        }
-        if(inT||inAll){
-          var sc=(inT?0:1000)+(st.t.indexOf(n)>=0?0:100)+(st.t.indexOf(n)===0?-50:0)+st.t.length/50;
-          out.push({id:i,sc:sc,inT:inT});
-        }
+        var m=sqScore(idx[i].t,idx[i].o,n,toks);
+        if(m){out.push({id:i,sc:m.sc+idx[i].t.length/50,inT:m.inT,ph:m.ph});if(m.ph)ph=true}
       }
+      if(ph&&toks.length>1)out=out.filter(function(h){return h.ph});   /* exact phrase found: show only those */
       out.sort(function(a,b){return a.sc-b.sc});
       return {list:out,toks:toks};
     }
@@ -2671,7 +2695,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function esc(r){return r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
     function hl(node,text,toks){
       if(!toks.length){node.appendChild(document.createTextNode(text));return}
-      var re=new RegExp("("+toks.map(esc).join("|")+")","ig"),last=0,m;
+      var re=sqRe(toks,text),last=0,m;
       while((m=re.exec(text))){
         if(m.index>last)node.appendChild(document.createTextNode(text.slice(last,m.index)));
         var mk=document.createElement("mark");mk.textContent=m[0];node.appendChild(mk);
@@ -2690,15 +2714,12 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function key(i){return (QO[i]&&QO[i].length)?QA[i]:Q[i].ans}
     function find(qr){
       var n=norm(qr);if(!n)return {list:[],toks:[]};
-      var toks=n.split(" ").filter(Boolean),out=[];
+      var toks=n.split(" ").filter(Boolean),out=[],ph=false;
       for(var i=0;i<Q.length;i++){
-        var t=norm(Q[i].text),o=norm(opts(i).join(" ")),inT=true,inAll=true;
-        for(var k=0;k<toks.length;k++){
-          if(t.indexOf(toks[k])<0)inT=false;
-          if(t.indexOf(toks[k])<0&&o.indexOf(toks[k])<0)inAll=false;
-        }
-        if(inT||inAll)out.push({id:i,inT:inT,sc:(inT?0:1000)+(t.indexOf(n)>=0?0:100)+(t.indexOf(n)===0?-50:0)+t.length/50});
+        var t=norm(Q[i].text),m=sqScore(t,norm(opts(i).join(" ")),n,toks);
+        if(m){out.push({id:i,inT:m.inT,sc:m.sc+t.length/50,ph:m.ph});if(m.ph)ph=true}
       }
+      if(ph&&toks.length>1)out=out.filter(function(h){return h.ph});   /* exact phrase found: show only those */
       out.sort(function(a,b){return a.sc-b.sc});
       return {list:out,toks:toks};
     }
@@ -4061,6 +4082,8 @@ const AI_SYS="You are the friendly AI tutor of Engrgroup23, an exam-preparation 
  "After every answer add a final line exactly in this form: FOLLOWUPS: question 1 | question 2 | question 3 . These are three short follow-up questions (max 10 words each) the student may ask next about your answer; if Urdu is requested write each as English / Urdu. Put nothing after that line.";
 const AI_BASE="https://generativelanguage.googleapis.com/v1beta/models/";
 const VTX_BASE="https://aiplatform.googleapis.com/v1/publishers/google/models/";
+const JOKES_OFF=true;   /* jokes are switched OFF: set to false (and delete the .nojokes CSS rule) to bring them back */
+try{document.documentElement.classList.toggle("nojokes",JOKES_OFF)}catch(_){}
 let aiKeyP=null,aiGood=null;
 /* saved AI settings (Admin panel > Settings): {key, provider, model, baseUrl} */
 function aiKey(){
@@ -4075,6 +4098,21 @@ function aiKey(){
   })().catch(e=>{aiKeyP=null;throw e});
   return aiKeyP;
 }
+/* one separate key per AI feature (Admin panel > Settings > "AI keys for each feature"), stored in meta/aikeys.
+   A feature with an empty key uses the MAIN key (+ extra key 1 and 2). Students go through the server proxy and never see any key. */
+const AI_FEATS=[["tutor","AI Tutor"],["askai","Ask AI (button on each MCQ)"],["urdu","Urdu AI (Urdu translation)"],["hint","Hint AI"],["generator","AI Generator (MCQ generator, classify, organizer)"],["writer","Web-search AI Writer (auto MCQ writer)"]];
+let aiFeatP=null;
+function aiFeatKey(f){
+  return (async()=>{
+    const main=await aiKey();
+    if(!IS_ADMIN)return Object.assign({},main,{feature:f});   /* students: the server proxy picks this feature's key */
+    if(!aiFeatP)aiFeatP=getDoc(doc(db,"meta","aikeys")).then(d=>d.exists()?d.data():{},()=>({}));
+    const all=await aiFeatP,x=all[f]||{},k=String(x.key||"").trim();
+    if(!k)return Object.assign({},main,{feature:f});
+    return {key:k,provider:x.provider||"auto",model:String(x.model||"").trim(),baseUrl:String(x.baseUrl||"").trim(),backup:main.backup,feature:f};
+  })();
+}
+const aiGenKey=()=>aiFeatKey("generator");
 function aiErrMsg(st,j){
   const e=(j&&j.error)||{};const m=(e.status||"")+" "+(e.message||"")+" "+JSON.stringify(e.details||"");
   const x=new Error(m.trim()||("HTTP "+st));x.http=st;return x;
@@ -4083,14 +4121,14 @@ function aiErrMsg(st,j){
 function aiPlans(cfg){
   const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-flash-latest",em=encodeURIComponent(model),ek=encodeURIComponent(key);
   /* if Google says the model is busy (503) / retired (404) / over quota (429), the next model is tried automatically */
-  const fbm=cfg.model?[]:["gemini-3.8-flash","gemini-flash-lite-latest","gemini-2.5-flash-lite"].filter(x=>x!==model);
+  const fbm=cfg.model?[]:["gemini-3.8-flash","gemini-flash-lite-latest","gemini-flash-latest"].filter(x=>x!==model);
   const more=()=>fbm.map(m=>({id:"gemini:"+m,m:m,kind:"g",url:AI_BASE+encodeURIComponent(m)+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}}));
   const gem=()=>({id:"gemini",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
   const gemq=()=>({id:"gemini-q",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const oai=()=>({id:"openai",kind:"o",model:model,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}});
   /* server proxy: the key stays on the server (Vercel env GEMINI_API_KEY), users never see it */
-  const prx=()=>({id:"proxy",kind:"g",proxy:true,url:"/api/ai",h:{}});
+  const prx=()=>({id:"proxy",kind:"g",proxy:true,feature:cfg.feature||"",url:"/api/ai",h:{}});
   /* keyless free fallback (no API key needed) */
   const free=()=>({id:"free",kind:"o",free:true,model:"openai",url:"https://text.pollinations.ai/openai",h:{}});
   /* secure by default: no key / proxy -> our own server only (login + approval checked there). The third-party free service is used only if the owner picks "Free" explicitly. */
@@ -4116,6 +4154,7 @@ function aiBody(plan,contents,noThink){
   const gc={temperature:0.4,maxOutputTokens:AI_MAXOUT||1024};if(!noThink)gc.thinkingConfig={thinkingBudget:0};
   const body={systemInstruction:{parts:[{text:(AI_SYS_OVR||AI_SYS.split("Engrgroup23").join(siteName()))}]},contents,generationConfig:gc};
   if(plan.proxy&&AI_MAXOUT)body.mode="mcq";
+  if(plan.proxy&&plan.feature)body.feature=plan.feature;
   return body;
 }
 function aiPiece(plan,j){
@@ -4190,8 +4229,8 @@ async function aiCallOne(cfg,contents,on){
 /* shared Urdu cache: translated once (by admin / bulk tool), every student reads it instantly */
 window.__urGet=async function(key){try{const s=await getDoc(doc(db,"urdu",key));return s.exists()?s.data():null}catch(e){return null}};
 window.__urPut=async function(key,r){try{if(!IS_ADMIN)return;await setDoc(doc(db,"urdu",key),{q:String(r.q||"").slice(0,1500),o:(r.o||[]).map(function(x){return String(x||"").slice(0,600)}),at:serverTimestamp()})}catch(e){}};
-window.__aiStart=async ctx=>{
-  const cfg=await aiKey();
+window.__aiStart=async (ctx,feat)=>{
+  const cfg=feat?await aiFeatKey(feat):await aiKey();
   const hist=[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}];
   return {send:async(msg,on)=>{
     const turn=hist.concat([{role:"user",parts:[{text:msg}]}]);
@@ -4618,6 +4657,8 @@ async function check(user){
     window.__AI_ON=cfg.ai!==false&&!window.__VISITOR;
     window.__AIQ_MODE=["all","premium","off"].includes(cfg.aiMcq)?cfg.aiMcq:"all";
     window.__URDU_ON=Array.isArray(cfg.urduCourses)?cfg.urduCourses:null;
+    window.__HINT_ON=Array.isArray(cfg.hintCourses)?cfg.hintCourses:null;
+    window.__HINT_LANG=["en","ur","both"].includes(cfg.hintLang)?cfg.hintLang:"both";
     window.__LIB_ON=cfg.library!==false;
     window.__CHATNOTE=cfg.chatNote===true;
     lgStep("Loading questions...",55);
@@ -4753,7 +4794,7 @@ function openMenu(){
   if(IS_OWNER&&!PV)mi("\u2699\uFE0F Settings (important)",()=>openAdmin("settings"));
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
-  if(IS_OWNER&&!PV)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
+  if(IS_OWNER&&!PV&&!JOKES_OFF)mi("\u{1F604} Jokes (add / edit / AI) \u00b7 admin only",()=>openJokes());
   if(IS_OWNER&&!PV)mi("\u{1F4E2} Ads (add / edit) \u00b7 admin only",()=>openAds());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
@@ -4804,7 +4845,7 @@ async function jkAutoUpdate(){
     if(window.__jkRepaint)window.__jkRepaint();
   }catch(e){}
 }
-let jkTry=0;(function jkLoop(){setTimeout(()=>{if(IS_ADMIN&&!PV)jkAutoUpdate();else if(++jkTry<24)jkLoop()},15000)})();
+let jkTry=0;(function jkLoop(){if(JOKES_OFF)return;setTimeout(()=>{if(IS_ADMIN&&!PV)jkAutoUpdate();else if(++jkTry<24)jkLoop()},15000)})();
 window.__ads={
   get:async()=>{const d=await getDoc(doc(db,"sitedata","ads"));return d.exists()?d.data():{}},
   set:async o=>{await setDoc(doc(db,"sitedata","ads"),Object.assign({},o,{updatedAt:Date.now()}))},
@@ -5387,7 +5428,7 @@ function aimcqParse(full,n){
   return out.slice(0,n);
 }
 async function aimcqGenerate(subject,n,have,noUrdu){
-  const cfg=await aiKey();
+  const cfg=await aiGenKey();
   AI_SYS_OVR="You write exam MCQs for Pakistani competitive tests (PPSC, FPSC, NTS, Sub Engineer) in engineering, IT, accounting and finance (ACCA, CA) and general knowledge. Write MCQs only for the subject the user names. Reply with ONLY a valid JSON array, no markdown and no other text.";
   AI_MAXOUT=4096;
   try{
@@ -5978,7 +6019,7 @@ async function aimcqAutoRun(manual){
     let bank=null;try{bank=JSON.parse(BANK_JSON||"null")}catch(_){}
     if(!bank||!Array.isArray(bank.CARDS)||!bank.CARDS.length){rep.note="Home folders are not saved in the bank yet. Open Edit MCQs, publish once.";await aimcqAutoLog(rep);return rep}
     const subs=bank.SUB.filter(y=>y&&y.cat!=="__tmp").map(y=>y.name);
-    let cfg=null;try{cfg=await aiKey()}catch(_){}
+    let cfg=null;try{cfg=await aiGenKey()}catch(_){}
     const meta=new Array(use.length).fill(null);let aiFail=0;
     if(cfg)for(let b=0;b<use.length;b+=20){
       const part=use.slice(b,b+20);let m=null;
@@ -6059,7 +6100,7 @@ async function writerCycle(){
     rep.subject=pick.course+" > "+pick.y.name;
     const label=(/^civil/i.test(pick.course)?"Civil Engineering":pick.course)+": "+pick.y.name;
     const have=(bank.Q0||[]).filter(q=>bank.S[q.sec]&&bank.S[q.sec].sub===pick.i).map(q=>q.text);
-    const cfg=await aiKey();
+    const cfg=await aiFeatKey("writer");
     const rows=await aimcqGenerate(label,6,have,true);
     const good=await writerVerify(cfg,label,rows);
     if(!good.length){rep.note="No MCQ passed the check.";return rep}
@@ -6223,7 +6264,7 @@ function aimcqOrganizer(host){
     const parts=split(box.value);
     if(!parts.length){say("Paste the MCQs first.");return}
     lock(true);items=[];prev.textContent="";
-    let cfg;try{cfg=await aiKey()}catch(e){say(aiErrBase(e));lock(false);return}
+    let cfg;try{cfg=await aiGenKey()}catch(e){say(aiErrBase(e));lock(false);return}
     const hint=[courseSel.value&&"course = "+courseSel.value,kindSel.value&&"kind = "+kindSel.value,subj.value.trim()&&"subject = "+subj.value.trim(),chap.value.trim()&&"chapter / paper name = "+chap.value.trim()].filter(Boolean).join("; ");
     let fail=0,err="";
     for(let i=0;i<parts.length;i++){
@@ -6420,7 +6461,7 @@ function aimcqPool(host){
   return load;
 }
 async function aimcqChapters(subject,n){
-  const cfg=await aiKey();
+  const cfg=await aiGenKey();
   AI_SYS_OVR="You plan course syllabi. Reply with ONLY a valid JSON array of strings, no markdown and no other text.";AI_MAXOUT=1024;
   try{
     const full=await aiCall(cfg,[{role:"user",parts:[{text:"List exactly "+n+" main chapter names (2 to 5 words each, in teaching order) for the course: "+subject+"."}]}],null);
@@ -6760,7 +6801,7 @@ function buildSettings(host){
     async function one(q){
       const nn=q.opts.length;
       const msg="Translate this MCQ into Urdu script for a Pakistani civil engineering diploma student. Keep technical terms, formulas, units and numbers in English. Reply with ONLY these lines and nothing else (no explanation, no extra text):\nQ: <question in Urdu>\n"+q.opts.map((x,j)=>(j+1)+": <option "+(j+1)+" in Urdu>").join("\n")+"\n\nQuestion: "+q.text+"\nOptions:\n"+q.opts.map((x,j)=>(j+1)+". "+x).join("\n");
-      const sx=await window.__aiStart("Translate MCQs into Urdu script.");
+      const sx=await window.__aiStart("Translate MCQs into Urdu script.","urdu");
       const full=String(await sx.send(msg,null)||"");
       if(/[\u0900-\u097F]/.test(full))return null;
       const r={q:"",o:[]};let m;
@@ -6812,6 +6853,19 @@ function buildSettings(host){
     names.forEach(n=>{const lbx=el("label","",null);lbx.style.cssText="display:flex;gap:6px;align-items:center";const c=el("input");c.type="checkbox";c.value=n;c.checked=sel===null||sel.some(x=>String(x).toLowerCase()===n.toLowerCase());urBoxes.push(c);lbx.append(c,el("span","",n));urList.appendChild(lbx)});
   };
   buildUr(null);
+  const hiWrap=el("div","",null);hiWrap.style.cssText="margin-top:12px";
+  const hiLab=el("div","label","\u{1F4A1} Hint button shows only in the courses ticked here (Civil, ACCA, CA ...):");
+  const hiList=el("div","",null);hiList.style.cssText="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px";
+  const hiLang=el("select");hiLang.id="cfgHintLang";hiLang.setAttribute("aria-label","Hint language");hiLang.style.cssText="width:100%;margin-top:8px";
+  [["both","Hint language: English + \u0627\u0631\u062f\u0648 (both)"],["en","Hint language: English only"],["ur","Hint language: \u0627\u0631\u062f\u0648 (Urdu) only"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];hiLang.appendChild(op)});
+  hiWrap.append(hiLab,hiList,hiLang);
+  const hiBoxes=[];
+  const buildHi=(sel)=>{
+    hiList.textContent="";hiBoxes.length=0;let names=["Civil"];
+    try{const bk=JSON.parse(BANK_JSON||"null");(bk&&bk.CARDS||[]).forEach(c=>{const n=String((c&&c.course)||"").trim()||"Civil";if(names.indexOf(n)<0)names.push(n)})}catch(_){}
+    names.forEach(n=>{const lbx=el("label","",null);lbx.style.cssText="display:flex;gap:6px;align-items:center";const c=el("input");c.type="checkbox";c.value=n;c.checked=sel===null||sel.some(x=>String(x).toLowerCase()===n.toLowerCase());hiBoxes.push(c);lbx.append(c,el("span","",n));hiList.appendChild(lbx)});
+  };
+  buildHi(null);
   const lb4=el("label","",null);lb4.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb4.append(cb4,el("span","","AI Helper (Gemini) ON for all users"));
   const cb6=el("input");cb6.type="checkbox";cb6.id="cfgAiFree";
   const lb6=el("label","",null);lb6.style.cssText="display:flex;gap:8px;align-items:center;margin-top:8px";lb6.append(cb6,el("span","","AI backup (free, no key) if main AI is busy/quota over - question text goes to a 3rd-party service"));
@@ -6835,7 +6889,7 @@ function buildSettings(host){
   const lbB=el("label","",null);lbB.style.cssText="display:flex;gap:8px;align-items:center;margin-top:10px";lbB.append(cbB,el("span","","Browse without login: app opens straight to the dashboard, login is asked only when someone opens MCQs"));
   const cb5=el("input");cb5.type="checkbox";cb5.id="cfgLib";
   const lb5=el("label","",null);lb5.style.cssText="display:flex;gap:8px;align-items:center;margin-top:12px";lb5.append(cb5,el("span","","Library ON for all users (admin/manager keep access)"));
-  const kl=el("div","label","AI API key (optional: Gemini AQ.../AIza..., OpenAI-style sk-...). Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
+  const kl=el("div","label","MAIN AI key: used by every feature that has no key of its own below, and for jokes etc. (extra key 1 and 2 are its backups). Optional: Gemini AQ.../AIza..., OpenAI-style sk-.... Leave empty = secure server AI (recommended, key stays on Vercel)");kl.style.marginTop="12px";
   const kw=el("div","",null);kw.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
   const ki=el("input");ki.type="password";ki.placeholder="Paste API key";ki.autocomplete="off";ki.spellcheck=false;ki.style.flex="1 1 220px";ki.setAttribute("aria-label","AI API key");
   const ks=el("button","btn","Show");ks.type="button";ks.onclick=()=>{ki.type=ki.type==="password"?"text":"password";ks.textContent=ki.type==="password"?"Show":"Hide"};
@@ -6846,6 +6900,33 @@ function buildSettings(host){
   const mi=el("input");mi.type="text";mi.placeholder="Model (optional, default gemini-flash-latest)";mi.setAttribute("aria-label","AI model");
   const bi=el("input");bi.type="text";bi.placeholder="Base URL, OpenAI-compatible only (e.g. https://openrouter.ai/api/v1)";bi.setAttribute("aria-label","AI base URL");
   const kst=el("div","label");
+  /* one key per AI feature */
+  const fkWrap=el("div","",null);
+  fkWrap.appendChild(Object.assign(el("div","label","\u{1F511} AI keys for each feature: paste a separate key for any feature below. Empty box = that feature uses the MAIN key above."),{style:"margin-top:18px;font-weight:800"}));
+  const fk={};
+  AI_FEATS.forEach(function(F){
+    const f=F[0],box=el("div","",null);box.style.cssText="margin-top:12px;padding:10px;border:1px solid var(--line,#ccc);border-radius:10px";
+    const lab=el("div","label","\u2728 "+F[1]);lab.style.fontWeight="700";
+    const w=el("div","",null);w.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+    const k=el("input");k.type="password";k.placeholder="Paste API key for "+F[1];k.autocomplete="off";k.spellcheck=false;k.style.flex="1 1 220px";k.setAttribute("aria-label","API key: "+F[1]);
+    const sh=el("button","btn","Show");sh.type="button";sh.onclick=()=>{k.type=k.type==="password"?"text":"password";sh.textContent=k.type==="password"?"Show":"Hide"};
+    const tt=el("button","btn","Test key");tt.type="button";w.append(k,sh,tt);
+    const p=el("select");p.setAttribute("aria-label","Provider: "+F[1]);p.style.cssText="width:100%;margin-top:6px";
+    [["auto","Provider: Auto-detect (recommended)"],["gemini","Google Gemini - AI Studio key (AQ... or AIza...)"],["vertex","Google Cloud Vertex AI Express key only"],["openai","OpenAI-compatible (OpenAI, OpenRouter, Groq, DeepSeek...)"]].forEach(o=>{const op=el("option","",o[1]);op.value=o[0];p.appendChild(op)});
+    const m=el("input");m.type="text";m.placeholder="Model (optional, default gemini-flash-latest)";m.setAttribute("aria-label","Model: "+F[1]);m.style.cssText="width:100%;margin-top:6px";
+    const b=el("input");b.type="text";b.placeholder="Base URL, OpenAI-compatible only (e.g. https://api.groq.com/openai/v1)";b.setAttribute("aria-label","Base URL: "+F[1]);b.style.cssText="width:100%;margin-top:6px";
+    const s2=el("div","label");
+    const sync=()=>{b.style.display=p.value==="openai"?"":"none"};p.onchange=sync;sync();
+    tt.onclick=async()=>{
+      const kk=k.value.trim();if(!kk){s2.textContent="Paste a key first.";return}
+      tt.disabled=true;s2.textContent="Testing...";
+      try{const r=await window.__aiTest({key:kk,provider:p.value,model:m.value.trim(),baseUrl:b.value.trim()});s2.textContent=r?"Key works \u2714 AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
+      catch(e){s2.textContent=window.__aiErr(e)}
+      tt.disabled=false;
+    };
+    box.append(lab,w,p,m,b,s2);fkWrap.appendChild(box);
+    fk[f]={k:k,p:p,m:m,b:b,sync:sync};
+  });
   /* extra (backup) AI keys: used one after another if the main key hits its limit */
   const exBlocks=[1,2].map(n=>{
     const lab=el("div","label","Extra AI key "+n+" (optional backup: used if the main key hits its limit)");lab.style.marginTop="10px";
@@ -6877,20 +6958,22 @@ function buildSettings(host){
   };
   const sv=el("button","btn primary","Save");sv.type="button";
   const st=el("div","label st");
-  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,am,urWrap,lb6,lb5,kl,kw,ps,mi,bi,kst,...exBlocks.flatMap(x=>[x.lab,x.w,x.p,x.m,x.b,x.s2]),sv,st);
+  host.append(lb,tx,lbO,lbB,lbH,lbN,lbI,lbS,iT,tB,lb2,lb3,gm,lb4,am,urWrap,hiWrap,lb6,lb5,kl,kw,ps,mi,bi,kst,fkWrap,...exBlocks.flatMap(x=>[x.lab,x.w,x.p,x.m,x.b,x.s2]),sv,st);
   const syncP=()=>{bi.style.display=ps.value==="openai"?"":"none"};ps.onchange=syncP;syncP();
-  if(!IS_ADMIN){[kl,kw,kst].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null;exBlocks.forEach(x=>{[x.lab,x.w,x.p,x.m,x.b,x.s2].forEach(y=>{y.style.display="none"});x.p.onchange=null})}
+  if(!IS_ADMIN){[kl,kw,kst,fkWrap].forEach(x=>{x.hidden=true});[ps,mi,bi].forEach(x=>{x.style.display="none"});ps.onchange=null;exBlocks.forEach(x=>{[x.lab,x.w,x.p,x.m,x.b,x.s2].forEach(y=>{y.style.display="none"});x.p.onchange=null})}
   tabs.settings.load=async()=>{
-    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";buildUr(Array.isArray(d.urduCourses)?d.urduCourses:null);am.value=["all","premium","off"].includes(d.aiMcq)?d.aiMcq:"all";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);cbB.checked=!(ac.exists()&&ac.data().browse===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
-      if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP();const ee=Array.isArray(x.extra)?x.extra:[];exBlocks.forEach((b,i)=>{const e=ee[i]||{};b.k.value=e.key||"";b.p.value=e.provider||"auto";b.m.value=e.model||"";b.b.value=e.baseUrl||"";b.sync()})}catch(e){}}
+    try{const c=await getDoc(doc(db,"meta","config"));const d=c.exists()?c.data():{};cb.checked=d.enabled!==false;tx.value=d.message||"";cb2.checked=d.trial!==false;cb3.checked=d.trialIp!==false;cb4.checked=d.ai!==false;cb6.checked=d.aiFree!==false;gm.value=d.guestApprove===true?"approve":"auto";buildUr(Array.isArray(d.urduCourses)?d.urduCourses:null);buildHi(Array.isArray(d.hintCourses)?d.hintCourses:null);hiLang.value=["en","ur","both"].includes(d.hintLang)?d.hintLang:"both";am.value=["all","premium","off"].includes(d.aiMcq)?d.aiMcq:"all";cb5.checked=d.library!==false;try{const ac=await getDoc(doc(db,"sitedata","access"));cbO.checked=ac.exists()&&ac.data().open===true;cbH.checked=ac.exists()&&ac.data().showHours===true;cbN.checked=ac.exists()&&ac.data().showNote===true;cbS.checked=!(ac.exists()&&ac.data().seoOn===false);cbI.checked=!(ac.exists()&&ac.data().showInstall===false);cbB.checked=!(ac.exists()&&ac.data().browse===false);iT.value=ac.exists()?(ac.data().seoTitle||""):"";tB.value=ac.exists()?(ac.data().seoBody||""):"";if(!iT.value){const e1=document.getElementById("seoT");if(e1)iT.value=e1.textContent}if(!tB.value){const e2=document.getElementById("seoB");if(e2)tB.value=Array.from(e2.children).map(x=>x.textContent.trim()).join("\n\n")}}catch(_){}
+      if(IS_ADMIN)try{const a=await getDoc(doc(db,"meta","ai"));const x=a.exists()?a.data():{};ki.value=x.key||"";ps.value=x.provider||"auto";mi.value=x.model||"";bi.value=x.baseUrl||"";syncP();const ee=Array.isArray(x.extra)?x.extra:[];exBlocks.forEach((b,i)=>{const e=ee[i]||{};b.k.value=e.key||"";b.p.value=e.provider||"auto";b.m.value=e.model||"";b.b.value=e.baseUrl||"";b.sync()})}catch(e){}
+      if(IS_ADMIN)try{const t=await getDoc(doc(db,"meta","aikeys"));const y=t.exists()?t.data():{};AI_FEATS.forEach(F=>{const e=y[F[0]]||{},c=fk[F[0]];c.k.value=e.key||"";c.p.value=e.provider||"auto";c.m.value=e.model||"";c.b.value=e.baseUrl||"";c.sync()})}catch(e){}}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
   };
   sv.onclick=async()=>{
     sv.disabled=true;
-    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",aiMcq:am.value,urduCourses:urBoxes.filter(c=>c.checked).map(c=>c.value),library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
+    try{await setDoc(doc(db,"meta","config"),{enabled:cb.checked,message:tx.value.trim(),trial:cb2.checked,trialIp:cb3.checked,ai:cb4.checked,aiFree:cb6.checked,guestApprove:gm.value==="approve",aiMcq:am.value,urduCourses:urBoxes.filter(c=>c.checked).map(c=>c.value),hintCourses:hiBoxes.filter(c=>c.checked).map(c=>c.value),hintLang:hiLang.value,library:cb5.checked,updatedAt:serverTimestamp()},{merge:true});
       await setDoc(doc(db,"sitedata","access"),{open:cbO.checked,showHours:cbH.checked,showNote:cbN.checked,showInstall:cbI.checked,browse:cbB.checked,seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim(),updatedAt:serverTimestamp()});OPEN_ACC=cbO.checked;SHOW_HRS=cbH.checked;SHOW_NOTE=cbN.checked;SHOW_INST=cbI.checked;SEO_CFG={seoOn:cbS.checked,seoTitle:iT.value.trim(),seoBody:tB.value.trim()};if(window.__applyOpen)window.__applyOpen();
       if(IS_ADMIN)await setDoc(doc(db,"meta","ai"),{key:ki.value.trim(),provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim(),extra:exBlocks.map(b=>({key:b.k.value.trim(),provider:b.p.value,model:b.m.value.trim(),baseUrl:b.b.value.trim()})).filter(e=>e.key),updatedAt:serverTimestamp()});
-      aiKeyP=null;aiGood=null;window.__URDU_ON=urBoxes.filter(c=>c.checked).map(c=>c.value);st.textContent="Saved.";}
+      if(IS_ADMIN){const o={updatedAt:serverTimestamp()};AI_FEATS.forEach(F=>{const c=fk[F[0]];o[F[0]]={key:c.k.value.trim(),provider:c.p.value,model:c.m.value.trim(),baseUrl:c.b.value.trim()}});await setDoc(doc(db,"meta","aikeys"),o)}
+      aiKeyP=null;aiFeatP=null;aiGood=null;window.__URDU_ON=urBoxes.filter(c=>c.checked).map(c=>c.value);window.__HINT_ON=hiBoxes.filter(c=>c.checked).map(c=>c.value);window.__HINT_LANG=hiLang.value;st.textContent="Saved.";}
     catch(e){st.textContent="Error: "+(e.code||e.message)}
     sv.disabled=false;
   };
@@ -7354,7 +7437,7 @@ function showHtml(it,html){
       try{
         const L="ABCDEFGH",opts=(d.o||[]).map((x,k)=>L.charAt(k)+") "+x).join("\n");
         const ctx="You are a friendly civil engineering tutor for PPSC Sub Engineer exam students. MCQ: "+d.q+"\nOptions:\n"+opts+"\nCorrect answer: "+(d.a>=0?L.charAt(d.a):"unknown")+"\nStudent picked: "+L.charAt(d.p);
-        const s=await window.__aiStart(ctx);
+        const s=await window.__aiStart(ctx,"askai");
         const out=await s.send("Explain this MCQ in simple English: why the correct answer is correct and why the other options are wrong. Keep the answer short and clear, 5-6 lines.",t=>reply(t));
         reply(out||"The AI did not answer, please try again.");
       }catch(e){reply((window.__aiErr?window.__aiErr(e):String(e&&e.message||e)))}
