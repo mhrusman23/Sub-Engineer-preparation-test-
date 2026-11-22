@@ -9232,4 +9232,227 @@ details>summary:hover{color:var(--accent)}
 })();
 </script>
 
+
+<style id="seoToolCss">
+/* ===== SEO PAGES TOOL (2026-11-22): naye subjects ki Google pages ===== */
+#seoToolOv{position:fixed;inset:0;z-index:120000;background:rgba(9,14,28,.55);display:flex;align-items:flex-end;justify-content:center}
+#seoToolOv[hidden]{display:none!important}
+#seoToolOv .seoBox{background:#fff;color:#16233c;width:min(680px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 16px 26px;font:14px/1.55 system-ui,sans-serif}
+@media(min-width:640px){#seoToolOv{align-items:center}#seoToolOv .seoBox{border-radius:22px}}
+#seoToolOv h3{margin:2px 0 4px;font-size:19px}
+#seoToolOv .seoSub{color:#5a6b85;font-size:13px;margin:0 0 12px}
+#seoToolOv .seoRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+#seoToolOv select,#seoToolOv input[type=text]{padding:10px 12px;border:1.5px solid #c9d4e6;border-radius:12px;font:600 14px system-ui,sans-serif;background:#fff;color:#16233c}
+#seoToolOv .seoBtn{border:0;border-radius:999px;padding:10px 16px;background:#1d4ed8;color:#fff;font:800 13.5px system-ui,sans-serif;cursor:pointer}
+#seoToolOv .seoBtn.gold{background:linear-gradient(135deg,#F7DE8E,#D4AF37);color:#3a2c00}
+#seoToolOv .seoBtn.ghost{background:#eef2f9;color:#16233c;border:1.5px solid #c9d4e6}
+#seoToolOv .seoBtn:disabled{opacity:.45}
+#seoToolOv .seoChips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#seoToolOv .seoChip{background:#eef4ff;border:1px solid #c9dbff;color:#1d4ed8;border-radius:999px;padding:5px 12px;font:700 12.5px system-ui,sans-serif}
+#seoToolOv .seoChip.new{background:#fff4d6;border-color:#ecd28a;color:#7a5b00}
+#seoToolOv .seoItem{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid #e2e9f4;border-radius:14px;margin:8px 0}
+#seoToolOv .seoItem input{width:20px;height:20px;accent-color:#1d4ed8;margin-top:2px}
+#seoToolOv .seoItem .nm{font-weight:800;font-size:14px}
+#seoToolOv .seoItem .mt{color:#5a6b85;font-size:12.5px;word-break:break-all}
+#seoToolOv .seoBadge{margin-left:auto;flex:none;border-radius:999px;padding:3px 10px;font:800 11px system-ui,sans-serif;background:#e8f7ee;color:#137a3f}
+#seoToolOv .seoBadge.new{background:#ffe9a8;color:#7a5b00}
+#seoToolOv .seoBadge.ready{background:#e3ecff;color:#1d4ed8}
+#seoToolOv .seoNote{background:#f6f9ff;border:1px dashed #b9cdf5;border-radius:14px;padding:10px 12px;font-size:13px;color:#33507e}
+#seoToolOv .seoBanner{background:linear-gradient(135deg,#fff7dc,#ffe9a8);border:1.5px solid #d9b34a;border-radius:14px;padding:12px;font-weight:700;color:#5b4a00}
+</style>
+<script>
+/* ===== SEO PAGES: naye subject ki Google page khud tayyar (Automatic / Manual) =====
+   Sach ye hai ke browser se page seedha GitHub par nahi ja sakta (security), is liye
+   ye tool page + sitemap khud-ba-khud tayyar karke download kar deta hai - admin ko
+   sirf GitHub me upload karna hota hai, bilkul waisay jaisay index.html karte hain. */
+(function(){
+  "use strict";
+  var EXISTING=("advance-quantity-surveying-mcqs advanced-civil-engineering-surveying-mcqs advanced-construction-techniques-mcqs basic-civil-drawing-1st-year-mcqs basic-surveying-1st-year-mcqs building-inspector-lg-and-cd-2020 civil-engineering-drawing-and-autocad-mcqs concrete-technology-and-r-c-c-design-mcqs construction-project-planning-and-management-mcqs documentation-officer-punjab-seed-corporation-2023 engineering-materials-and-construction-1st-year-mcqs engineering-mechanics-mcqs environment-health-and-safety-3rd-year-mcqs hydraulics-and-irrigation-engineering-mcqs public-health-technology-mcqs quantity-surveying-mcqs soil-mechanics-and-bridge-engineering-mcqs sub-engineer-civil-bda-bahawalpur-2021 sub-engineer-civil-bda-bahawalpur-2023 sub-engineer-civil-c-and-w-department-2019 sub-engineer-civil-c-and-w-department-2021 sub-engineer-civil-clubbed-test-c-and-w-rda-wasa-gda-2025 sub-engineer-civil-clubbed-test-mda-mtn-fda-fsd-2023 sub-engineer-civil-clubbed-test-pid-psc-sda-gda-2024 sub-engineer-civil-fda-faisalabad-2021 sub-engineer-civil-gda-gujranwala-2018 sub-engineer-civil-hud-and-phed-2019 sub-engineer-civil-hud-and-phed-2022 sub-engineer-civil-parks-and-horticulture-authority-faisalabad-2023 sub-engineer-civil-punjab-irrigation-department-2020 sub-engineer-civil-punjab-irrigation-department-2023 sub-engineer-civil-rda-rawalpindi-2021 sub-engineer-civil-wasa-lda-lahore-2019 transportation-engineering-mcqs").split(" ");
+  var CORE=["https://ppscengr.com/","https://ppscengr.com/about.html","https://ppscengr.com/contact.html","https://ppscengr.com/privacy-policy.html","https://ppscengr.com/papers-hub.html"];
+  var BANK=null,ROWS=[];
+  function ls(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function mode(){return ls("eg23seoMode","auto")}
+  function doneMap(){return ls("eg23seoDone",{})}
+  function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+  function slugify(name,cat){
+    var s=String(name||"subject").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+    if(cat!=="pp")s+="-mcqs";
+    return s||"subject";
+  }
+  function download(name,content,type){
+    var b=new Blob([content],{type:type||"text/html;charset=utf-8"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+  }
+  function pageHtml(row){
+    var secs=row.sections,total=row.count,name=esc(row.name),slug=row.slug;
+    var body="";
+    secs.forEach(function(sc){
+      body+='<h2>'+esc(sc.name)+'</h2><ol class="qs">';
+      sc.qs.forEach(function(q){
+        body+='<li><p class="q">'+esc(q.text)+'</p><ul class="op">';
+        (q.opts||[]).forEach(function(o,i){
+          body+='<li'+(i===q.ans?' class="ok"':'')+'>'+esc(o)+(i===q.ans?' &#10003; <b>(Correct answer)</b>':'')+'</li>';
+        });
+        body+='</ul></li>';
+      });
+      body+='</ol>';
+    });
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+      +'<title>'+name+' - Solved MCQs with Answers | Engrgroup23</title>\n'
+      +'<meta name="description" content="Free '+name+' solved MCQs with correct answers ('+total+' questions). Practice online, take the mock test and check your preparation on Engrgroup23.">\n'
+      +'<link rel="canonical" href="https://ppscengr.com/papers/'+slug+'.html">\n'
+      +'<style>body{font:16px/1.65 system-ui,sans-serif;color:#1c2b3a;max-width:760px;margin:0 auto;padding:20px 16px 48px;background:#f7faff}h1{font-size:24px;line-height:1.3}h2{font-size:19px;margin:28px 0 6px;color:#0d2b52}.cta{display:inline-block;background:#1d4ed8;color:#fff;font-weight:800;padding:13px 22px;border-radius:999px;text-decoration:none;margin:10px 0 4px}.qs{padding-left:20px}.q{font-weight:700;margin:14px 0 4px}.op{list-style:none;padding:0;margin:0 0 6px}.op li{padding:5px 10px;border:1px solid #dbe5f2;border-radius:9px;margin:4px 0;background:#fff}.op li.ok{background:#e8f7ee;border-color:#9fd8b4}footer{margin-top:36px;font-size:13px;color:#567}a{color:#1d4ed8}</style>\n</head>\n<body>\n'
+      +'<p><a href="https://ppscengr.com/">&#8592; Engrgroup23 - Home</a></p>\n'
+      +'<h1>'+name+' - Solved MCQs</h1>\n'
+      +'<p>Free <strong>'+name+'</strong> solved MCQs with the correct answer marked - <strong>'+total+' questions</strong> in total. Read them below, or take the same test online with a timer, instant result and progress tracking.</p>\n'
+      +'<a class="cta" href="https://ppscengr.com/#t='+slug+'">&#9654; Take this test online - free</a>\n'
+      +body
+      +'\n<footer><p><a href="https://ppscengr.com/">Engrgroup23</a> - Free past papers and solved MCQs for PPSC, Civil, Electrical, Mechanical, IT, ACCA, CA and General Knowledge. <a href="https://ppscengr.com/papers-hub.html">All past papers</a></p></footer>\n</body>\n</html>';
+  }
+  function sitemapXml(){
+    var done=doneMap(),urls=CORE.slice(),today=new Date().toISOString().slice(0,10);
+    EXISTING.forEach(function(s){urls.push("https://ppscengr.com/papers/"+s+".html")});
+    Object.keys(done).forEach(function(s){var u="https://ppscengr.com/papers/"+s+".html";if(urls.indexOf(u)<0)urls.push(u)});
+    var x='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    urls.forEach(function(u){x+="<url><loc>"+u+"</loc><lastmod>"+today+"</lastmod></url>\n"});
+    return x+"</urlset>\n";
+  }
+  function buildRows(){
+    ROWS=[];var used={};
+    var secSub={},secName={};
+    (BANK.S||[]).forEach(function(s,i){secSub[i]=s.sub;secName[i]=s.name||("Section "+(i+1))});
+    var perSub={};
+    (BANK.SUB||[]).forEach(function(s,i){perSub[i]={count:0,sections:{}}});
+    (BANK.Q0||[]).forEach(function(q){
+      var si=secSub[q.sec];if(si==null||!perSub[si])return;
+      var sn=secName[q.sec];
+      perSub[si].count++;
+      (perSub[si].sections[sn]=perSub[si].sections[sn]||[]).push(q);
+    });
+    (BANK.SUB||[]).forEach(function(s,i){
+      var info=perSub[i];if(!info||!info.count)return;
+      var slug=slugify(s.name,s.cat),base=slug,n=2;
+      while(used[slug]){slug=base+"-"+(n++);}
+      used[slug]=1;
+      var secs=Object.keys(info.sections).map(function(k){return{name:k,qs:info.sections[k]}});
+      ROWS.push({idx:i,name:s.name,cat:s.cat||"",slug:slug,count:info.count,sections:secs,
+        state:EXISTING.indexOf(slug)>=0?"site":(doneMap()[slug]?"ready":"new")});
+    });
+    ROWS.sort(function(a,b){return (a.state==="new"?0:a.state==="ready"?1:2)-(b.state==="new"?0:b.state==="ready"?1:2)||a.name.localeCompare(b.name)});
+  }
+  function markDone(slugs){
+    var d=doneMap();slugs.forEach(function(s){d[s]=1});save("eg23seoDone",d);
+    ROWS.forEach(function(r){if(slugs.indexOf(r.slug)>=0&&r.state==="new")r.state="ready"});
+  }
+  /* ---------- UI ---------- */
+  var ov=null,listEl=null,statusEl=null,bannerEl=null;
+  function ensureOv(){
+    if(ov)return ov;
+    ov=document.createElement("div");ov.id="seoToolOv";ov.hidden=true;
+    ov.innerHTML='<div class="seoBox">'
+      +'<div style="display:flex;align-items:center;gap:10px"><h3 style="flex:1">&#128269; SEO Pages - Google Search</h3><button type="button" class="seoBtn ghost" id="seoClose">Close</button></div>'
+      +'<p class="seoSub">Har naye subject ki alag Google page khud tayyar ho jati hai, bilkul purani paper pages ki tarah - phir wo Google search me aati hai.</p>'
+      +'<div class="seoRow"><label style="font-weight:800">New subjects mode:</label>'
+      +'<select id="seoModeSel"><option value="auto">Automatic (recommended)</option><option value="manual">Manual</option><option value="off">Off</option></select></div>'
+      +'<div id="seoBody">'
+      +'<div class="seoNote"><b>Step 1:</b> Pehle Admin panel se <b>bank-backup.json</b> download karein, phir yahan select karein. Pages isi data se banti hain.<br><b>Step 2:</b> Pages download karke GitHub ke <b>papers</b> folder me upload karein aur <b>sitemap.xml</b> ko replace karein.<br><b>Step 3:</b> Google Search Console me sitemap.xml dobara submit karein - naye pages search me aana shuru ho jayenge.</div>'
+      +'<div class="seoRow"><label class="seoBtn gold" for="seoFile" style="cursor:pointer">Select bank-backup.json</label><input type="file" id="seoFile" accept=".json,application/json" hidden><span id="seoStatus" style="font-weight:700;color:#33507e">No file loaded yet</span></div>'
+      +'<div class="seoChips" id="seoChips"></div>'
+      +'<div id="seoBanner"></div>'
+      +'<div class="seoRow"><input type="text" id="seoFilter" placeholder="Search subject..." style="flex:1;min-width:150px"><button type="button" class="seoBtn" id="seoDlSel">Download selected pages</button><button type="button" class="seoBtn gold" id="seoDlMap">Download sitemap.xml</button></div>'
+      +'<div id="seoList"></div>'
+      +'</div></div>';
+    document.body.appendChild(ov);
+    listEl=ov.querySelector("#seoList");statusEl=ov.querySelector("#seoStatus");bannerEl=ov.querySelector("#seoBanner");
+    ov.querySelector("#seoClose").onclick=function(){ov.hidden=true};
+    ov.addEventListener("click",function(e){if(e.target===ov)ov.hidden=true});
+    var sel=ov.querySelector("#seoModeSel");sel.value=mode();
+    sel.onchange=function(){save("eg23seoMode",sel.value);applyMode();render()};
+    ov.querySelector("#seoFile").addEventListener("change",function(){
+      var f=this.files&&this.files[0];if(!f)return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        try{
+          var d=JSON.parse(rd.result);
+          if(!d||!d.SUB||!d.Q0)throw new Error("bad");
+          BANK=d;buildRows();
+          statusEl.textContent="Loaded: "+ROWS.length+" subjects with MCQs";
+          render();
+          if(mode()==="auto"){
+            var nw=ROWS.filter(function(r){return r.state==="new"});
+            if(nw.length){
+              bannerEl.innerHTML='<div class="seoBanner">Automatic mode: '+nw.length+' new subject(s) found. Un ki pages aik click me tayyar karein: <button type="button" class="seoBtn" id="seoAutoGo" style="margin-left:8px">Download '+nw.length+' pages + sitemap</button></div>';
+              ov.querySelector("#seoAutoGo").onclick=function(){downloadRows(nw,true)};
+            }
+          }
+        }catch(e){statusEl.textContent="Ye sahi bank-backup.json nahi lagti - dobara try karein."}
+      };
+      rd.readAsText(f);
+    });
+    ov.querySelector("#seoFilter").addEventListener("input",render);
+    ov.querySelector("#seoDlSel").onclick=function(){
+      var picked=ROWS.filter(function(r){return r.checked});
+      if(!picked.length){statusEl.textContent="Pehle list se kam az kam aik subject select karein.";return}
+      downloadRows(picked,false);
+    };
+    ov.querySelector("#seoDlMap").onclick=function(){download("sitemap.xml",sitemapXml(),"text/xml;charset=utf-8");statusEl.textContent="sitemap.xml download ho gayi - GitHub me purani wali se replace kar dein."};
+    applyMode();
+    return ov;
+  }
+  function applyMode(){
+    if(!ov)return;
+    var b=ov.querySelector("#seoBody");
+    if(mode()==="off"){b.style.opacity=".45";b.style.pointerEvents="none"}
+    else{b.style.opacity="";b.style.pointerEvents=""}
+  }
+  function render(){
+    if(!ov||!BANK)return;
+    var q=(ov.querySelector("#seoFilter").value||"").toLowerCase();
+    var nw=ROWS.filter(function(r){return r.state==="new"}).length;
+    var rd=ROWS.filter(function(r){return r.state==="ready"}).length;
+    ov.querySelector("#seoChips").innerHTML='<span class="seoChip">On site already: '+EXISTING.length+'</span>'
+      +(rd?'<span class="seoChip">Pages ready (uploaded by you): '+rd+'</span>':'')
+      +'<span class="seoChip new">New subjects without a page: '+nw+'</span>';
+    var html="";
+    ROWS.forEach(function(r,i){
+      if(q&&r.name.toLowerCase().indexOf(q)<0)return;
+      var badge=r.state==="site"?'<span class="seoBadge">On site</span>':r.state==="ready"?'<span class="seoBadge ready">Page ready</span>':'<span class="seoBadge new">NEW</span>';
+      html+='<div class="seoItem"><input type="checkbox" data-i="'+i+'" '+(r.checked?"checked":"")+'><div style="flex:1;min-width:0"><div class="nm">'+esc(r.name)+'</div><div class="mt">'+r.count+' MCQs &middot; /papers/'+r.slug+'.html</div></div>'+badge+'<button type="button" class="seoBtn ghost" data-dl="'+i+'">Page</button></div>';
+    });
+    listEl.innerHTML=html||'<p style="color:#5a6b85">No subject matches.</p>';
+    listEl.querySelectorAll("input[type=checkbox]").forEach(function(c){
+      c.onchange=function(){ROWS[+c.getAttribute("data-i")].checked=c.checked};
+    });
+    listEl.querySelectorAll("[data-dl]").forEach(function(b){
+      b.onclick=function(){downloadRows([ROWS[+b.getAttribute("data-dl")]],false)};
+    });
+  }
+  function downloadRows(rows,withMap){
+    rows.forEach(function(r,i){
+      setTimeout(function(){download(r.slug+".html",pageHtml(r))},i*650);
+    });
+    markDone(rows.map(function(r){return r.slug}));
+    setTimeout(function(){
+      if(withMap)download("sitemap.xml",sitemapXml(),"text/xml;charset=utf-8");
+      statusEl.textContent=rows.length+" page(s) downloaded. Ab inhe GitHub ke papers folder me upload karein"+(withMap?" aur sitemap.xml replace karein":"")+".";
+      render();
+    },rows.length*650+350);
+  }
+  function openTool(){ensureOv();ov.hidden=false;applyMode();render()}
+  /* Admin panel me button lagana */
+  setInterval(function(){
+    var adm=document.getElementById("adm");
+    if(!adm||document.getElementById("seoTabBtn"))return;
+    var tabs=adm.querySelector(".tabs");if(!tabs)return;
+    var b=document.createElement("button");
+    b.type="button";b.id="seoTabBtn";b.className="btn ghost";b.textContent="\uD83D\uDD0E SEO Pages";
+    b.onclick=openTool;
+    tabs.appendChild(b);
+  },1200);
+})();
+</script>
+
 </body></html>
