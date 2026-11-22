@@ -1594,7 +1594,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       ah.appendChild(ab);ac.appendChild(ah);list.appendChild(ac);
     }
     ids.forEach(function(i){
-      var s=SUB[i],n=subCount(i),ai=(s.code==="Subject"),card=el("div","hcard"),hd=el("div","hhead");
+      var s=SUB[i],n=subCount(i),ai=(s.code==="Subject"||(!pp&&(window.__AIQ_MODE||"all")==="all"))/* har subject AI flow: 2026-11-22 user ki khwahish - sab folders/templates, sirf Past Papers view classic rahega, aur AI mode off/premium ho to khud classic par wapas */,card=el("div","hcard"),hd=el("div","hhead");
       var cb=document.createElement("input");cb.type="checkbox";cb.className="pk";cb.value=String(i);cb.setAttribute("aria-label","Select "+s.name);
       cb.checked=keep?keep.indexOf(i)>=0:false;cb.disabled=!n;cb.addEventListener("change",refreshPick);
       hd.appendChild(cb);
@@ -6607,7 +6607,7 @@ window.__aiPlaySubject=async function(subject){
   window.__aiqNext=()=>{};
   window.__aiqDone=()=>{
     if(buf.length<3&&q.old.length)buf.push(...q.old.splice(0,10));
-    const add=buf.splice(0,3);aiqMarkS(add);
+    const add=buf.splice(0,3+Math.floor(Math.random()*5));aiqMarkS(add);/* 3-7 naye MCQs har submit par (2026-11-22) */
     if(add.length&&window.__aiAppend)window.__aiAppend(add.map(toQ));
     if(buf.length<10)more();
   };
@@ -6658,7 +6658,7 @@ window.__aiPlayBankSub=async function(label,course,own){
     window.__aiqNext=()=>{};
     window.__aiqDone=()=>{
       if(buf.length<3&&old.length)buf.push(...old.splice(0,10));
-      const add=buf.splice(0,3);aiqMarkS(add);
+      const add=buf.splice(0,3+Math.floor(Math.random()*5));aiqMarkS(add);/* 3-7 naye MCQs har submit par (2026-11-22) */
       if(add.length&&window.__aiAppend)window.__aiAppend(add.map(toQ));
       if(buf.length<10)more();
     };
