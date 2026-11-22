@@ -3990,7 +3990,7 @@ function buildWebset(){
   box.appendChild(el("div","label","Contact email (shown on About / Contact / Privacy pages):"));
   const wmail=el("input");wmail.id="wsEmail";wmail.type="email";wmail.placeholder="maherusman1947@gmail.com";wmail.style.cssText="width:100%";box.appendChild(wmail);
   const lab3=el("div","label","\ud83d\udce2 Announcement strip (login screen + top of the app; empty = off):");box.appendChild(lab3);
-  const wannc=el("input");wannc.id="wsAnnc";wannc.placeholder="Naye PPSC 2026 papers add ho gaye!";wannc.style.cssText="width:100%";box.appendChild(wannc);
+  const wannc=el("input");wannc.id="wsAnnc";wannc.placeholder="New PPSC 2026 papers added!";wannc.style.cssText="width:100%";box.appendChild(wannc);
   box.appendChild(el("div","label","Theme color:"));
   const accRow=el("div");accRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0";
   ["#1F4FD8","#7C3AED","#0E9F6E","#D97706","#BE123C","#0E7490"].forEach(c=>{
@@ -4705,7 +4705,7 @@ async function check(user){
     const code=String((e&&(e.code||e.message))||e).trim();
     if(code==="permission-denied"||/Missing or insufficient permissions/i.test(code)){
       deny(email,(IS_OWNER||IS_ADMIN)
-        ?"Server rules abhi publish nahi hui is liye data load nahi ho raha. File manager mein 'firestore.rules' kholen \u2192 Firebase Console \u2192 Firestore Database \u2192 Rules tab \u2192 poori file paste kar ke Publish dabayen. (permission-denied)"
+        ?"Server rules are not published yet, so data cannot load. Open 'firestore.rules' in File Manager \u2192 Firebase Console \u2192 Firestore Database \u2192 Rules tab \u2192 paste the full file and press Publish. (permission-denied)"
         :"Site settings are being updated \u2014 please try again shortly or contact the admin (03494482609). (permission-denied)");
     }else deny(email,"Error: "+code);
   }
@@ -5299,7 +5299,7 @@ function bankToast(){
   t.appendChild(el("div","","The admin has published new MCQs / files. Refresh the page and everything will appear on the dashboard instantly."));
   const rb=el("button","btn primary","🔄 Refresh");rb.type="button";rb.style.cssText="width:100%";
   rb.onclick=()=>location.reload();
-  const xb=el("button","btn","Baad mein");xb.type="button";xb.style.cssText="width:100%";
+  const xb=el("button","btn","Later");xb.type="button";xb.style.cssText="width:100%";
   xb.onclick=()=>t.remove();
   t.appendChild(rb);t.appendChild(xb);
   document.body.appendChild(t);
@@ -6870,7 +6870,7 @@ function buildSettings(host){
   (function(){
     const box=el("div");box.style.cssText="padding:12px;border:1px solid var(--line,#ccc);border-radius:12px;margin-bottom:14px";
     box.appendChild(el("b","","\u26a1 Urdu translation (saved for everyone)"));
-    box.appendChild(el("div","label","Paper ya subject chunein aur Start dabayein: AI saare sawalon ka Urdu bana kar save kar deta hai. Phir students ko Urdu foran milta hai. Jab tak chale, ye page khula rakhein. Pehle se bane hue sawal skip ho jate hain."));
+    box.appendChild(el("div","label","Choose a paper or subject and press Start: AI creates the Urdu version of all questions and saves it. Students then get Urdu instantly. Keep this page open while it runs. Questions that are already done are skipped."));
     const sel=el("select");sel.style.cssText="width:100%;margin-top:6px";
     ((typeof bank!=="undefined"&&bank&&bank.SUB)||[]).forEach((x,i)=>{const o=el("option","",x.name);o.value=String(i);sel.appendChild(o)});
     const go=el("button","btn primary","\u25b6 Start");go.type="button";go.style.marginTop="8px";
@@ -8490,7 +8490,7 @@ body>.dd-ghost{position:fixed;z-index:9999;pointer-events:none;padding:9px 16px;
 </style>
 <script>
 (function(){
-  try{if(sessionStorage.getItem("introShown")==="1")return;if(localStorage.getItem("introSeen")==="1")return;if(localStorage.getItem("lookMode")==="classic")return}catch(e){}
+  return; /* Intro / Tap to start hamesha ke liye khatam - owner request 2026-11-22: website seedha login / dashboard par khulegi */
   var reduce=false;try{reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches}catch(e){}
   var muted=false;try{muted=localStorage.getItem("introMute")==="1"}catch(e){}
   var name="PPSC PAST PAPERS";try{if(window.__siteName){var n=String(window.__siteName()||"").trim();if(n)name=n.toUpperCase()}}catch(e){}
@@ -8657,9 +8657,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   function build(){
     if(document.getElementById("accaCaCentre"))return;
     var sec=document.createElement("section");sec.id="accaCaCentre";
-    sec.innerHTML='<span class="acc-kick">Exam Centre</span><h2>ACCA &amp; CA Past Papers</h2><p class="acc-sub">Here you will find all ACCA and CA subjects with solved MCQs. Pick a subject and take the exam.</p><div class="acc-tabs"><button type="button" class="acc-tab on" data-t="acca">ACCA</button><button type="button" class="acc-tab" data-t="ca">CA</button></div><input class="acc-search" type="search" placeholder="Search a subject... e.g. Financial Management" aria-label="Search ACCA and CA subjects"><div class="acc-list"></div><p class="acc-note">Tip: Take the exam dabane se aap seedha us subject ki selection par chale jayenge.</p>';
-    var host=document.getElementById("seoInfo")||document.getElementById("start");
-    if(host&&host.parentNode){host.parentNode.insertBefore(sec,host)}else{document.body.appendChild(sec)}
+    sec.innerHTML='<span class="acc-kick">Exam Centre</span><h2>ACCA &amp; CA Past Papers</h2><p class="acc-sub">Here you will find all ACCA and CA subjects with solved MCQs. Pick a subject and take the exam.</p><div class="acc-tabs"><button type="button" class="acc-tab on" data-t="acca">ACCA</button><button type="button" class="acc-tab" data-t="ca">CA</button></div><input class="acc-search" type="search" placeholder="Search a subject... e.g. Financial Management" aria-label="Search ACCA and CA subjects"><div class="acc-list"></div><p class="acc-note">Tip: Pressing Take the exam takes you straight to the selection of that subject below.</p>';
+    sec.hidden=true;
+    document.body.appendChild(sec);
     var list=sec.querySelector(".acc-list"),search=sec.querySelector(".acc-search"),cur="acca";
     function render(){
       var q=(search.value||"").toLowerCase(),data=cur==="acca"?ACCA:CA,html="";
@@ -8668,7 +8668,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
         if(q&&name.toLowerCase().indexOf(q)<0)return;
         html+='<div class="acc-card"><div class="acc-main"><div class="acc-name">'+name+'</div><div class="acc-type">'+(cur==="acca"?"ACCA Computer Based Exam":"CA Exam - ICAP")+' &middot; Solved MCQs</div></div><span class="acc-pill">Past Papers</span><span class="acc-pill spec">Specimen</span><button type="button" class="acc-btn" data-name="'+name.replace(/"/g,"")+'">Take the exam</button></div>';
       });
-      list.innerHTML=html||'<div class="acc-empty">No subject found. Koi aur naam likh kar dekhein.</div>';
+      list.innerHTML=html||'<div class="acc-empty">No subject found. Try another name.</div>';
       list.querySelectorAll(".acc-btn").forEach(function(b){b.addEventListener("click",function(){go(b.getAttribute("data-name"))})});
     }
     function go(name){
@@ -8692,6 +8692,29 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     sec.querySelectorAll(".acc-tab").forEach(function(tab){tab.addEventListener("click",function(){cur=tab.getAttribute("data-t");sec.querySelectorAll(".acc-tab").forEach(function(x){x.classList.toggle("on",x===tab)});render()})});
     search.addEventListener("input",render);
     render();
+    /* Folder mode: ye centre ab sirf ACCA / CA course folder khulne par us ke andar nazar ayega, dashboard par nahi */
+    var shownCourse="";
+    function place(){
+      var hc=document.getElementById("homeCards");if(!hc||!hc.parentNode)return;
+      var course="",yd=hc.querySelector(".ycard.add .yd");
+      if(yd){var m=/All courses \u00B7 (ACCA|CA)\s*$/.exec(yd.textContent||"");if(m)course=m[1]}
+      if(!course){sec.hidden=true;shownCourse="";return}
+      if(sec.nextSibling!==hc||sec.parentNode!==hc.parentNode)hc.parentNode.insertBefore(sec,hc);
+      if(shownCourse!==course){
+        shownCourse=course;cur=course.toLowerCase();
+        sec.querySelector("h2").textContent=course+" Past Papers";
+        var tb=sec.querySelector(".acc-tabs");if(tb)tb.style.display="none";
+        render();
+      }
+      sec.hidden=false;
+    }
+    var pPend=false;
+    function pSched(){if(pPend)return;pPend=true;setTimeout(function(){pPend=false;place()},200)}
+    (function watch(){
+      var hc=document.getElementById("homeCards");
+      if(hc){new MutationObserver(pSched).observe(hc,{childList:true});place()}
+      else setTimeout(watch,600);
+    })();
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",build);else build();
 })();
@@ -8930,7 +8953,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
       if(card.querySelector(".yunl"))return;
       var meta=card.querySelector(".ym");
       var s=document.createElement("span");s.className="yunl";
-      s.innerHTML="\uD83D\uDD13 "+TXT+' <i>AI GENERATOR ON</i>';
+      s.innerHTML="\uD83D\uDD13 "+TXT;
       if(meta&&meta.parentNode===card)card.insertBefore(s,meta.nextSibling);else card.appendChild(s);
     });
     document.querySelectorAll("#accaCaCentre .acc-card").forEach(function(card){
@@ -8940,9 +8963,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
       if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);
     });
   }
+  var pend=false;
+  function sched(){if(pend)return;pend=true;setTimeout(function(){pend=false;enhance()},300)}
   function start(){
     enhance();
-    new MutationObserver(function(){enhance()}).observe(document.body,{childList:true,subtree:true});
+    var hc=document.getElementById("homeCards"),ct=document.getElementById("accaCaCentre");
+    if(hc)new MutationObserver(sched).observe(hc,{childList:true,subtree:true});
+    if(ct)new MutationObserver(sched).observe(ct,{childList:true,subtree:true});
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();
@@ -9073,5 +9100,136 @@ details>summary:hover{color:var(--accent)}
   html{scroll-behavior:auto}
 }
 </style>
+
+
+
+<style id="pink3dLoginCss">
+/* ===== OPTION 2: PINK 3D EDUCATION LOGIN - aCOWtancy style (user selected 2026-11-22) =====
+   Halki pink background, rang-birangi 3D education sajawat, safed card
+   plum outline + offset shadow, peelay buttons, mint highlights.
+   Sirf design: login ke functions waisay hi hain. */
+#gate{
+  background:
+    radial-gradient(520px 320px at 88% -40px,rgba(154,125,255,.35),transparent 60%),
+    radial-gradient(460px 300px at -60px 108%,rgba(49,224,142,.28),transparent 60%),
+    radial-gradient(240px 160px at 50% 112%,rgba(254,203,46,.35),transparent 60%),
+    #FFDEED!important;
+  color:#2A0A39!important}
+#gate>*{position:relative;z-index:2}
+#gate .g3d{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#gate .g3d .fi{position:absolute;filter:drop-shadow(4px 6px 0 rgba(42,10,57,.28));animation:gfloat2 ease-in-out infinite alternate;will-change:transform}
+#gate .g3d .gp{position:absolute;border-radius:50%;animation:gtwinkle2 ease-in-out infinite alternate;will-change:opacity,transform}
+@keyframes gfloat2{from{transform:translateY(-7px) rotate(-5deg)}to{transform:translateY(11px) rotate(6deg)}}
+@keyframes gtwinkle2{from{opacity:.35;transform:scale(.75)}to{opacity:1;transform:scale(1.2)}}
+#gate .gbox{background:#fff!important;border:2px solid #2A0A39!important;border-radius:28px!important;box-shadow:10px 10px 0 #2A0A39!important;color:#2A0A39!important;max-width:400px}
+#gate .gbox::before{height:6px!important;background:#FECB2E!important}
+#gate .gbrand{color:#2A0A39!important;letter-spacing:-.02em}
+#gate .gbrand b{background:none!important;color:#E9A800!important;-webkit-text-fill-color:#E9A800;text-shadow:2px 2px 0 rgba(253,66,80,.45)}
+@media (prefers-reduced-motion:reduce){
+  #gate .g3d .fi,#gate .g3d .gp{animation:none!important}
+}
+</style>
+<script>
+/* Pink 3D login: halki floating education sajawat (kitab, cap, globe, calculator...)
+   rang-birangi 3D style me + chhotay rang-birangay zarre. Sirf transform/opacity
+   animation hai taake website hang na ho. */
+(function(){
+  "use strict";
+  function ic(fill,paths){return '<svg viewBox="0 0 24 24" fill="'+fill+'" stroke="#2A0A39" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>'}
+  var SVG={
+    book:ic("#FECB2E",'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>'),
+    cap:ic("#9A7DFF",'<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/><path d="M22 10v6"/>'),
+    globe:ic("#3684FF",'<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
+    pencil:ic("#31E08E",'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>'),
+    calc:ic("#FF8FA3",'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/>'),
+    medal:ic("#FECB2E",'<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 22l5-3 5 3-1.5-8"/>')
+  };
+  var ITEMS=[
+    ["book","left:4%;top:9%",66,"8s"],
+    ["cap","right:4%;top:7%",86,"9.5s"],
+    ["globe","left:6%;bottom:13%",58,"10.5s"],
+    ["pencil","right:7%;bottom:19%",46,"7.5s"],
+    ["calc","left:12%;top:42%",40,"9s"],
+    ["medal","right:13%;top:44%",42,"8.5s"]
+  ];
+  var DOTS=["#2A0A39","#FECB2E","#9A7DFF","#31E08E","#3684FF"];
+  function build(){
+    var gate=document.getElementById("gate");
+    if(!gate||gate.querySelector(".g3d"))return;
+    var layer=document.createElement("div");layer.className="g3d";layer.setAttribute("aria-hidden","true");
+    ITEMS.forEach(function(it){
+      var s=document.createElement("span");s.className="fi";
+      s.style.cssText=it[1]+";width:"+it[2]+"px;height:"+it[2]+"px;animation-duration:"+it[3];
+      s.innerHTML=SVG[it[0]];layer.appendChild(s);
+    });
+    for(var i=0;i<16;i++){
+      var d=document.createElement("span");d.className="gp";
+      var sz=4+Math.random()*5;
+      d.style.cssText="left:"+(Math.random()*97)+"%;top:"+(Math.random()*96)+"%;width:"+sz+"px;height:"+sz+"px;background:"+DOTS[i%DOTS.length]+";animation-duration:"+(2.6+Math.random()*2.8)+"s;animation-delay:"+(Math.random()*2)+"s";
+      layer.appendChild(d);
+    }
+    gate.insertBefore(layer,gate.firstChild);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",build);else build();
+})();
+</script>
+
+
+<style id="noIntroCss">
+/* Tap to start / intro splash hamesha ke liye band */
+#introSplash{display:none!important}
+</style>
+
+<style id="navyGoldWaitCss">
+/* ===== LOADING SCREEN: OPTION 1 NAVY GOLD PREMIUM (user selected 2026-11-22) =====
+   Gehra navy background, logo ke gird ghoomta sunehra ring, halke sunehray
+   zarre, patli gold progress bar. Sirf design: loading ka function waisa hi. */
+#lgWait{
+  background:
+    radial-gradient(520px 320px at 85% -40px,rgba(245,197,66,.16),transparent 60%),
+    radial-gradient(560px 420px at -60px 108%,rgba(74,118,255,.28),transparent 62%),
+    linear-gradient(165deg,#0A1B45,#060D24 55%,#0D2154)!important;
+  color:#EAF0FF!important}
+#lgWait>*{position:relative;z-index:2}
+#lgWait .lgdots{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#lgWait .lgdots i{position:absolute;border-radius:50%;background:radial-gradient(circle,#FFE9A8,#F5C542);animation:lgTwinkle ease-in-out infinite alternate;will-change:opacity,transform}
+@keyframes lgTwinkle{from{opacity:.2;transform:scale(.7)}to{opacity:1;transform:scale(1.15)}}
+#lgWait .lgring{border-radius:50%;box-shadow:0 0 64px rgba(245,197,66,.20)}
+#lgWait .lgring:after{content:"";position:absolute;inset:-11px;border-radius:50%;border:1px solid rgba(247,222,142,.35)}
+#lgWait .lgring:before{
+  background:none!important;-webkit-mask:none!important;mask:none!important;
+  border:4px solid rgba(255,255,255,.12)!important;border-top-color:#F5C542!important;border-right-color:rgba(245,197,66,.45)!important;
+  filter:drop-shadow(0 0 10px rgba(245,197,66,.55))!important;
+  animation-duration:1s!important;animation-timing-function:linear!important}
+#lgWait .lgshield{filter:drop-shadow(0 10px 22px rgba(0,0,0,.5)) drop-shadow(0 0 18px rgba(245,197,66,.25))}
+#lgWait .lgname{color:#fff!important;font-size:24px;letter-spacing:.03em;text-shadow:0 4px 24px rgba(74,118,255,.45)}
+#lgWait .lgmsg{color:#B9CCFF!important;opacity:1!important}
+#lgWait .lgbar{background:rgba(255,255,255,.12)!important;border:1px solid rgba(247,222,142,.45);height:7px}
+#lgWait .lgbar i{background:linear-gradient(90deg,#F7DE8E,#D4AF37,#F5C542)!important;box-shadow:0 0 12px rgba(245,197,66,.65)}
+#lgWait .lgpct{color:#F5C542!important;opacity:1!important;font-weight:700}
+#lgWait .lgnote{color:#93A7D9!important;opacity:1!important}
+@media (prefers-reduced-motion:reduce){
+  #lgWait .lgdots i{animation:none!important}
+}
+</style>
+<script>
+/* Loading screen par halke sunehray zarre (sirf opacity/transform animation) */
+(function(){
+  "use strict";
+  function build(){
+    var w=document.getElementById("lgWait");
+    if(!w||w.querySelector(".lgdots"))return;
+    var layer=document.createElement("div");layer.className="lgdots";layer.setAttribute("aria-hidden","true");
+    for(var i=0;i<14;i++){
+      var d=document.createElement("i");
+      var sz=3+Math.random()*4;
+      d.style.cssText="left:"+(Math.random()*97)+"%;top:"+(Math.random()*96)+"%;width:"+sz+"px;height:"+sz+"px;animation-duration:"+(2.6+Math.random()*2.8)+"s;animation-delay:"+(Math.random()*2)+"s";
+      layer.appendChild(d);
+    }
+    w.insertBefore(layer,w.firstChild);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",build);else build();
+})();
+</script>
 
 </body></html>
