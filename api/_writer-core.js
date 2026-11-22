@@ -277,7 +277,7 @@ async function runOnce() {
     const aiDoc = useOwn ? { exists: true, data: () => wk } : await db.doc("meta/ai").get();
     const x = aiDoc.exists ? aiDoc.data() : {};
     const cfg = { backup, key: String(x.key || "").trim(), provider: x.provider || "auto", model: String(x.model || "").trim(), baseUrl: String(x.baseUrl || "").trim(),
-      extra: (Array.isArray(x.extra) ? x.extra : []).filter((e) => e && String(e.key || "").trim()).slice(0, 2).map((e) => ({ key: String(e.key).trim(), provider: e.provider || "auto", model: String(e.model || "").trim(), baseUrl: String(e.baseUrl || "").trim() })) };
+      extra: (Array.isArray(x.extra) ? x.extra : []).filter((e) => e && String(e.key || "").trim()).slice(0, 10).map((e) => ({ key: String(e.key).trim(), provider: e.provider || "auto", model: String(e.model || "").trim(), baseUrl: String(e.baseUrl || "").trim() })) };
 
     const lb = await loadBank();
     if (!lb) { await logRef.set({ serverAt: FV.serverTimestamp(), writerLast: "Server: bank not ready, will retry" }, { merge: true }); return { skipped: "bank not ready" }; }
