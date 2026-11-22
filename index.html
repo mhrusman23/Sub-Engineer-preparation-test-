@@ -3758,7 +3758,7 @@ function openGateMenu(){
   const ch=el("div");bx.appendChild(ch);
   try{renderContacts(ch)}catch(_){}
   const cl=el("button","btn mnit","Close");cl.type="button";cl.onclick=()=>dl.remove();bx.appendChild(cl);
-  bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
+  bx.appendChild(el("div","mnfoot",creditBy()));
   dl.appendChild(bx);document.body.appendChild(dl);
 }
 (function(){const b=document.getElementById("gmenu");if(b)b.onclick=openGateMenu})();
@@ -3795,6 +3795,10 @@ try{
 function deepClear(){try{sessionStorage.removeItem("eg23deep")}catch(_){}try{localStorage.removeItem("eg23deep")}catch(_){}}
 function siteName(){return (SITE&&String(SITE.name||"").trim())||"Engrgroup23"}
 window.__siteName=siteName;
+function creditBy(){return (SITE&&String(SITE.credit||"").trim())||"By Engr Usman Amjad & Engr Umar Sajjid"}
+window.__creditBy=creditBy;
+function waNums(){return {a:String((SITE&&SITE.wa1)||"").trim()||"03494482609",b:String((SITE&&SITE.wa2)||"").trim()||"03400658893"}}
+window.__waNums=waNums;
 /* ===== Download / install the app (PWA) ===== */
 let SHOW_INST=true;
 function isStandalone(){try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}}
@@ -3964,6 +3968,9 @@ function webFill(){
   if(!n)return;
   n.value=String(s.name||"");d.value=String(s.desc||"");if(f)f.value="";
   const a2=document.getElementById("wsAnnc");if(a2)a2.value=String(s.announce||"");
+  const c3=document.getElementById("wsCredit");if(c3)c3.value=String(s.credit||"");
+  const w1=document.getElementById("wsWa1");if(w1)w1.value=String(s.wa1||"");
+  const w2=document.getElementById("wsWa2");if(w2)w2.value=String(s.wa2||"");
   const em0=document.getElementById("wsEmail");if(em0)em0.value=String(s.email||"");
   const h=document.getElementById("wsGuest"),em=document.getElementById("wsEnd");
   if(h)h.value=Number(s.guestHours)>0?String(Math.floor(Number(s.guestHours))):"";
@@ -3991,6 +3998,13 @@ function buildWebset(){
   const wmail=el("input");wmail.id="wsEmail";wmail.type="email";wmail.placeholder="maherusman1947@gmail.com";wmail.style.cssText="width:100%";box.appendChild(wmail);
   const lab3=el("div","label","\ud83d\udce2 Announcement strip (login screen + top of the app; empty = off):");box.appendChild(lab3);
   const wannc=el("input");wannc.id="wsAnnc";wannc.placeholder="New PPSC 2026 papers added!";wannc.style.cssText="width:100%";box.appendChild(wannc);
+  box.appendChild(el("div","label","Credit line - the 'By ...' name shown in the menu footer, login footer and watermark:"));
+  const wcred=el("input");wcred.id="wsCredit";wcred.placeholder="By Engr Usman Amjad & Engr Umar Sajjid";wcred.style.cssText="width:100%";box.appendChild(wcred);
+  box.appendChild(el("div","label","WhatsApp numbers - the file credits show a WhatsApp icon instead of the number (tap the icon to open a chat):"));
+  box.appendChild(el("div","label","WhatsApp - Usman Amjad:"));
+  const wwa1=el("input");wwa1.id="wsWa1";wwa1.placeholder="03494482609";wwa1.style.cssText="width:100%";box.appendChild(wwa1);
+  box.appendChild(el("div","label","WhatsApp - Umar Sajjid:"));
+  const wwa2=el("input");wwa2.id="wsWa2";wwa2.placeholder="03400658893";wwa2.style.cssText="width:100%";box.appendChild(wwa2);
   box.appendChild(el("div","label","Theme color:"));
   const accRow=el("div");accRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0";
   ["#1F4FD8","#7C3AED","#0E9F6E","#D97706","#BE123C","#0E7490"].forEach(c=>{
@@ -4051,7 +4065,9 @@ function buildWebset(){
       const endv=document.getElementById("wsEnd");
       const anv=document.getElementById("wsAnnc");
       const emv=document.getElementById("wsEmail");
-      const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
+      const crv=document.getElementById("wsCredit");
+      const wav1=document.getElementById("wsWa1");const wav2=document.getElementById("wsWa2");
+      const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",credit:crv?crv.value.trim():"",wa1:wav1?wav1.value.trim():"",wa2:wav2?wav2.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
         guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),updatedAt:serverTimestamp()};
       await setDoc(doc(db,"sitedata","style"),data);
       applySite(data);
@@ -4819,7 +4835,7 @@ function openMenu(){
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
 
   mi("\u21A9 Sign out",()=>{try{localStorage.removeItem("eg23in");localStorage.removeItem("eg23g")}catch(_){}signOut(auth).then(()=>location.reload())});
-  bx.appendChild(el("div","mnfoot","By Engr Usman Amjad & Engr Umar Sajjid"));
+  bx.appendChild(el("div","mnfoot",creditBy()));
   dl.appendChild(bx);
   document.body.appendChild(dl);
 }
@@ -10172,5 +10188,101 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 #appmenu .mnit{background:transparent!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.06)!important;border-radius:10px!important;min-height:52px!important;font-size:16px!important;font-weight:700!important;padding:8px 10px!important;box-shadow:none!important}
 #appmenu .mnit:hover{background:rgba(255,255,255,.06)!important;transform:none!important}
 #appmenu .mnfoot{color:rgba(233,196,106,.55)!important;font-size:12px!important}
+</style>
+
+<script>
+/* ===== CREDIT LINE APPLIER (2026-11-22): Website Settings wali credit line ko
+   login gate ke footer, file credits aur test watermark par bhi lagata hai.
+   Menu footer module ke andar khud creditBy() se banta hai. ===== */
+(function(){
+  "use strict";
+  var DEF="By Engr Usman Amjad & Engr Umar Sajjid", last="";
+  function wmCss(txt){
+    var t=txt.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    var svg="<svg xmlns='http://www.w3.org/2000/svg' width='520' height='120'><text x='260' y='62' text-anchor='middle' transform='rotate(-18 160 58)' font-family='Arial,sans-serif' font-size='18' font-weight='700' fill='#6f8496' fill-opacity='0.3'>"+t+"</text></svg>";
+    return ".opts{background-image:url(\"data:image/svg+xml,"+encodeURIComponent(svg).replace(/'/g,"%27")+"\")!important}";
+  }
+  function apply(){
+    var cb=window.__creditBy; if(!cb) return;
+    var cur=""; try{ cur=String(cb()||""); }catch(e){}
+    if(!cur||cur===last) return; last=cur;
+    document.querySelectorAll(".gfoot").forEach(function(g){
+      if(/^By\s/.test(g.textContent)&&g.textContent.length<90) g.textContent=cur;
+    });
+    var names=cur.replace(/^By\s+/i,"").split("&").map(function(x){return x.trim()});
+    if(names.length===2&&names[0]&&names[1]&&cur!==DEF){
+      document.querySelectorAll(".filecredit,.credit3d").forEach(function(g){ swapNames(g,names); });
+    }
+    var st=document.getElementById("creditWmCss");
+    if(cur===DEF){ if(st) st.remove(); return; }
+    if(!st){ st=document.createElement("style"); st.id="creditWmCss"; document.head.appendChild(st); }
+    st.textContent=wmCss(cur);
+  }
+  function swapNames(root,names){
+    var walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(nd){
+      if(nd.nodeValue.indexOf("Usman Amjad")>=0) nd.nodeValue=nd.nodeValue.split("Engr Usman Amjad").join(names[0]).split("Engr Umar Sajjid").join(names[1]);
+    });
+  }
+  var WA_PATH="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
+  function waHref(num){ var d=String(num||"").replace(/\D/g,""); if(d.charAt(0)==="0") d="92"+d.slice(1); return "https://wa.me/"+d; }
+  function escH(t){ return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function iconify(){
+    var nums={a:"03494482609",b:"03400658893"};
+    try{ if(window.__waNums) nums=window.__waNums(); }catch(e){}
+    var pairs=[{lit:"03494482609",num:nums.a},{lit:"03400658893",num:nums.b},{lit:nums.a,num:nums.a},{lit:nums.b,num:nums.b}];
+    document.querySelectorAll(".filecredit,.credit3d").forEach(function(g){
+      if(g.querySelector(".waIc")) return;
+      var html=null;
+      pairs.forEach(function(pr){
+        if(!pr.lit) return;
+        var raw="("+pr.lit+")";
+        var cur=(html===null?g.textContent:html);
+        if(cur.indexOf(raw)>=0){
+          if(html===null) html=escH(g.textContent);
+          html=html.split(raw).join('<a class="waIc" href="'+waHref(pr.num)+'" target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+WA_PATH+'"/></svg></a>');
+        }
+      });
+      if(html!==null) g.innerHTML=html;
+    });
+  }
+  function tagBadges(){
+    document.querySelectorAll(".gfoot").forEach(function(g){
+      if(/^By\s/.test(g.textContent)&&g.textContent.length<90) g.classList.add("egCreditBadge");
+    });
+  }
+  setInterval(function(){ apply(); tagBadges(); iconify(); },1200);
+  setTimeout(function(){ apply(); tagBadges(); iconify(); },600);
+})();
+</script>
+
+<style id="creditFrameCss">
+/* ===== CREDIT FRAME 4 - TEAL-GOLD BADGE (2026-11-22, user ki pasand):
+   credit line ab gehre navy pill me, chamakti teal kinari, gold text,
+   dono taraf gold star. Menu footer (.mnfoot) aur login footer par lagta hai. ===== */
+.mnfoot,.egCreditBadge{
+  display:flex!important;align-items:center;justify-content:center;gap:9px;
+  width:fit-content;max-width:96%;
+  margin:14px auto 6px!important;padding:11px 20px!important;
+  background:linear-gradient(180deg,#0B1E3D,#081226)!important;
+  border:2px solid #14C8A8!important;border-radius:999px!important;
+  color:#F2C94C!important;font-size:13.5px!important;font-weight:800!important;
+  letter-spacing:.02em;text-align:center;line-height:1.35;
+  box-shadow:0 0 16px rgba(20,200,168,.55),inset 0 0 12px rgba(20,200,168,.16),0 6px 18px rgba(0,0,0,.35)!important;
+}
+.mnfoot::before,.mnfoot::after,.egCreditBadge::before,.egCreditBadge::after{
+  content:"\2605";color:#FFD34D;font-size:12px;flex:none;
+  text-shadow:0 0 8px rgba(255,211,77,.8);
+}
+#appmenu .mnfoot{margin-top:auto!important}
+</style>
+
+<style id="waIconCss">
+/* ===== WHATSAPP ICON 5 - NEON RING (2026-11-22, user ki pasand):
+   kala gola, neon hari chamakti kinari + halo glow, safed nishan. ===== */
+.waIc{display:inline-flex!important;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#182018,#050705 75%);border:1.5px solid #2BFF62;color:#fff!important;margin:0 3px;vertical-align:-7px;box-shadow:0 0 10px rgba(43,255,98,.85),0 0 22px rgba(43,255,98,.35),inset 0 0 6px rgba(43,255,98,.25);text-decoration:none!important;flex:none}
+.waIc svg{width:14px;height:14px;display:block}
+.waIc:active{transform:scale(.92)}
 </style>
 </body></html>
