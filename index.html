@@ -8949,20 +8949,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 (function(){
   "use strict";
   var TXT="Unlocked \u00B7 Up to Unlimited MCQs";
-  function enhance(){
-    document.querySelectorAll(".ycard").forEach(function(card){
-      if(card.classList.contains("add"))return;
+  function addBadge(card){
+    try{
       if(card.querySelector(".yunl"))return;
-      var meta=card.querySelector(".ym");
       var s=document.createElement("span");s.className="yunl";
       s.innerHTML="\uD83D\uDD13 "+TXT;
-      if(meta&&meta.parentNode===card)card.insertBefore(s,meta.nextSibling);else card.appendChild(s);
-    });
+      var meta=card.querySelector(".ym");
+      if(meta&&meta.parentNode)meta.parentNode.insertBefore(s,meta.nextSibling);
+      else card.appendChild(s);
+    }catch(e){}
+  }
+  function enhance(){
+    document.querySelectorAll(".ycard:not(.add)").forEach(addBadge);
     document.querySelectorAll("#accaCaCentre .acc-card").forEach(function(card){
-      if(card.querySelector(".acc-pill.unl"))return;
-      var anchor=card.querySelector(".acc-pill");
-      var p=document.createElement("span");p.className="acc-pill unl";p.textContent="\uD83D\uDD13 Unlocked \u00B7 Unlimited";
-      if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(p,anchor.nextSibling);
+      try{
+        if(card.querySelector(".acc-pill.unl"))return;
+        var anchor=card.querySelector(".acc-pill");
+        var pl=document.createElement("span");pl.className="acc-pill unl";pl.textContent="\uD83D\uDD13 Unlocked \u00B7 Unlimited";
+        if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(pl,anchor.nextSibling);
+      }catch(e){}
     });
   }
   var pend=false;
@@ -8972,6 +8977,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     var hc=document.getElementById("homeCards"),ct=document.getElementById("accaCaCentre");
     if(hc)new MutationObserver(sched).observe(hc,{childList:true,subtree:true});
     if(ct)new MutationObserver(sched).observe(ct,{childList:true,subtree:true});
+    setInterval(enhance,2500);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
 })();
@@ -9822,7 +9828,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       html+='<div class="cc2Cat">'+esc(g.title)+'</div>';
       g.subjects.forEach(function(s){
         html+='<div class="cc2Card" data-nm="'+esc(s.name.toLowerCase())+'"><div class="cc2Main"><div class="cc2Name">'+esc(s.name)+'</div><div class="cc2Type">'+esc(curCourseName)+' \u00B7 Solved MCQs'+(s.n?' \u00B7 '+s.n+' Q':'')+'</div></div>'
-          +'<span class="cc2Pill">Subject</span>'
+          +'<span class="cc2Pill">Subject</span><span class="cc2Pill" style="background:linear-gradient(135deg,#12B5A5,#0E9594);color:#fff;border-color:#0B7C7B">\uD83D\uDD13 Unlocked \u00B7 Unlimited</span>'
           +'<button type="button" class="cc2Btn" data-cat="'+esc(g.title)+'" data-idx="'+s.idx+'">Start</button></div>';
       });
     });
@@ -9985,7 +9991,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 <style id="lookMenuCss">
 /* ===== OPTION 4: Look (Premium/Classic) button header se hata kar Menu me (2026-11-22) ===== */
 .lookbtn{display:none!important}
-#appmenu .lookbtn{display:flex!important;width:100%;justify-content:flex-start;flex:none!important}
+#appmenu .lookbtn{display:flex!important;width:100%;justify-content:flex-start;align-items:center;flex:none!important;background:linear-gradient(145deg,#2A3358,#1E2547)!important;color:#fff!important;border:1px solid rgba(201,162,39,.65)!important;border-radius:999px;padding:13px 18px!important;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.35)}
 </style>
 <script>
 /* Header wala Premium/Classic (look) button ab header me nahi ayega -
@@ -10025,6 +10031,13 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       if(lb.nextSibling!==inMenu||inMenu.parentNode!==box){
         box.insertBefore(lb,anchor);
         box.insertBefore(inMenu,lb.nextSibling);
+      }
+      if(!inMenu.__egLookBound){
+        inMenu.__egLookBound=true;
+        inMenu.addEventListener("click",function(){
+          try{if(window.__lookToggle)window.__lookToggle()}catch(e){}
+          setTimeout(function(){label(inMenu)},120);
+        });
       }
       label(inMenu);
     }
