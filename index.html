@@ -1459,7 +1459,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       host.appendChild(ds);
       if(!opt.mini&&window.__egPdf&&l.length){
         var lr=l[l.length-1];
-        var pbd=el("button","btn primary","\U0001F4C4 Download Record (PDF)");pbd.type="button";pbd.style.cssText="margin:10px 0 2px";
+        var pbd=el("button","btn primary","\u{1F4C4} Download Record (PDF)");pbd.type="button";pbd.style.cssText="margin:10px 0 2px";
         pbd.addEventListener("click",function(){window.__egPdf({title:lr.t||"Test",course:"",ts:lr.ts||Date.now(),secs:lr.time||0,pct:lr.p||0,right:lr.o||0,total:lr.a||0,items:null},false)});
         host.appendChild(pbd);
       }
@@ -1632,7 +1632,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Chapters \u25be":"Hide \u25b4"});
       }
       var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n&&!ai;go.addEventListener("click",function(){
-        if(!vipGuard(courseOf(y),s.name))return;
+        if(window.__vipGuard&&!window.__vipGuard(courseOf(y),s.name))return;
         if(ai&&window.__aiPlayBankSub){
           var own=[];Q.forEach(function(q,qi){if(S[q.sec]&&S[q.sec].sub===i)own.push({text:q.text,opts:(QO[qi]||q.opts).slice(),ans:(QA[qi]!=null?QA[qi]:q.ans)})});
           go.disabled=true;
@@ -1750,6 +1750,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     });
   }
   window.__buildPick=function(){try{buildPick()}catch(e){}};
+  window.__vipLists=function(){var cs=[];YEARS.forEach(function(y){var c=courseOf(y);if(cs.indexOf(c)<0)cs.push(c)});return{courses:cs,subjects:SUB.map(function(s){return s.name})}};
   /* Real Exam ke liye: subject ke APNE bank MCQs (live AI generated bilkul NAHI) - naam se dhoondh kar sawal + sahi jawab */
   window.__bankQsByName=function(name){
     try{
@@ -2393,7 +2394,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     rpEl.hidden=false;rpEl.scrollTop=0;
   }
   function openYear(k){
-    var _ocg=cardOf(k);if(_ocg&&!vipGuard(courseOf(_ocg),null))return;
+    var _ocg=cardOf(k);if(_ocg&&window.__vipGuard&&!window.__vipGuard(courseOf(_ocg),null))return;
     curYear=k;var _oc=cardOf(k);if(_oc)curCourse=courseOf(_oc);buildYear(k,null);
     $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#gsrch").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
     try{if(!(history.state&&history.state.y===1))history.pushState({y:1},"")}catch(e){}
@@ -2441,7 +2442,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       if(ch&&Array.isArray(ch.chapters))_vs=ch.chapters.map(function(c){return S[c]?S[c].sub:-1}).filter(function(x){return x>=0});
       else if(typeof ch==="number")_vs=[S[ch].sub];
       else _vs=(Array.isArray(ch)?ch.slice():pickedSubs());
-      for(var _vi=0;_vi<_vs.length;_vi++){var _sb=SUB[_vs[_vi]];if(_sb&&vipLocked(null,_sb.name)){vipShow(_sb.name);return}}
+      for(var _vi=0;_vi<_vs.length;_vi++){var _sb=SUB[_vs[_vi]];if(_sb&&window.__vipGuard&&!window.__vipGuard(null,_sb.name))return}
     }
     TTITLE="";
     if(ch==="bkm"){
@@ -2851,8 +2852,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     if(sr&&window.__egPdf){
       var pitems=order.map(function(id){var o=(QO[id]&&QO[id].length)?QO[id]:Q[id].opts,k=(QO[id]&&QO[id].length)?QA[id]:Q[id].ans,a2=ans[id];return{q:Q[id].text,opts:o,mine:a2?a2.sel:null,ans:k}});
       var pcfg={title:hpageTitle(),course:"",ts:Date.now(),secs:usedAtEnd,pct:Math.round(pct*10)/10,right:c.ok,total:order.length,items:pitems};
-      var pb1=el("button","btn sharebtn","\U0001F4C4 Only Record (PDF)");pb1.type="button";pb1.addEventListener("click",function(){window.__egPdf(pcfg,false)});
-      var pb2=el("button","btn sharebtn","\U0001F4C4 Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){window.__egPdf(pcfg,true)});
+      var pb1=el("button","btn sharebtn","\u{1F4C4} Only Record (PDF)");pb1.type="button";pb1.addEventListener("click",function(){window.__egPdf(pcfg,false)});
+      var pb2=el("button","btn sharebtn","\u{1F4C4} Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){window.__egPdf(pcfg,true)});
       sr.appendChild(pb1);sr.appendChild(pb2);
     }
     /* ---- progress on the result page ---- */
@@ -4075,10 +4076,10 @@ function openVip(){
     box.appendChild(sc);
     return sc;
   }
-  const courses=[];YEARS.forEach(function(y){const c=courseOf(y);if(courses.indexOf(c)<0)courses.push(c)});
-  const cSc=checkList("Premium folders (courses) \u2014 jo tick karein ge wo pura folder lock hoga:",courses,"vipCourse");
+  const _vl=(window.__vipLists?window.__vipLists():{courses:[],subjects:[]});
+  const cSc=checkList("Premium folders (courses) \u2014 jo tick karein ge wo pura folder lock hoga:",_vl.courses,"vipCourse");
   const fIn=el("input");fIn.placeholder="Search subject\u2026";fIn.style.cssText="width:100%;margin:2px 0 6px";box.appendChild(fIn);
-  const sSc=checkList("Premium subjects \u2014 jo tick karein ge wo subject lock hoga:",SUB.map(function(s){return s.name}),"vipSubject");
+  const sSc=checkList("Premium subjects \u2014 jo tick karein ge wo subject lock hoga:",_vl.subjects,"vipSubject");
   fIn.addEventListener("input",function(){
     const q=fIn.value.toLowerCase();
     sSc.querySelectorAll("label").forEach(function(lb){lb.style.display=lb.textContent.toLowerCase().indexOf(q)>=0?"":"none"});
@@ -5104,7 +5105,7 @@ function openMenu(){
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if(IS_ADMIN&&!PV)mi("\u{1F916} AI MCQs (approve / pool)",()=>openAdmin("aimcq"));
   if(IS_OWNER&&!PV)mi("\u2699\uFE0F Settings (important)",()=>openAdmin("settings"));
-  if(IS_OWNER&&!PV)mi("\U0001F451 VIP Premium settings",()=>openVip());
+  if(IS_OWNER&&!PV)mi("\u{1F451} VIP Premium settings",()=>openVip());
   if(IS_OWNER&&!PV)mi("\u{1F511} AI backup keys (3 + add more)",()=>openAiBackup());
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
@@ -9249,7 +9250,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     ov.querySelector(".rex-wrap").innerHTML='<div class="rex-head"><div class="rex-title">'+escapeHtml(displayName)+'<small>'+course+' &middot; '+(auto?"Time up - auto submitted":"Exam submitted")+'</small></div><span class="rex-badge">'+(pass?"PASS":"FAIL")+'</span></div>'
       +'<div class="rex-card" style="text-align:center"><div class="rex-score">'+pct+'%</div><p style="font-size:17px;margin:8px 0 2px"><b>'+right+' / '+S.qs.length+'</b> correct answers</p><p style="margin:0;opacity:.75">Time used: '+fmt(used)+' &middot; Passing marks: 50% &middot; Result: <b>'+(pass?"PASS":"FAIL")+'</b></p>'
       +'<div class="rex-nav" style="justify-content:center;margin-top:16px"><button type="button" class="rex-btn go" id="rexAgain">Retake Test</button><button type="button" class="rex-btn pri" id="rexClose">Back to Subjects</button></div>'
-      +'<div class="rex-nav" style="justify-content:center;margin-top:10px"><button type="button" class="rex-btn" id="rexPdf1">\U0001F4C4 Only Record (PDF)</button><button type="button" class="rex-btn" id="rexPdf2">\U0001F4C4 Record with MCQs (PDF)</button></div></div>'
+      +'<div class="rex-nav" style="justify-content:center;margin-top:10px"><button type="button" class="rex-btn" id="rexPdf1">\u{1F4C4} Only Record (PDF)</button><button type="button" class="rex-btn" id="rexPdf2">\u{1F4C4} Record with MCQs (PDF)</button></div></div>'
       +'<div class="rex-card"><h3 style="margin:0 0 6px">Review - Correct Answers</h3>'+rev+'</div>';
     ov.querySelector("#rexClose").addEventListener("click",closeExam);
     ov.querySelector("#rexAgain").addEventListener("click",function(){openSetup(displayName,course)});
