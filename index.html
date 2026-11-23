@@ -9715,6 +9715,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 #egExit button{flex:1;border-radius:12px;padding:12px;font:800 15px system-ui,sans-serif;cursor:pointer}
 #egExit .stay{background:#fff;color:#1B2A4A;border:1.5px solid #C9D6EE}
 #egExit .ok{background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border:1.5px solid #E04A28}
+#egBackBtn{flex:0 0 auto!important;white-space:nowrap}
 </style>
 <script>
 /* Mobile Back ab seedha chale ga:
@@ -9726,7 +9727,8 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 (function(){
   "use strict";
   var allow=false,shown=false,box=null;
-  var testWas=false,yvWas=false,ctx={course:"",cat:""};
+  var testWas=false,yvWas=false,folderWas=false,ctx={course:"",cat:""};
+  var dialogArmed=true,guardOff=false,lastPop=0;
   function $(id){return document.getElementById(id)}
   function vis(el){return !!el&&!el.hidden&&el.getClientRects().length>0}
   function push(){try{history.pushState({egGuard:1},"",location.href)}catch(e){}}
@@ -9736,14 +9738,24 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     var m=/All courses \u00B7 (.+?)\s*$/.exec(yd.textContent||"");
     return m?m[1].trim():"";
   }
+  function innerOpen(){
+    if(vis($("test")))return "test";
+    if(vis($("result")))return "result";
+    if(vis($("yearView")))return "year";
+    if(folderCourse())return "folder";
+    return "";
+  }
   function track(){
     var t=$("test"),yv=$("yearView");
     testWas=vis(t);
     yvWas=vis(yv);
+    folderWas=!!folderCourse();
+    if(testWas||yvWas||folderWas){dialogArmed=true;guardOff=false}
     if(yvWas){
       var c=folderCourse();if(c)ctx.course=c;
       var yt=$("yTitle");if(yt)ctx.cat=(yt.textContent||"").trim();
     }
+    updBackBtn();
   }
   function openFolder(course,done){
     var btns=document.querySelectorAll("#start button");
@@ -9770,7 +9782,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     if(box)return box;
     box=document.createElement("div");box.id="egExit";box.hidden=true;
     box.innerHTML='<div class="bx"><p class="t">Leave Engrgroup23?</p><p class="s">Press OK to close the website, or Stay to keep studying.</p><div class="row"><button type="button" class="stay">Stay</button><button type="button" class="ok">OK</button></div></div>';
-    box.querySelector(".stay").addEventListener("click",function(){box.hidden=true;shown=false});
+    box.querySelector(".stay").addEventListener("click",function(){box.hidden=true;shown=false;guardOff=true});
     box.querySelector(".ok").addEventListener("click",function(){
       allow=true;box.hidden=true;
       try{history.go(-2)}catch(e){}
@@ -9779,24 +9791,65 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     document.body.appendChild(box);
     return box;
   }
+  /* Header wala Back button: jo screen khuli hai wahan se aik step peeche */
+  window.__egSmartBack=function(){
+    var k=innerOpen();
+    if(k==="test"){var b=$("btnBack");if(b){b.click();return}try{history.back()}catch(e){}return}
+    if(k==="result"){try{history.back()}catch(e){}return}
+    if(k==="year"){var y=$("yBack");if(y)y.click();return}
+    if(k==="folder"){var bc=document.querySelector("#homeCards .ycard.add");if(bc)bc.click();return}
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+  function updBackBtn(){
+    var u=$("userbar");if(!u)return;
+    var btn=$("egBackBtn");
+    if(!btn){
+      btn=document.createElement("button");btn.type="button";btn.id="egBackBtn";btn.className="btn";btn.textContent="\u2190 Back";
+      btn.addEventListener("click",function(){window.__egSmartBack()});
+      var row=u.querySelector(":scope > span");
+      if(row)row.insertBefore(btn,row.firstChild);else u.appendChild(btn);
+    }
+    btn.style.display=innerOpen()?"":"none";
+  }
+  /* Upar wale naam (PPSC PAST PAPERS) par click = seedha full dashboard */
+  document.addEventListener("click",function(e){
+    var br=(e.target&&e.target.closest)?e.target.closest("#userbar .ubrand"):null;
+    if(!br)return;
+    var steps=function(){
+      if(vis($("yearView"))){var y=$("yBack");if(y)y.click()}
+      setTimeout(function(){
+        if(folderCourse()){var bc=document.querySelector("#homeCards .ycard.add");if(bc)bc.click()}
+        setTimeout(function(){try{if(typeof window.__goHome==="function")window.__goHome()}catch(_){}window.scrollTo(0,0)},260);
+      },260);
+    };
+    if(vis($("test"))){var b=$("btnBack");if(b)b.click();setTimeout(steps,480)}
+    else steps();
+  },true);
   window.addEventListener("popstate",function(){
-    if(allow)return;
-    var wasTest=testWas,wasYv=yvWas;
+    if(allow||guardOff)return;
+    var wasTest=testWas,wasYv=yvWas,wasFolder=folderWas,now=Date.now();
     setTimeout(function(){
-      if(allow||shown)return;
+      if(allow||shown||guardOff)return;
       var start=$("start"),test=$("test"),yv=$("yearView");
       /* Jo step website ne khud sambhala (test band / list band), wahan sirf dobara arm karo */
       if(wasTest&&!vis(test)){
         if(vis(start)&&!vis(yv)&&ctx.course&&!folderCourse()){restoreCtx()}
-        push();return;
+        push();lastPop=now;return;
       }
-      if(wasYv&&!vis(yv)){push();return}
+      if(wasYv&&!vis(yv)){push();lastPop=now;return}
       if(vis(test)||vis(yv))return;
       /* Folder khula hai to dashboard par jao */
       var bc=document.querySelector("#homeCards .ycard.add");
-      if(vis(start)&&bc&&folderCourse()){bc.click();push();return}
-      /* Sab se upar: dashboard ya login - confirm dikhao */
-      if(vis(start)||vis($("gate"))){push();ensureBox();box.hidden=false;shown=true}
+      if(vis(start)&&bc&&folderCourse()){bc.click();push();lastPop=now;return}
+      /* Dashboard/login par asal Back press: dialog sirf tab, jab press WAQAI dashboard
+         par hui ho (andar se wapis ane wali press par NAHI) - aur aik dashboard visit
+         me sirf aik dafa. Stay ke baad guardOff: agli Back seedha bahir le jati hai. */
+      if((vis(start)||vis($("gate")))&&!wasFolder&&dialogArmed&&now-lastPop>700){
+        dialogArmed=false;push();ensureBox();box.hidden=false;shown=true;
+      }else if(vis(start)||vis($("gate"))){
+        push();
+      }
+      lastPop=now;
     },90);
   });
   push();
@@ -9850,14 +9903,15 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 #courseCentre .cc2Search{width:100%;box-sizing:border-box;border:1.5px solid #C9D6EE;border-radius:14px;padding:12px 18px;font:600 15px system-ui,sans-serif;color:#1B2A4A;background:#fff;margin:0 0 18px;outline:none}
 #courseCentre .cc2Search:focus{box-shadow:0 0 0 4px rgba(46,124,246,.18)}
 #courseCentre .cc2Cat{font:800 13px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#33507E;margin:18px 0 10px}
-#courseCentre .cc2Card{background:#fff;border:1.5px solid #D3DEEF;border-radius:18px;box-shadow:0 10px 24px rgba(27,42,74,.10);padding:16px 18px;margin:0 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-#courseCentre .cc2Main{flex:1;min-width:200px}
-#courseCentre .cc2Name{font-size:18.5px;font-weight:800;line-height:1.25;color:#1B2A4A}
-#courseCentre .cc2Type{font-size:13.5px;opacity:.75;margin-top:2px}
-#courseCentre .cc2Pill{display:inline-block;background:#EEF3FB;color:#33507E;font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px;border:1.5px solid #C9D6EE}
+#courseCentre .cc2Card{background:#fff;border:1.5px solid #D3DEEF;border-radius:18px;box-shadow:0 10px 24px rgba(27,42,74,.10);padding:20px 22px;margin:0 0 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#courseCentre .cc2Main{flex:1;min-width:210px}
+#courseCentre .cc2Name{font-size:21px;font-weight:800;line-height:1.2;color:#1B2A4A}
+#courseCentre .cc2Type{font-size:14.5px;opacity:.75;margin-top:3px}
+#courseCentre .cc2Pill{display:inline-block;background:#EEF3FB;color:#33507E;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;border:1.5px solid #C9D6EE}
 #courseCentre .cc2Unlock{background:linear-gradient(135deg,#3DDC84,#12B76A);color:#fff;border-color:#0E9F6E}
-#courseCentre .cc2Btn{border:1.5px solid #E04A28;background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border-radius:14px;padding:12px 24px;font:800 15.5px system-ui,sans-serif;cursor:pointer;box-shadow:0 10px 20px rgba(255,90,60,.30)}
+#courseCentre .cc2Btn{border:1.5px solid #E04A28;background:linear-gradient(135deg,#FF7A59,#FF5A3C);color:#fff;border-radius:999px;padding:14px 26px;font:800 16.5px system-ui,sans-serif;cursor:pointer;box-shadow:0 10px 20px rgba(255,90,60,.30);white-space:nowrap}
 #courseCentre .cc2Btn:disabled{opacity:.55}
+@media(max-width:640px){#courseCentre .cc2Btn{width:100%}}
 #courseCentre .cc2Note{font-size:13.5px;opacity:.75;margin:12px 0 0}
 #courseCentre.cc2Classic .cc2Body{display:none}
 body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
