@@ -1,9 +1,12 @@
-/* Engrgroup23 service worker v4: makes the site open from the PHONE, not the internet.
-   - Page + images + Firebase scripts + fonts + verified MCQs come from the phone first,
-     then update quietly in the background (stale-while-revalidate).
+/* Engrgroup23 service worker v5: makes the site open from the PHONE, not the internet.
+   - The PAGE (navigations) is NETWORK-FIRST: online visitors always get the newest
+     version straight away (no glimpse of the old version); offline it opens from
+     the phone's saved copy.
+   - Scripts, images, fonts and verified MCQs come from the phone first, then
+     update quietly in the background (stale-while-revalidate).
    - Questions (bank) are saved by the app itself in IndexedDB and also work offline.
    - Login, database and /api are never touched by this worker (always live). */
-const V = 'eg23-v4';
+const V = 'eg23-v5';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/verified-mcqs.js', '/ai.js', '/writer-core.js'];
 
 self.addEventListener('install', function (e) {
@@ -34,13 +37,27 @@ function swr(req, key) {
   });
 }
 
+/* network-first for the page itself: newest version when online, phone copy when offline */
+function netFirst(req, key) {
+  return caches.open(V).then(function (c) {
+    return fetch(req).then(function (r) {
+      if (r && !r.redirected && r.ok) { try { c.put(key || req, r.clone()); } catch (_) {} }
+      return r;
+    }).catch(function () {
+      return c.match(key || req, { ignoreSearch: true }).then(function (hit) {
+        return hit || c.match('/index.html', { ignoreSearch: true });
+      });
+    });
+  });
+}
+
 self.addEventListener('fetch', function (e) {
   var r = e.request;
   if (r.method !== 'GET') return;
   var u = new URL(r.url);
   if (u.origin === location.origin) {
     if (u.pathname.indexOf('/api/') === 0 || u.pathname === '/sw.js' || u.pathname.indexOf('/__/') === 0) return;
-    if (r.mode === 'navigate') { e.respondWith(swr(r, u.origin + u.pathname)); return; }
+    if (r.mode === 'navigate') { e.respondWith(netFirst(r, u.origin + u.pathname)); return; }
     if (/\.(js|css|png|jpe?g|webp|svg|ico|webmanifest|woff2?)$/i.test(u.pathname)) { e.respondWith(swr(r)); return; }
     return;
   }
