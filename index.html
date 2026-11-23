@@ -1429,6 +1429,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function hxAdd(rec){
     return hxGet(HKEY).then(function(l){l=Array.isArray(l)?l:[];l.push(rec);if(l.length>HMAX)l=l.slice(-HMAX);return hxSet(HKEY,l)});
   }
+  window.__hxAdd=hxAdd;window.__hxGetHist=function(){return hxGet(HKEY)};
   function hxDash(target,opt){
     var host=target;opt=opt||{};
     return hxGet(HKEY).then(function(l){
@@ -1456,6 +1457,12 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         var d=el("div");d.appendChild(el("b","",String(x[0])));d.appendChild(el("span","",x[1]));ds.appendChild(d);
       });
       host.appendChild(ds);
+      if(!opt.mini&&window.__egPdf&&l.length){
+        var lr=l[l.length-1];
+        var pbd=el("button","btn primary","\U0001F4C4 Download Record (PDF)");pbd.type="button";pbd.style.cssText="margin:10px 0 2px";
+        pbd.addEventListener("click",function(){window.__egPdf({title:lr.t||"Test",course:"",ts:lr.ts||Date.now(),secs:lr.time||0,pct:lr.p||0,right:lr.o||0,total:lr.a||0,items:null},false)});
+        host.appendChild(pbd);
+      }
       if(!opt.mini){
         /* VIP score graph — last 10 attempts, gold 3D bars (v3.3.0) */
         var vg=el("div","vgraph");
@@ -1625,6 +1632,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
         tg.addEventListener("click",function(){pn.hidden=!pn.hidden;tg.textContent=pn.hidden?"Chapters \u25be":"Hide \u25b4"});
       }
       var go=el("button","btn primary",multi?"Full subject":"Start");go.type="button";go.disabled=!n&&!ai;go.addEventListener("click",function(){
+        if(!vipGuard(courseOf(y),s.name))return;
         if(ai&&window.__aiPlayBankSub){
           var own=[];Q.forEach(function(q,qi){if(S[q.sec]&&S[q.sec].sub===i)own.push({text:q.text,opts:(QO[qi]||q.opts).slice(),ans:(QA[qi]!=null?QA[qi]:q.ans)})});
           go.disabled=true;
@@ -2385,6 +2393,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     rpEl.hidden=false;rpEl.scrollTop=0;
   }
   function openYear(k){
+    var _ocg=cardOf(k);if(_ocg&&!vipGuard(courseOf(_ocg),null))return;
     curYear=k;var _oc=cardOf(k);if(_oc)curCourse=courseOf(_oc);buildYear(k,null);
     $("#homeCards").hidden=true;$("#homeExtra").hidden=true;$("#gsrch").hidden=true;$("#yearView").hidden=false;window.scrollTo(0,0);
     try{if(!(history.state&&history.state.y===1))history.pushState({y:1},"")}catch(e){}
@@ -2427,6 +2436,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
 
   function start(ch){
     if(window.__VISITOR&&window.__vWall&&window.__vWall())return;   /* free limit reached: login first */
+    if(ch!=="bkm"){
+      var _vs=null;
+      if(ch&&Array.isArray(ch.chapters))_vs=ch.chapters.map(function(c){return S[c]?S[c].sub:-1}).filter(function(x){return x>=0});
+      else if(typeof ch==="number")_vs=[S[ch].sub];
+      else _vs=(Array.isArray(ch)?ch.slice():pickedSubs());
+      for(var _vi=0;_vi<_vs.length;_vi++){var _sb=SUB[_vs[_vi]];if(_sb&&vipLocked(null,_sb.name)){vipShow(_sb.name);return}}
+    }
     TTITLE="";
     if(ch==="bkm"){
       sel=[];order=bkmIds().filter(function(id){return Q[id]});
@@ -2830,6 +2846,14 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       });
       sr.appendChild(cp);
       if(navigator.share){var ns=el("button","btn primary sharebtn","\ud83d\udd17");ns.type="button";ns.addEventListener("click",function(){try{navigator.share({title:(window.__siteName?window.__siteName():"Engrgroup23")+" result",text:shareTxt})}catch(e){}});sr.appendChild(ns)}
+    }
+    /* ---- PDF record buttons ---- */
+    if(sr&&window.__egPdf){
+      var pitems=order.map(function(id){var o=(QO[id]&&QO[id].length)?QO[id]:Q[id].opts,k=(QO[id]&&QO[id].length)?QA[id]:Q[id].ans,a2=ans[id];return{q:Q[id].text,opts:o,mine:a2?a2.sel:null,ans:k}});
+      var pcfg={title:hpageTitle(),course:"",ts:Date.now(),secs:usedAtEnd,pct:Math.round(pct*10)/10,right:c.ok,total:order.length,items:pitems};
+      var pb1=el("button","btn sharebtn","\U0001F4C4 Only Record (PDF)");pb1.type="button";pb1.addEventListener("click",function(){window.__egPdf(pcfg,false)});
+      var pb2=el("button","btn sharebtn","\U0001F4C4 Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){window.__egPdf(pcfg,true)});
+      sr.appendChild(pb1);sr.appendChild(pb2);
     }
     /* ---- progress on the result page ---- */
     var rd=$("#resDash");
@@ -3985,6 +4009,113 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
     }}catch(_){}};
 try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);SEO_CFG=s.exists()?s.data():null;SHOW_INST=!(s.exists()&&s.data().showInstall===false);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
+/* ---------- VIP Premium lock: owner Menu se folders/subjects premium kare, sirf VIP Gmail walon ko khule ---------- */
+let VIP={on:false,courses:[],subjects:[],emails:[]};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[]}}catch(_){}
+function vipApply(x){
+  if(!x||typeof x!=="object")return;
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()})};
+  try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
+}
+try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
+function vipMember(){
+  if(IS_OWNER||IS_ADMIN)return true;
+  const e=String(ME||"").toLowerCase();
+  return e.indexOf("@")>0&&VIP.emails.indexOf(e)>=0;
+}
+function vipLocked(course,subject){
+  if(!VIP.on||vipMember())return false;
+  const c=String(course||"").toLowerCase(),s=String(subject||"").toLowerCase();
+  if(c&&VIP.courses.some(function(x){return String(x).toLowerCase()===c}))return true;
+  if(s&&VIP.subjects.some(function(x){return String(x).toLowerCase()===s}))return true;
+  return false;
+}
+function vipShow(what){
+  const old=document.getElementById("vipw");if(old)old.remove();
+  const dl=el("div");dl.id="vipw";dl.style.cssText="position:fixed;inset:0;z-index:100003;background:rgba(8,12,26,.62);display:flex;align-items:center;justify-content:center;padding:18px";
+  dl.addEventListener("click",e=>{if(e.target===dl)dl.remove()});
+  const bx=el("div");bx.style.cssText="background:linear-gradient(160deg,#0A1730,#0B1E3D 60%,#081226);border:1.5px solid #C9A227;border-radius:18px;padding:22px 20px;max-width:370px;width:100%;color:#fff;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5)";
+  const cr=el("div","","\u{1F451}");cr.style.cssText="font-size:40px;line-height:1";bx.appendChild(cr);
+  const tt=el("div","","Premium \u00b7 VIP Only");tt.style.cssText="font:800 20px Georgia,serif;color:#E9C46A;margin-top:8px";bx.appendChild(tt);
+  const tx=el("p","","\u201C"+(what||"This")+"\u201D is Premium. It opens only for VIP members whose Gmail is added by the admin.");tx.style.cssText="font-size:13.5px;line-height:1.55;color:#D7E1F0;margin:10px 0 4px";bx.appendChild(tx);
+  const me=String(ME||"");
+  const ml=el("p","",me.indexOf("@")>0?("Your Gmail: "+me+" \u2014 is not in the VIP list yet. Contact the admin on WhatsApp to get added."):"You are browsing as a guest. First login with your Gmail, then ask the admin to add it to the VIP list.");ml.style.cssText="font-size:12.5px;line-height:1.5;color:#9FB2CC;margin:0 0 6px";bx.appendChild(ml);
+  const ch=el("div");ch.style.cssText="text-align:left;margin-top:8px";bx.appendChild(ch);
+  try{renderContacts(ch)}catch(_){}
+  const cl=el("button","btn","Close");cl.type="button";cl.style.cssText="margin-top:14px;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;font-weight:800;border:none;padding:10px 26px;border-radius:999px";cl.onclick=()=>dl.remove();bx.appendChild(cl);
+  dl.appendChild(bx);document.body.appendChild(dl);
+}
+function vipGuard(course,subject){if(vipLocked(course,subject)){vipShow(subject||course);return false}return true}
+window.__vipGuard=vipGuard;
+function openVip(){
+  if(!IS_OWNER){alert("Only the owner can change VIP Premium settings.");return}
+  const old=document.getElementById("vipP");if(old)old.remove();
+  const wrap=el("div");wrap.id="vipP";wrap.style.cssText="position:fixed;inset:0;z-index:1150;background:rgba(8,12,26,.62);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto";
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:24px 0";
+  wrap.appendChild(box);
+  const top=el("div");top.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px";
+  top.appendChild(el("h2","","\u{1F451} VIP Premium settings"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
+  box.appendChild(top);
+  box.appendChild(el("p","label","Premium folders / subjects sirf un students ko khulenge jinki Gmail neeche VIP list me hogi. Owner aur managers ko hamesha sab khulta hai. Jab tak ON na karein, website sab ke liye free rahegi jaisi ab hai."));
+  const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer";
+  const onCb=document.createElement("input");onCb.type="checkbox";onCb.id="vipOn";onCb.style.cssText="width:20px;height:20px;flex:none";
+  onRow.appendChild(onCb);
+  const onTx=el("span","","");onTx.innerHTML="<b>Premium lock ON</b><br><small>ON karne se premium folders / subjects lock ho jayenge (sirf VIP Gmail walon ke liye khulenge).</small>";onRow.appendChild(onTx);
+  box.appendChild(onRow);
+  function checkList(title,items,cls){
+    box.appendChild(el("div","label",title));
+    const sc=el("div");sc.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;max-height:210px;overflow:auto;margin-bottom:6px";
+    items.forEach(function(nm){
+      const lb=el("label");lb.style.cssText="display:flex;gap:9px;align-items:center;padding:5px 2px;cursor:pointer;font-size:14px";
+      const cb=document.createElement("input");cb.type="checkbox";cb.className=cls;cb.value=nm;cb.style.cssText="width:17px;height:17px;flex:none";
+      lb.appendChild(cb);lb.appendChild(el("span","",nm));sc.appendChild(lb);
+    });
+    if(!items.length)sc.appendChild(el("p","label","(none)"));
+    box.appendChild(sc);
+    return sc;
+  }
+  const courses=[];YEARS.forEach(function(y){const c=courseOf(y);if(courses.indexOf(c)<0)courses.push(c)});
+  const cSc=checkList("Premium folders (courses) \u2014 jo tick karein ge wo pura folder lock hoga:",courses,"vipCourse");
+  const fIn=el("input");fIn.placeholder="Search subject\u2026";fIn.style.cssText="width:100%;margin:2px 0 6px";box.appendChild(fIn);
+  const sSc=checkList("Premium subjects \u2014 jo tick karein ge wo subject lock hoga:",SUB.map(function(s){return s.name}),"vipSubject");
+  fIn.addEventListener("input",function(){
+    const q=fIn.value.toLowerCase();
+    sSc.querySelectorAll("label").forEach(function(lb){lb.style.display=lb.textContent.toLowerCase().indexOf(q)>=0?"":"none"});
+  });
+  box.appendChild(el("div","label","VIP members \u2014 Gmail list (aik line me aik Gmail):"));
+  const emTx=el("textarea");emTx.id="vipEmails";emTx.rows=5;emTx.placeholder="student1@gmail.com\nstudent2@gmail.com";emTx.style.cssText="width:100%";box.appendChild(emTx);
+  const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
+  const sv=el("button","btn primary","\u{1F4BE} Save VIP settings");sv.type="button";srow.appendChild(sv);
+  const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
+  function fillForm(){
+    onCb.checked=!!VIP.on;
+    box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
+    box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
+    emTx.value=(VIP.emails||[]).join("\n");
+  }
+  fillForm();
+  try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists()){vipApply(s.data());fillForm()}}).catch(()=>{})}catch(_){}
+  sv.onclick=async()=>{
+    sv.disabled=true;st.textContent="Saving\u2026";
+    const data={
+      on:onCb.checked,
+      courses:Array.from(box.querySelectorAll(".vipCourse:checked")).map(function(cb){return cb.value}),
+      subjects:Array.from(box.querySelectorAll(".vipSubject:checked")).map(function(cb){return cb.value}),
+      emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
+      updatedAt:Date.now()
+    };
+    try{
+      await setDoc(doc(db,"sitedata","vip"),data);
+      vipApply(data);
+      st.textContent="\u2713 Saved \u2014 VIP setting ab sab phones par lag jayegi.";
+    }catch(e){st.textContent="Error: "+((e&&e.code)||e)}
+    sv.disabled=false;
+  };
+  document.body.appendChild(wrap);
+}
+window.__openVip=openVip;
+
 
 let wsEl=null,wsAccent="",wsMode="",wsPic="";
 /* 8 VIP premium wallpapers (pure CSS — data bharne ka boj nahi) */
@@ -4973,6 +5104,7 @@ function openMenu(){
   if(IS_ADMIN&&!PV)mi("\u{1F6E0}\uFE0F Admin panel",()=>openAdmin());
   if(IS_ADMIN&&!PV)mi("\u{1F916} AI MCQs (approve / pool)",()=>openAdmin("aimcq"));
   if(IS_OWNER&&!PV)mi("\u2699\uFE0F Settings (important)",()=>openAdmin("settings"));
+  if(IS_OWNER&&!PV)mi("\U0001F451 VIP Premium settings",()=>openVip());
   if(IS_OWNER&&!PV)mi("\u{1F511} AI backup keys (3 + add more)",()=>openAiBackup());
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
@@ -8962,7 +9094,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",watch);else watch();
   /* Baqi sab folders ke centre ke liye bhi wohi Real Exam - pool subject ke apne bank MCQs se banta hai, AI se nahi */
-  window.__openRealExam=function(displayName,course){openSetup(displayName,course)};
+  window.__openRealExam=function(displayName,course){if(window.__vipGuard&&!window.__vipGuard(course,displayName))return;openSetup(displayName,course)};
 
   /* ---------- question loading: built-in verified MCQs (same file the site already uses) ---------- */
   var cache=null;
@@ -9107,16 +9239,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     if(!S||S.done)return;S.done=true;clearInterval(timerId);
     var right=0;S.qs.forEach(function(q,i){if(S.sel[i]===q.ans)right++});
     var pct=Math.round(right/S.qs.length*100),pass=pct>=50,used=S.total-S.left;
+    var pdfItems=S.qs.map(function(q,i){return{q:q.q,opts:q.opts,mine:S.sel[i]==null?null:S.sel[i],ans:q.ans}});
+    var pdfCfg={title:displayName,course:course,ts:Date.now(),secs:used,pct:pct,right:right,total:S.qs.length,items:pdfItems};
+    try{if(window.__hxAdd)window.__hxAdd({ts:pdfCfg.ts,t:displayName+" \u2014 Real Exam",a:S.qs.length,n:right,p:Math.round(pct*10)/10,o:right,time:used,pass:pass,subs:[{n:displayName,o:right,t:S.qs.length}]})}catch(e){}
     var rev=S.qs.map(function(q,i){
       var mine=S.sel[i]==null?"(No answer)":q.opts[S.sel[i]],ok=S.sel[i]===q.ans;
       return '<div class="rex-rev"><b>Q'+(i+1)+'.</b> '+escapeHtml(q.q)+'<br>Your answer: <span class="'+(ok?"ok":"bad")+'">'+escapeHtml(mine)+'</span>'+(ok?'':'<br>Correct answer: <span class="ok">'+escapeHtml(q.correct)+'</span>')+'</div>';
     }).join("");
     ov.querySelector(".rex-wrap").innerHTML='<div class="rex-head"><div class="rex-title">'+escapeHtml(displayName)+'<small>'+course+' &middot; '+(auto?"Time up - auto submitted":"Exam submitted")+'</small></div><span class="rex-badge">'+(pass?"PASS":"FAIL")+'</span></div>'
       +'<div class="rex-card" style="text-align:center"><div class="rex-score">'+pct+'%</div><p style="font-size:17px;margin:8px 0 2px"><b>'+right+' / '+S.qs.length+'</b> correct answers</p><p style="margin:0;opacity:.75">Time used: '+fmt(used)+' &middot; Passing marks: 50% &middot; Result: <b>'+(pass?"PASS":"FAIL")+'</b></p>'
-      +'<div class="rex-nav" style="justify-content:center;margin-top:16px"><button type="button" class="rex-btn go" id="rexAgain">Retake Test</button><button type="button" class="rex-btn pri" id="rexClose">Back to Subjects</button></div></div>'
+      +'<div class="rex-nav" style="justify-content:center;margin-top:16px"><button type="button" class="rex-btn go" id="rexAgain">Retake Test</button><button type="button" class="rex-btn pri" id="rexClose">Back to Subjects</button></div>'
+      +'<div class="rex-nav" style="justify-content:center;margin-top:10px"><button type="button" class="rex-btn" id="rexPdf1">\U0001F4C4 Only Record (PDF)</button><button type="button" class="rex-btn" id="rexPdf2">\U0001F4C4 Record with MCQs (PDF)</button></div></div>'
       +'<div class="rex-card"><h3 style="margin:0 0 6px">Review - Correct Answers</h3>'+rev+'</div>';
     ov.querySelector("#rexClose").addEventListener("click",closeExam);
     ov.querySelector("#rexAgain").addEventListener("click",function(){openSetup(displayName,course)});
+    var rp1=ov.querySelector("#rexPdf1"),rp2=ov.querySelector("#rexPdf2");
+    if(rp1)rp1.addEventListener("click",function(){if(window.__egPdf)window.__egPdf(pdfCfg,false)});
+    if(rp2)rp2.addEventListener("click",function(){if(window.__egPdf)window.__egPdf(pdfCfg,true)});
     ov.scrollTop=0;
   }
   function escapeHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -10613,7 +10752,7 @@ body,.ycard,.hcard,.btn,.chip,.bar,.card,.mnit,.mnai,.gbox,.acbx,#userbar{transi
     var defs=[
       ["MAIN",/Dashboard|AI Tutor|Library|Jobs|Friendly Chat|Share site/],
       ["SETTINGS",/Account settings|Change username|Website settings|Mode:/],
-      ["ADMIN",/Admin panel|AI MCQs|Settings \(important\)|AI backup keys|Bin \(|Jokes|Ads \(/]
+      ["ADMIN",/Admin panel|AI MCQs|Settings \(important\)|AI backup keys|VIP Premium settings|Bin \(|Jokes|Ads \(/]
     ];
     var used=new Set(), plan=[];
     defs.forEach(function(d){
@@ -10789,4 +10928,94 @@ html[data-look="premium"] #test .cell.cur{outline:2px solid #20242B;outline-offs
 #contactBox .gcClick{color:#2BFF62;font-size:12.5px}
 #contactBox .gcGo:active .gcBtn{transform:scale(.93)}
 </style>
+
+<style id="egPrintCss">
+#egPrint{display:none}
+@media print{
+  body>*{display:none!important}
+  body>#egPrint{display:block!important}
+  #egPrint *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:9mm}
+}
+</style>
+<script>
+(function(){
+"use strict";
+function esc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function fmts(s){s=Math.max(0,Math.round(s||0));var m=Math.floor(s/60),x=s%60;return (m<10?"0":"")+m+":"+(x<10?"0":"")+x}
+function fdate(ts){return new Date(ts||Date.now()).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
+function ftime(ts){return new Date(ts||Date.now()).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
+function logoSrc(){try{var im=document.querySelector(".lgmascot");if(im&&im.src)return im.src}catch(e){}return ""}
+function row(k,v){return '<div style="display:flex;gap:8px;margin-top:9px;font-size:13.5px"><span style="color:#5A6B82;min-width:118px">'+k+':</span><b>'+esc(v)+'</b></div>'}
+function build(cfg,withMcqs,hist){
+  var pass=cfg.pct>=50,L=logoSrc();
+  var site=(window.__siteName?window.__siteName():"Engrgroup23");
+  var credit=(window.__creditBy?window.__creditBy():"By Engr Usman Amjad & Engr Umar Sajjid");
+  var h='<div style="font-family:system-ui,Arial,sans-serif;color:#14202E;max-width:760px;margin:0 auto">';
+  h+='<div style="background:linear-gradient(135deg,#0A1730,#0B1E3D 60%,#081226);border-radius:14px;padding:20px 22px;display:flex;align-items:center;gap:16px;border:1.5px solid #C9A227">'
+    +(L?'<img src="'+L+'" style="width:84px;height:84px;border-radius:50%;border:2.5px solid #E9C46A;object-fit:cover" alt="">':"")
+    +'<div><div style="font-family:Georgia,serif;font-size:30px;font-weight:700;color:#E9C46A;line-height:1.1">'+esc(site)+'</div>'
+    +'<div style="font-family:Georgia,serif;font-size:19px;color:#F3E5C0;margin-top:3px">'+(withMcqs?"Test Record with MCQs":"Student Test Record")+'</div>'
+    +'<div style="font-size:11.5px;color:#9FB2CC;margin-top:5px;letter-spacing:1.5px">&#10022; VIP STUDENT RECORD &#10022;</div></div></div>';
+  if(!withMcqs){
+    h+='<div style="display:flex;gap:14px;margin-top:14px">'
+      +'<div style="flex:1.2;border:1.5px solid #D9C58A;border-radius:12px;padding:14px 16px;background:#FFFDF4">'
+      +'<div style="font-size:11px;letter-spacing:1.5px;color:#9A7B1E;font-weight:800">RESULT SUMMARY</div>'
+      +row("Subject",cfg.title)+(cfg.course?row("Qualification",cfg.course):"")+row("Date",fdate(cfg.ts)+" \u00b7 "+ftime(cfg.ts))+row("Time used",fmts(cfg.secs))+row("Correct answers",cfg.right+" / "+cfg.total)
+      +'</div>'
+      +'<div style="flex:1;border:1.5px solid #D9C58A;border-radius:12px;padding:14px 16px;background:#FFFDF4;text-align:center">'
+      +'<div style="font-family:Georgia,serif;font-size:52px;font-weight:700;color:#B8860B;line-height:1">'+cfg.pct+'%</div>'
+      +'<div style="display:inline-block;margin-top:10px;background:'+(pass?"#12994F":"#D33A2C")+';color:#fff;font-weight:800;font-size:16px;padding:6px 22px;border-radius:999px">'+(pass?"\u2713 PASS":"\u2717 FAIL")+'</div>'
+      +'<div style="font-size:11.5px;color:#5A6B82;margin-top:10px">Passing marks: 50%</div></div></div>';
+    var last=(hist||[]).slice(-10);
+    if(last.length){
+      h+='<div style="border:1.5px solid #D9C58A;border-radius:12px;padding:14px 16px;background:#FFFDF4;margin-top:14px">'
+        +'<div style="font-family:Georgia,serif;font-size:17px;color:#8A6D1F;font-weight:700;text-align:center">Score Graph \u2014 last '+last.length+' tests</div>'
+        +'<div style="display:flex;align-items:flex-end;gap:8px;height:130px;margin-top:16px;padding:0 4px">';
+      last.forEach(function(r,i){var p=Math.max(0,Math.min(100,r.p||0));h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:10.5px;font-weight:800;color:#8A6D1F;margin-bottom:4px">'+p.toFixed(0)+'%</div><div style="width:100%;max-width:44px;height:'+Math.max(4,p)+'%;background:linear-gradient(180deg,#E9C46A,#C9A227);border-radius:6px 6px 0 0"></div><div style="font-size:10px;color:#5A6B82;margin-top:5px">Test '+(i+1)+'</div></div>'});
+      h+='</div></div>';
+    }
+    var rows=(hist||[]).slice(-10).reverse();
+    if(rows.length){
+      h+='<div style="margin-top:16px"><div style="font-family:Georgia,serif;font-size:16px;color:#8A6D1F;font-weight:700;letter-spacing:1px;text-align:center">ATTEMPTS HISTORY</div>'
+        +'<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:13px"><tr><th style="background:#0B1E3D;color:#E9C46A;text-align:left;padding:8px 10px">Date</th><th style="background:#0B1E3D;color:#E9C46A;text-align:left;padding:8px 10px">Subject</th><th style="background:#0B1E3D;color:#E9C46A;padding:8px 10px">Score</th><th style="background:#0B1E3D;color:#E9C46A;padding:8px 10px">Result</th></tr>';
+      rows.forEach(function(r){var p=r.p||0,ps=(typeof r.pass==="boolean")?r.pass:p>=50;h+='<tr><td style="padding:7px 10px;border-bottom:1px solid #E7DFC8">'+fdate(r.ts)+'</td><td style="padding:7px 10px;border-bottom:1px solid #E7DFC8">'+esc(r.t||"Test")+'</td><td style="padding:7px 10px;border-bottom:1px solid #E7DFC8;text-align:center;font-weight:700">'+p.toFixed(1)+'%</td><td style="padding:7px 10px;border-bottom:1px solid #E7DFC8;text-align:center"><span style="background:'+(ps?"#12994F":"#D33A2C")+';color:#fff;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px">'+(ps?"PASS":"FAIL")+'</span></td></tr>'});
+      h+='</table></div>';
+    }
+  }else{
+    h+='<div style="background:linear-gradient(90deg,#C9A227,#E9C46A);border-radius:10px;padding:10px 16px;margin-top:12px;font-weight:700;font-size:14px;color:#241A00;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center"><span>'+esc(cfg.title)+(cfg.course?" \u2014 "+esc(cfg.course):"")+'</span><span>\u00b7 '+fdate(cfg.ts)+'</span><span>\u00b7 Time '+fmts(cfg.secs)+'</span><span>\u00b7 Score '+cfg.pct+'%</span><span style="background:'+(pass?"#12994F":"#D33A2C")+';color:#fff;padding:2px 12px;border-radius:999px;font-size:12px">'+(pass?"\u2713 PASS":"\u2717 FAIL")+'</span></div>';
+    h+='<div style="font-family:Georgia,serif;font-size:20px;color:#8A6D1F;font-weight:700;margin:18px 0 4px;border-bottom:2px solid #E9C46A;padding-bottom:6px">MCQ REVIEW</div>';
+    (cfg.items||[]).forEach(function(it,i){
+      var ok=it.mine!=null&&it.mine===it.ans;
+      h+='<div style="border:1.5px solid #D9C58A;border-radius:12px;padding:12px 14px;margin-top:12px;background:#fff;page-break-inside:avoid">'
+        +'<div style="display:flex;gap:10px;align-items:flex-start"><span style="background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;white-space:nowrap">QUESTION '+("0"+(i+1)).slice(-2)+'</span><b style="font-size:14.5px;line-height:1.45">'+esc(it.q)+'</b></div>';
+      it.opts.forEach(function(o,oi){
+        var isC=oi===it.ans,isM=oi===it.mine;
+        var st='padding:6px 10px;border-radius:8px;margin-top:6px;font-size:13.5px;';
+        if(isC)st+='background:#DFF5E3;font-weight:700';
+        else if(isM)st+='background:#FBE3DF;font-weight:700';
+        h+='<div style="'+st+'"><b>'+"ABCD"[oi]+'.</b> '+esc(o)+(isC?' <span style="color:#12994F">\u2713</span>':"")+(isM&&!isC?' <span style="color:#D33A2C">\u2717 your answer</span>':"")+'</div>';
+      });
+      h+='<div style="margin-top:8px;font-size:12.5px">Your answer: <b>'+(it.mine==null?"(No answer)":"ABCD"[it.mine])+'</b> \u00b7 Correct answer: <b style="color:#12994F">'+"ABCD"[it.ans]+'</b>'+(ok?' <span style="color:#12994F;font-weight:800">\u2713 Correct</span>':' <span style="color:#D33A2C;font-weight:800">\u2717 Incorrect</span>')+'</div></div>';
+    });
+  }
+  h+='<div style="margin-top:18px;border-top:1.5px solid #D9C58A;padding-top:9px;font-size:11.5px;color:#5A6B82;text-align:center">'+esc(credit)+' \u00b7 '+esc(site)+' \u00b7 ppscengr.com<br>Document generated '+fdate(Date.now())+' \u00b7 Official VIP student record</div>';
+  h+='</div>';
+  return h;
+}
+window.__egPdf=function(cfg,withMcqs){
+  cfg=cfg||{};
+  var go=function(hist){
+    var host=document.getElementById("egPrint");
+    if(!host){host=document.createElement("div");host.id="egPrint";document.body.appendChild(host)}
+    host.innerHTML=build(cfg,!!withMcqs,hist||[]);
+    setTimeout(function(){window.print()},60);
+  };
+  if(window.__hxGetHist){window.__hxGetHist().then(function(l){go(Array.isArray(l)?l:[])}).catch(function(){go([])})}
+  else go([]);
+};
+window.addEventListener("afterprint",function(){var h=document.getElementById("egPrint");if(h)h.innerHTML=""});
+})();
+</script>
+
 </body></html>
