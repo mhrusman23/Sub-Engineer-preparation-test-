@@ -3794,13 +3794,19 @@ function renderContacts(host){
   const list=(CFG.contacts||[]);if(!list.length)return;
   host.appendChild(el("div","gct","Contact us:"));
   let wn={a:"",b:"",au:"",bu:""};try{wn=waNums()}catch(_){}
-  list.forEach(c=>{
-    const r=el("div","gcr");r.appendChild(el("span","gcn",c.role+": "+c.name));
-    const isU=/usman/i.test(c.name||"");
+  list.forEach((c,idx)=>{
+    const snm=idx===0?(SITE&&SITE.waName1):(SITE&&SITE.waName2);
+    const name=String(snm||"").trim()||c.name;
+    const r=el("div","gcr");
+    const who=el("div","gcWho");
+    who.appendChild(el("span","gcRole",c.role));
+    who.appendChild(el("span","gcn",name));
+    r.appendChild(who);
+    const isU=idx===0;
     const un=isU?wn.au:wn.bu;
     const p=String((isU?wn.a:wn.b)||c.phone||"").replace(/\D/g,""),intl=p.replace(/^0/,"92");
-    const w=el("a","waIc");w.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+WAP+'"/></svg>';
-    w.href=un?("https://wa.me/"+un):("https://wa.me/"+intl);w.target="_blank";w.rel="noopener";w.setAttribute("aria-label","Chat on WhatsApp");
+    const w=el("a","gcGo");w.innerHTML='<span class="gcBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+WAP+'"/></svg></span><span class="gcClick">Click here</span>';
+    w.href=intl?("https://wa.me/"+intl):("https://wa.me/"+un);w.target="_blank";w.rel="noopener";w.setAttribute("aria-label","Chat on WhatsApp");
     r.appendChild(w);host.appendChild(r);
   });
 }
@@ -4029,6 +4035,8 @@ function webFill(){
   const ct2=document.getElementById("wsContact");if(ct2)ct2.value=String(s.contact||"");
   const w1=document.getElementById("wsWa1");if(w1)w1.value=String(s.wa1||"");
   const w2=document.getElementById("wsWa2");if(w2)w2.value=String(s.wa2||"");
+  const wn1=document.getElementById("wsWaName1");if(wn1)wn1.value=String(s.waName1||"");
+  const wn2=document.getElementById("wsWaName2");if(wn2)wn2.value=String(s.waName2||"");
   const wu1=document.getElementById("wsWaU1");if(wu1)wu1.value=String(s.waU1||"");
   const wu2=document.getElementById("wsWaU2");if(wu2)wu2.value=String(s.waU2||"");
   const lgs=document.getElementById("wsLgSubs");if(lgs)lgs.value=String(s.lgsubs||"");
@@ -4077,6 +4085,9 @@ function buildWebset(){
   const wwa1=el("input");wwa1.id="wsWa1";wwa1.placeholder="03494482609";wwa1.style.cssText="width:100%";box.appendChild(wwa1);
   box.appendChild(el("div","label","WhatsApp - Umar Sajjid:"));
   const wwa2=el("input");wwa2.id="wsWa2";wwa2.placeholder="03400658893";wwa2.style.cssText="width:100%";box.appendChild(wwa2);
+  box.appendChild(el("div","label","Contact names on the test page card (Admin / Manager):"));
+  const wwn1=el("input");wwn1.id="wsWaName1";wwn1.placeholder="Usman Amjad";wwn1.style.cssText="width:100%";box.appendChild(wwn1);
+  const wwn2=el("input");wwn2.id="wsWaName2";wwn2.placeholder="Umar Sajjid";wwn2.style.cssText="width:100%";box.appendChild(wwn2);
   box.appendChild(el("div","label","WhatsApp usernames (optional) - if a username is active, the icon opens the chat via wa.me/username instead of the number. Empty = number link:"));
   box.appendChild(el("div","label","WhatsApp username - Usman Amjad (without @):"));
   const wwu1=el("input");wwu1.id="wsWaU1";wwu1.placeholder="e.g. engrusman";wwu1.style.cssText="width:100%";box.appendChild(wwu1);
@@ -4179,12 +4190,13 @@ function buildWebset(){
       const emv=document.getElementById("wsEmail");
       const crv=document.getElementById("wsCredit");
       const wav1=document.getElementById("wsWa1");const wav2=document.getElementById("wsWa2");
+      const wnv1=document.getElementById("wsWaName1");const wnv2=document.getElementById("wsWaName2");
       const wavU1=document.getElementById("wsWaU1");const wavU2=document.getElementById("wsWaU2");
       const lgv=document.getElementById("wsLgSubs");
       const abv=document.getElementById("wsAbout");
       const prv=document.getElementById("wsPrivacy");
       const ctv=document.getElementById("wsContact");
-      const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",credit:crv?crv.value.trim():"",wa1:wav1?wav1.value.trim():"",wa2:wav2?wav2.value.trim():"",waU1:wavU1?wavU1.value.trim():"",waU2:wavU2?wavU2.value.trim():"",lgsubs:lgv?lgv.value.trim():"",logo:String(window.__wsLogo||""),about:abv?abv.value.trim():"",privacy:prv?prv.value.trim():"",contact:ctv?ctv.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
+      const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",credit:crv?crv.value.trim():"",wa1:wav1?wav1.value.trim():"",wa2:wav2?wav2.value.trim():"",waName1:wnv1?wnv1.value.trim():"",waName2:wnv2?wnv2.value.trim():"",waU1:wavU1?wavU1.value.trim():"",waU2:wavU2?wavU2.value.trim():"",lgsubs:lgv?lgv.value.trim():"",logo:String(window.__wsLogo||""),about:abv?abv.value.trim():"",privacy:prv?prv.value.trim():"",contact:ctv?ctv.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
         guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),updatedAt:serverTimestamp()};
       await setDoc(doc(db,"sitedata","style"),data);
       applySite(data);
@@ -10498,6 +10510,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
   }
   var WA_PATH="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
   function waTarget(pr){
+    if(String(pr.num||"").replace(/\D/g,"")) return waHref(pr.num);
     var u=String(pr.un||"").replace(/[^A-Za-z0-9._]/g,"");
     if(u) return "https://wa.me/"+u;
     return waHref(pr.num);
@@ -10756,5 +10769,24 @@ html[data-look="premium"] #test .cell.cur{outline:2px solid #20242B;outline-offs
 .hlogo{width:96px!important;height:96px!important}
 #browse .bwshield{width:92px!important;height:92px!important}
 #browse .bwbrand .shield,#userbar .ubrand .shield{background-image:var(--mascot)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;border-radius:50%;border:1.5px solid rgba(245,197,66,.85);width:27px!important;height:27px!important}
+</style>
+
+<style id="contactCardCss">
+.gcr .gcWho{display:flex;flex-direction:column;flex:1;min-width:0}
+.gcr .gcRole{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.65}
+.gcr .gcGo{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none}
+.gcr .gcBtn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3BF273,#12B76A 70%);color:#fff;box-shadow:0 0 12px rgba(43,255,98,.45)}
+.gcr .gcBtn svg{width:23px;height:23px;display:block}
+.gcr .gcClick{color:#12B76A;font-size:11px;font-weight:800}
+#contactBox{background:linear-gradient(160deg,#0A1730,#0B1E3D 55%,#081226);border:1.5px solid rgba(233,196,106,.55);border-radius:16px;padding:16px 18px;box-shadow:0 12px 30px rgba(4,10,24,.35)}
+#contactBox .gct{color:#E9C46A;font-size:19px;font-weight:800;margin-bottom:4px}
+#contactBox .gcr{display:flex;align-items:center;gap:12px;padding:12px 0;margin:0;border-top:1px solid rgba(233,196,106,.18)}
+#contactBox .gcRole{color:#E9C46A;opacity:1;font-size:11.5px;letter-spacing:1.2px}
+#contactBox .gcn{color:#fff;font-size:18px;font-weight:800}
+#contactBox .gcGo{gap:5px}
+#contactBox .gcBtn{width:58px;height:58px;box-shadow:0 0 0 2px rgba(43,255,98,.5),0 0 18px rgba(43,255,98,.55),0 8px 18px rgba(0,0,0,.35)}
+#contactBox .gcBtn svg{width:32px;height:32px}
+#contactBox .gcClick{color:#2BFF62;font-size:12.5px}
+#contactBox .gcGo:active .gcBtn{transform:scale(.93)}
 </style>
 </body></html>
