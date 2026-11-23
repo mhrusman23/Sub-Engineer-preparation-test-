@@ -9920,6 +9920,8 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 @media(max-width:640px){#courseCentre .cc2Rex{width:100%}}
 #courseCentre .cc2Note{font-size:13.5px;opacity:.75;margin:12px 0 0}
 #courseCentre.cc2Classic .cc2Body{display:none}
+body.cc2Scraping #yearView{visibility:hidden!important}
+body.cc2Scraping #homeCards{visibility:hidden!important}
 body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 </style>
 <script>
@@ -9989,9 +9991,21 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       b.addEventListener("click",function(){if(window.__openRealExam)window.__openRealExam(b.getAttribute("data-nm2"),curCourseName)});
     });
   }
+  function yvOpen(){var yv=document.getElementById("yearView");return !!(yv&&!yv.hidden)}
+  async function waitRows(title){
+    for(var t=0;t<28;t++){
+      var rows=document.querySelectorAll("#yList .hcard");
+      var yt=document.getElementById("yTitle");
+      var tt=yt?(yt.textContent||"").trim():"";
+      if(rows.length&&(!title||!tt||tt.indexOf(title)>=0||title.indexOf(tt)>=0))return;
+      await wait(60);
+    }
+  }
+  async function waitYvClosed(){for(var t=0;t<25;t++){if(!yvOpen())return;await wait(60)}}
   async function scrape(course){
     if(building||cache[course])return;
     building=true;render();
+    document.body.classList.add("cc2Scraping");
     var groups=[];
     var cards=Array.prototype.slice.call(document.querySelectorAll("#homeCards .ycard:not(.add)"));
     for(var ci=0;ci<cards.length;ci++){
@@ -9999,7 +10013,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       var title=yt?(yt.textContent||"").trim():"";
       if(!title)continue;
       cards[ci].click();
-      await wait(420);
+      await waitRows(title);
       var subs=[];
       document.querySelectorAll("#yList .hcard").forEach(function(r){
         var pk=r.querySelector("input.pk");if(!pk)return;
@@ -10011,10 +10025,9 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
         subs.push({name:nm,idx:pk.value,n:n});
       });
       groups.push({title:title,subjects:subs});
-      var yb=document.getElementById("yBack");
-      if(yb)yb.click();
-      await wait(320);
+      if(yvOpen()){var yb=document.getElementById("yBack");if(yb)yb.click();await waitYvClosed()}
     }
+    document.body.classList.remove("cc2Scraping");
     cache[course]=groups;building=false;
     if(curCourseName===course)render();
     apply();
@@ -10075,7 +10088,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       if(!cache[course]&&!building)scrape(course);
       else if(cache[course]&&builtFor!==course){builtFor=course;render()}
       var yv=document.getElementById("yearView");
-      if(yv&&!yv.hidden&&!(window.__accGoUntil&&Date.now()<window.__accGoUntil)){
+      if(yv&&!yv.hidden&&!building&&!(window.__accGoUntil&&Date.now()<window.__accGoUntil)){
         var yb=document.getElementById("yBack");if(yb)yb.click();
       }
     }
@@ -10144,6 +10157,9 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 <style id="lookMenuCss">
 /* ===== OPTION 4: Look (Premium/Classic) button header se hata kar Menu me (2026-11-22) ===== */
 .lookbtn{display:none!important}
+#appmenu .egLookOpt{display:flex;justify-content:space-between;align-items:center;width:100%;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.08);color:#fff;padding:13px 6px;font:700 14.5px system-ui,sans-serif;cursor:pointer;text-align:left;box-sizing:border-box}
+#appmenu .egLookOpt .egTick{color:#2BFF62;font-weight:900;font-size:16px;visibility:hidden}
+#appmenu .egLookOpt.on .egTick{visibility:visible}
 #appmenu .lookbtn{display:flex!important;width:100%;justify-content:flex-start;align-items:center;flex:none!important;background:linear-gradient(145deg,#2A3358,#1E2547)!important;color:#fff!important;border:1px solid rgba(201,162,39,.65)!important;border-radius:999px;padding:13px 18px!important;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.35)}
 </style>
 <script>
@@ -10198,7 +10214,25 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
         });
       }
       label(inMenu);
+      ensureLookOpts(box,inMenu);
     }
+  }
+  function lookMode(){var v=document.documentElement.getAttribute("data-look");if(v==="premium"||v==="classic")return v;try{return localStorage.getItem("lookMode")==="classic"?"classic":"premium"}catch(e){return "premium"}}
+  function paintLookOpts(){var cur=lookMode();document.querySelectorAll("#appmenu .egLookOpt").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-m")===cur)})}
+  function ensureLookOpts(box,after){
+    if(!box.querySelector(".egLookOpt")){
+      ["premium","classic"].forEach(function(m){
+        var b=document.createElement("button");b.type="button";b.className="egLookOpt";b.setAttribute("data-m",m);
+        b.innerHTML=(m==="premium"?"Premium":"Classic")+'<span class="egTick">\u2713</span>';
+        b.addEventListener("click",function(){
+          if(lookMode()!==m){try{if(window.__lookToggle)window.__lookToggle()}catch(e){}}
+          setTimeout(paintLookOpts,180);
+        });
+        after.parentNode.insertBefore(b,after.nextSibling);
+        after=b;
+      });
+    }
+    paintLookOpts();
   }
   setInterval(move,900);
 })();
