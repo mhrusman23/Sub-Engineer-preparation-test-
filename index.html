@@ -4662,19 +4662,40 @@ $("gguest").onclick=async()=>{
 function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open("eg23",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function idbGet(k){try{const d=await idbOpen();return await new Promise((res,rej)=>{const q=d.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){return null}}
 async function idbSet(k,v){try{const d=await idbOpen();await new Promise((res,rej)=>{const t=d.transaction("kv","readwrite");t.objectStore("kv").put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
-async function loadBank(){
-  for(let attempt=0;attempt<2;attempt++){
-    const cP=idbGet("bank");
+async function refreshBankCache(){
+  try{
     const m=await getDoc(doc(db,"meta","bank"));
-    if(!m.exists())return null;
+    if(!m.exists())return;
     const md=m.data();
-    /* same version already saved on this phone -> no need to download the questions again */
-    const c=await cP;
-    if(c&&c.version===md.version&&c.parts===md.parts&&typeof c.json==="string"&&c.json.length)return {json:c.json,meta:md};
+    const c=await idbGet("bank");
+    if(c&&c.version===md.version&&c.parts===md.parts&&typeof c.json==="string"&&c.json.length)return;
     const docs=await Promise.all(Array.from({length:md.parts},(_,i)=>getDoc(doc(db,"bank","p"+i))));
     if(docs.every(d=>d.exists()&&d.data().v===md.version)){
       const json=docs.map(d=>d.data().data).join("");
-      idbSet("bank",{version:md.version,parts:md.parts,json});
+      idbSet("bank",{version:md.version,parts:md.parts,json,count:md.count||0,updatedAtMs:(md.updatedAt&&md.updatedAt.toMillis)?md.updatedAt.toMillis():0});
+    }
+  }catch(e){}
+}
+let __bankRefreshOn=false;
+async function loadBank(){
+  /* Phone-first (2026-11-23): sawal pehle mobile ki apni storage (IndexedDB) se
+     lo - internet ho ya na ho, website foran khulti hai aur load mobile ke
+     processor par padta hai. Nayi version ka check background me hota hai,
+     cache chupke se update ho jata hai (agli visit ke liye). Sirf pehli dafa,
+     jab phone me kuch save na ho, internet se download lazmi hai. */
+  const c=await idbGet("bank");
+  if(c&&typeof c.json==="string"&&c.json.length&&c.version){
+    if(!__bankRefreshOn){__bankRefreshOn=true;refreshBankCache().then(()=>{__bankRefreshOn=false},()=>{__bankRefreshOn=false})}
+    return {json:c.json,meta:{version:c.version,parts:c.parts,count:c.count||0,updatedAt:c.updatedAtMs?Timestamp.fromMillis(c.updatedAtMs):null}};
+  }
+  for(let attempt=0;attempt<2;attempt++){
+    const m=await getDoc(doc(db,"meta","bank"));
+    if(!m.exists())return null;
+    const md=m.data();
+    const docs=await Promise.all(Array.from({length:md.parts},(_,i)=>getDoc(doc(db,"bank","p"+i))));
+    if(docs.every(d=>d.exists()&&d.data().v===md.version)){
+      const json=docs.map(d=>d.data().data).join("");
+      idbSet("bank",{version:md.version,parts:md.parts,json,count:md.count||0,updatedAtMs:(md.updatedAt&&md.updatedAt.toMillis)?md.updatedAt.toMillis():0});
       return {json,meta:md};
     }
   }
@@ -6059,7 +6080,7 @@ function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)+courseCleanup(cu
 /* import the built-in verified MCQs into the bank: each MCQ goes to its own course > subject; answer positions are shuffled; duplicates are skipped */
 async function verifiedImport(){
   if(!window.__VMCQ){
-    await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="verified-mcqs.js?v="+Date.now();sc.onload=ok;sc.onerror=()=>no(new Error("verified-mcqs.js was not found. Upload it next to index.html first."));document.head.appendChild(sc)});
+    await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="verified-mcqs.js";sc.onload=ok;sc.onerror=()=>no(new Error("verified-mcqs.js was not found. Upload it next to index.html first."));document.head.appendChild(sc)});
   }
   const raw=String(window.__VMCQ||"");
   if(!raw)throw new Error("Built-in MCQs were not found.");
@@ -8890,7 +8911,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     }
     if(window.__VMCQ||window.VERIFIED_MCQS){cache=parse();if(cache.length)return Promise.resolve(cache);cache=null}
     return new Promise(function(ok,no){
-      var sc=document.createElement("script");sc.src="verified-mcqs.js?v="+Date.now();
+      var sc=document.createElement("script");sc.src="verified-mcqs.js";
       sc.onload=function(){cache=parse();ok(cache)};
       sc.onerror=function(){no(new Error("verified-mcqs.js not found"))};
       document.head.appendChild(sc);
@@ -9720,20 +9741,27 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
 #egBackBtn{flex:0 0 auto!important;white-space:nowrap}
 </style>
 <script>
-/* Mobile Back ab seedha chale ga:
-   Test -> wapis usi folder/category ki list (jahan se test khula tha)
-   Category list -> folder, Folder -> dashboard, Dashboard/Login -> "Leave?" confirm.
-   Website ke apne back system ({y:1}/{t:1} states) ke sath mil kar chalta hai:
-   jo step website khud sambhal le, wahan ye kuch nahi karta, sirf peeche
-   aik hifazati state dobara laga deta hai taake agli Back press bhi kaam kare. */
+/* Mobile Back v3 (2026-11-23): Leave dialog sirf ASAL exit press par.
+   Purani ghalti: dialog andar ke views se wapis ane par aur in-app Back
+   button ki stale history states par bhi khul jata tha, aur har visit par
+   dobara arm ho jata tha - is liye "khud br br" ata tha.
+   Ab ke usool:
+   1) Dialog sirf tab, jab user dashboard/login par KUCH dair se baitha ho
+      (1.2s+), Back dabaye, aur koi andar ka view na khula ho na band hua ho.
+   2) Aik session me sirf AIK dafa. Stay dabane ke baad is session me phir
+      kabhi nahi ayega - agli Back seedha bahir le jati hai.
+   3) Test/category/folder se wapis ana hamesha sirf navigation hai, dialog nahi. */
 (function(){
   "use strict";
   var allow=false,shown=false,box=null;
-  var testWas=false,yvWas=false,folderWas=false,ctx={course:"",cat:""};
-  var dialogArmed=true,guardOff=false,lastPop=0;
+  var testWas=false,yvWas=false;
+  var ctx={course:"",cat:""};
+  var guardSet=false,dashSince=0;
   function $(id){return document.getElementById(id)}
   function vis(el){return !!el&&!el.hidden&&el.getClientRects().length>0}
-  function push(){try{history.pushState({egGuard:1},"",location.href)}catch(e){}}
+  function push(){try{history.pushState({egGuard:1},"",location.href);guardSet=true}catch(e){}}
+  function latch(){try{return sessionStorage.getItem("egLeaveOnce")==="1"}catch(e){return window.__egLeaveOnce===true}}
+  function setLatch(){try{sessionStorage.setItem("egLeaveOnce","1")}catch(e){}window.__egLeaveOnce=true}
   function folderCourse(){
     var yd=document.querySelector("#homeCards .ycard.add .yd");
     if(!yd)return "";
@@ -9747,16 +9775,18 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     if(folderCourse())return "folder";
     return "";
   }
+  function atTop(){return vis($("start"))||vis($("gate"))}
   function track(){
     var t=$("test"),yv=$("yearView");
     testWas=vis(t);
     yvWas=vis(yv);
-    folderWas=!!folderCourse();
-    if(testWas||yvWas||folderWas){dialogArmed=true;guardOff=false}
+    if(innerOpen()){dashSince=0}
+    else if(atTop()&&!dashSince){dashSince=Date.now()}
     if(yvWas){
       var c=folderCourse();if(c)ctx.course=c;
       var yt=$("yTitle");if(yt)ctx.cat=(yt.textContent||"").trim();
     }
+    if(atTop()&&!innerOpen()&&!guardSet&&!latch())push();
     updBackBtn();
   }
   function openFolder(course,done){
@@ -9784,11 +9814,14 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     if(box)return box;
     box=document.createElement("div");box.id="egExit";box.hidden=true;
     box.innerHTML='<div class="bx"><p class="t">Leave Engrgroup23?</p><p class="s">Press OK to close the website, or Stay to keep studying.</p><div class="row"><button type="button" class="stay">Stay</button><button type="button" class="ok">OK</button></div></div>';
-    box.querySelector(".stay").addEventListener("click",function(){box.hidden=true;shown=false;guardOff=true});
+    box.querySelector(".stay").addEventListener("click",function(){
+      box.hidden=true;shown=false;setLatch();
+      if(!guardSet)push();
+    });
     box.querySelector(".ok").addEventListener("click",function(){
-      allow=true;box.hidden=true;
-      try{history.go(-2)}catch(e){}
-      setTimeout(function(){if(!document.hidden)try{history.back()}catch(e){}},450);
+      allow=true;box.hidden=true;setLatch();
+      try{history.back()}catch(e){}
+      setTimeout(function(){if(!document.hidden)try{history.back()}catch(e){}},600);
     });
     document.body.appendChild(box);
     return box;
@@ -9828,33 +9861,36 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     else steps();
   },true);
   window.addEventListener("popstate",function(){
-    if(allow||guardOff)return;
-    var wasTest=testWas,wasYv=yvWas,wasFolder=folderWas,now=Date.now();
+    if(allow)return;
+    var wasTest=testWas,wasYv=yvWas,wasInner=!!innerOpen();
     setTimeout(function(){
-      if(allow||shown||guardOff)return;
-      var start=$("start"),test=$("test"),yv=$("yearView");
-      /* Jo step website ne khud sambhala (test band / list band), wahan sirf dobara arm karo */
+      if(allow||shown)return;
+      var test=$("test"),yv=$("yearView");
+      /* Navigation steps: website ne khud view band kiya - sirf guard wapis lagao, dialog kabhi nahi */
       if(wasTest&&!vis(test)){
-        if(vis(start)&&!vis(yv)&&ctx.course&&!folderCourse()){restoreCtx()}
-        push();lastPop=now;return;
+        if(vis($("start"))&&!vis(yv)&&ctx.course&&!folderCourse())restoreCtx();
+        if(!guardSet&&!latch())push();
+        return;
       }
-      if(wasYv&&!vis(yv)){push();lastPop=now;return}
+      if(wasYv&&!vis(yv)){if(!guardSet&&!latch())push();return}
       if(vis(test)||vis(yv))return;
-      /* Folder khula hai to dashboard par jao */
+      /* Folder khula reh gaya (folder ka apna history step nahi hota): dashboard par le jao */
       var bc=document.querySelector("#homeCards .ycard.add");
-      if(vis(start)&&bc&&folderCourse()){bc.click();push();lastPop=now;return}
-      /* Dashboard/login par asal Back press: dialog sirf tab, jab press WAQAI dashboard
-         par hui ho (andar se wapis ane wali press par NAHI) - aur aik dashboard visit
-         me sirf aik dafa. Stay ke baad guardOff: agli Back seedha bahir le jati hai. */
-      if((vis(start)||vis($("gate")))&&!wasFolder&&dialogArmed&&now-lastPop>700){
-        dialogArmed=false;push();ensureBox();box.hidden=false;shown=true;
-      }else if(vis(start)||vis($("gate"))){
-        push();
+      if(vis($("start"))&&bc&&folderCourse()){bc.click();if(!guardSet&&!latch())push();return}
+      if(wasInner)return;
+      /* Dashboard/login par hain aur koi view nahi khula/band hua */
+      if(atTop()){
+        var consumed=guardSet;guardSet=false;
+        if(!consumed){if(!latch())push();return}
+        /* Guard wali asal Back press: dialog sirf tab jab user dashboard par
+           kuch dair se tha, aur is session me pehle na aya ho */
+        if(dashSince&&Date.now()-dashSince>1200&&!latch()){
+          setLatch();ensureBox();box.hidden=false;shown=true;
+        }
+        /* latch ho chuka ho to kuch na karo: agli Back waqai bahir le jayegi */
       }
-      lastPop=now;
-    },90);
+    },120);
   });
-  push();
   setInterval(track,800);
 })();
 </script>
@@ -10583,5 +10619,62 @@ html[data-look="premium"] ::selection{background:#FFB03A;color:#1B1206}
 html[data-look="premium"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#FF7A59,#F0441F)}
 html[data-look="premium"] #seoInfo{color:#8B96A8!important}
 html[data-look="premium"] #seoInfo a{color:#C7D2E4!important}
+</style>
+
+<style id="premiumIvoryTestCss">
+/* ===== PREMIUM MCQ LOOK: SMOOTH 6 - IVORY MINIMAL (user pick, 2026-11-23) =====
+   Sirf Premium look ke test screen par (html[data-look="premium"] #test).
+   Hathidant (ivory) safed card, hairline options, A/B/C/D gol chips,
+   naram saaye, smooth transitions. Classic look bilkul untouched.
+   Note: accaTheme (premium stylesheet) ke #test .opt wale sakht rules
+   (peeli 3D gol pattiyan, chhupa letter chip, jawab ke baad ki peeli
+   halat) ko yahan zyada-taqat selectors se override kiya gaya hai. */
+html[data-look="premium"] #test .bar{background:#FDFCF8!important;border:1px solid #EFE9DB;border-radius:22px;box-shadow:0 18px 36px rgba(0,0,0,.28);color:#20242B}
+html[data-look="premium"] #test .timer{color:#20242B}
+html[data-look="premium"] #test #timerNote{color:#8A8574!important}
+html[data-look="premium"] #test .stat{background:#F1EFE7!important;border:1px solid #E9E4D6;border-radius:14px;box-shadow:none!important;color:#20242B}
+html[data-look="premium"] #test .stat .label{color:#8A8574}
+html[data-look="premium"] #test .stat .n{color:#20242B}
+html[data-look="premium"] #test .stat.ok .n{color:#0E9F6E}
+html[data-look="premium"] #test .stat.bad .n{color:#E0492F}
+html[data-look="premium"] #test .prog{background:#ECE9DF!important}
+html[data-look="premium"] #test .prog i,html[data-look="premium"] #test #progFill{background:linear-gradient(90deg,#FF7A59,#FFB03A)!important}
+html[data-look="premium"] #test .barbtns .btn{background:#fff!important;border:1.5px solid #E3DECF!important;color:#20242B!important;box-shadow:none!important;border-radius:12px}
+html[data-look="premium"] #test #btnFinish{background:linear-gradient(135deg,#FF7A59,#FF5A3C)!important;border-color:#E04A28!important;color:#fff!important}
+html[data-look="premium"] #test #tmRow,html[data-look="premium"] #test #tmRow label{color:#3E4A5C!important}
+html[data-look="premium"] #test .card{background:#FDFCF8!important;color:#20242B;border:1px solid #EFE9DB;border-radius:26px!important;box-shadow:0 22px 44px rgba(0,0,0,.30)!important}
+html[data-look="premium"] #test .card.q::before{color:#20242B!important}
+html[data-look="premium"] #test .qtext{color:#20242B}
+html[data-look="premium"] #test #qno{color:#20242B;font-weight:800}
+html[data-look="premium"] #test #qmeta{background:#F1EFE7;color:#6B675A;border-radius:999px;padding:4px 11px;font-weight:800}
+html[data-look="premium"] #test .opts{background-image:none!important;gap:2px!important}
+html[data-look="premium"] #test .opts .opt{background:transparent!important;border:0!important;border-bottom:1.5px solid #ECE9DF!important;border-radius:14px;box-shadow:none!important;color:#20242B!important;padding:13px 12px;min-height:52px;align-items:center;justify-content:flex-start!important;text-align:left;transition:background .25s ease}
+html[data-look="premium"] #test .opts .opt:last-child{border-bottom:0!important}
+html[data-look="premium"] #test .opts .opt .ltr{position:static!important;width:32px;height:32px;clip:auto!important;overflow:visible!important;background:#F1EFE7!important;color:#6B675A!important;border:0!important;border-radius:50%!important;font-size:14px;box-shadow:none!important;flex:none;display:grid;place-items:center}
+html[data-look="premium"] #test .opts .opt .txt{color:#20242B;font-weight:650}
+html[data-look="premium"] #test .opts .opt:hover:not([aria-disabled="true"]){background:#F7F3EA!important;transform:none}
+html[data-look="premium"] #test .opts .opt:hover:not([aria-disabled="true"]) .ltr{background:#E9E2D2!important;color:#4A463C!important}
+html[data-look="premium"] #test .opts .opt.right{background:linear-gradient(120deg,rgba(18,183,106,.17),rgba(43,217,138,.12))!important;border-bottom-color:transparent!important}
+html[data-look="premium"] #test .opts .opt.right .ltr{background:linear-gradient(135deg,#2BD98A,#12B76A)!important;color:#fff!important}
+html[data-look="premium"] #test .opts .opt.right .txt{color:#0B6B3A!important}
+html[data-look="premium"] #test .opts .opt.wrong{background:linear-gradient(120deg,rgba(253,66,80,.14),rgba(255,122,89,.10))!important;border-bottom-color:transparent!important}
+html[data-look="premium"] #test .opts .opt.wrong .ltr{background:linear-gradient(135deg,#FF7A59,#FD4250)!important;color:#fff!important}
+html[data-look="premium"] #test .opts .opt.wrong .txt{color:#B3261E!important}
+html[data-look="premium"] #test .opts .opt[aria-disabled="true"]:not(.right):not(.wrong){background:transparent!important;box-shadow:none!important;opacity:1!important}
+html[data-look="premium"] #test .fb{border-radius:14px;padding:10px 14px}
+html[data-look="premium"] #test .fb.ok{background:rgba(18,183,106,.13)!important;color:#0B6B3A!important}
+html[data-look="premium"] #test .fb.bad{background:rgba(253,66,80,.11)!important;color:#B3261E!important}
+html[data-look="premium"] #test .qtools .btn{background:#fff!important;border:1.5px solid #E3DECF!important;color:#20242B!important;box-shadow:none!important;border-radius:12px;transition:background .25s ease,box-shadow .25s ease}
+html[data-look="premium"] #test .qtools .btn.ai{background:linear-gradient(135deg,#FFC65C,#FFB03A)!important;border-color:#E07F28!important;color:#241A02!important}
+html[data-look="premium"] #test .nav .btn{background:#fff!important;border:1.5px solid #E3DECF!important;color:#20242B!important;box-shadow:none!important;border-radius:14px;transition:background .25s ease,box-shadow .25s ease}
+html[data-look="premium"] #test .nav #nextUn{background:#F1EFE7!important}
+html[data-look="premium"] #test .nav #next{background:#20242B!important;border-color:#20242B!important;color:#fff!important;box-shadow:0 12px 24px rgba(0,0,0,.25)!important}
+html[data-look="premium"] #test #srchIn{background:#fff!important;border:1.5px solid #E3DECF!important;color:#20242B!important;border-radius:14px}
+html[data-look="premium"] #test .panel h3{color:#20242B}
+html[data-look="premium"] #test .log{color:#3E4A5C}
+html[data-look="premium"] #test .cell{background:#F1EFE7!important;border:1px solid #E9E4D6!important;color:#20242B!important;border-radius:10px!important;box-shadow:none!important}
+html[data-look="premium"] #test .cell.ok{background:rgba(18,183,106,.20)!important}
+html[data-look="premium"] #test .cell.bad{background:rgba(253,66,80,.16)!important}
+html[data-look="premium"] #test .cell.cur{outline:2px solid #20242B;outline-offset:1px}
 </style>
 </body></html>
