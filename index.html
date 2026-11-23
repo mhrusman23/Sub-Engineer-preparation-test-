@@ -3767,16 +3767,20 @@ function lgSet(l){
   try{localStorage.setItem("eg23lang",l==="ur"?"ur":"en")}catch(_){}
   location.reload();
 }
+const WAP="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
 function renderContacts(host){
   host.textContent="";
   const list=(CFG.contacts||[]);if(!list.length)return;
   host.appendChild(el("div","gct","Contact us:"));
+  let wn={a:"",b:"",au:"",bu:""};try{wn=waNums()}catch(_){}
   list.forEach(c=>{
     const r=el("div","gcr");r.appendChild(el("span","gcn",c.role+": "+c.name));
-    const p=String(c.phone||"").replace(/\D/g,""),intl=p.replace(/^0/,"92");
-    const a=el("a","gca",c.phone);a.href="tel:+"+intl;
-    const w=el("a","gca","WhatsApp");w.href="https://wa.me/"+intl;w.target="_blank";w.rel="noopener";
-    r.append(a,w);host.appendChild(r);
+    const isU=/usman/i.test(c.name||"");
+    const un=isU?wn.au:wn.bu;
+    const p=String((isU?wn.a:wn.b)||c.phone||"").replace(/\D/g,""),intl=p.replace(/^0/,"92");
+    const w=el("a","waIc");w.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+WAP+'"/></svg>';
+    w.href=un?("https://wa.me/"+un):("https://wa.me/"+intl);w.target="_blank";w.rel="noopener";w.setAttribute("aria-label","Chat on WhatsApp");
+    r.appendChild(w);host.appendChild(r);
   });
 }
 window.renderContacts=renderContacts;
@@ -3798,6 +3802,7 @@ window.__siteName=siteName;
 function creditBy(){return (SITE&&String(SITE.credit||"").trim())||"By Engr Usman Amjad & Engr Umar Sajjid"}
 window.__creditBy=creditBy;
 function waNums(){return {a:String((SITE&&SITE.wa1)||"").trim()||"03494482609",b:String((SITE&&SITE.wa2)||"").trim()||"03400658893",au:String((SITE&&SITE.waU1)||"").trim().replace(/^@/,""),bu:String((SITE&&SITE.waU2)||"").trim().replace(/^@/,"")}}
+function waHandle(){const u=String((SITE&&SITE.waU1)||"").trim().replace(/^@/,"");return u?("@"+u):""}
 window.__waNums=waNums;
 /* ===== Download / install the app (PWA) ===== */
 let SHOW_INST=true;
@@ -4057,7 +4062,7 @@ function buildWebset(){
   box.appendChild(el("div","label","How many hours of free access for guest login?"));
   const wh=el("input");wh.id="wsGuest";wh.type="number";wh.min="1";wh.max="8760";wh.placeholder="12 (default)";wh.style.cssText="width:100%";box.appendChild(wh);
   box.appendChild(el("div","label","Message shown to the visitor when the trial or access ends (empty = default text)"));
-  const we=el("input");we.id="wsEnd";we.type="text";we.placeholder="Your trial has ended \u2014 please contact the admin (03494482609)";we.style.cssText="width:100%";box.appendChild(we);
+  const we=el("input");we.id="wsEnd";we.type="text";we.placeholder="Your trial has ended \u2014 please contact the admin on WhatsApp";we.style.cssText="width:100%";box.appendChild(we);
   box.appendChild(el("div","label","Expiry for Google / number (approved) users is set in Admin panel → Users tab (in days)."));
   box.appendChild(el("div","label","To Add / Hide / Rename the home page options and cards: Admin panel → Settings tab."));
   const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
@@ -4680,10 +4685,10 @@ async function check(user){
       const ar=await alP;if(ar.e)throw ar.e;const a=ar.r;
       if(!a.exists()){if(user.isAnonymous)return claimGuest(user,email);
         /* User mode = Admin approval: a new user is saved as a waiting request instead of being turned away */
-        try{await setDoc(doc(db,"allowed",email),{email,enabled:false,trial:false,pending:true,createdAt:serverTimestamp()});return deny(email,"\u23F3 Your request has been sent. Please wait until the admin or manager approves your account, then open the app again. Contact: 03494482609")}catch(_){}
+        try{await setDoc(doc(db,"allowed",email),{email,enabled:false,trial:false,pending:true,createdAt:serverTimestamp()});return deny(email,"\u23F3 Your request has been sent. Please wait until the admin or manager approves your account, then open the app again."+(waHandle()?(" Contact on WhatsApp: "+waHandle()):" Contact the admin on WhatsApp."))}catch(_){}
         return deny(email,"This account is not approved yet. Ask the admin to add it, or tap Use another account and continue as Guest ("+ACC_H+" hours free).")}
       const d=a.data();
-      if(d.enabled!==true&&d.pending===true)return deny(email,"\u23F3 Your guest request has been sent. Please wait until the admin or manager approves it, then open the app again. Contact: 03494482609");
+      if(d.enabled!==true&&d.pending===true)return deny(email,"\u23F3 Your guest request has been sent. Please wait until the admin or manager approves it, then open the app again."+(waHandle()?(" Contact on WhatsApp: "+waHandle()):" Contact the admin on WhatsApp."));
       if(d.enabled!==true)return deny(email,"Your access is turned off.");
       if(d.expires&&d.expires.toMillis()<Date.now())return deny(email,d.trial?(ACC_END||("Your "+ACC_H+"-hour guest access has ended. Please ask the admin to add your Gmail.")):"Your access has expired.");
       EXP=d.expires?d.expires.toMillis():null;TRIAL=!!d.trial;
@@ -4730,7 +4735,7 @@ async function check(user){
     if(code==="permission-denied"||/Missing or insufficient permissions/i.test(code)){
       deny(email,(IS_OWNER||IS_ADMIN)
         ?"Server rules are not published yet, so data cannot load. Open 'firestore.rules' in File Manager \u2192 Firebase Console \u2192 Firestore Database \u2192 Rules tab \u2192 paste the full file and press Publish. (permission-denied)"
-        :"Site settings are being updated \u2014 please try again shortly or contact the admin (03494482609). (permission-denied)");
+        :"Site settings are being updated \u2014 please try again shortly or contact the admin"+(waHandle()?(" on WhatsApp "+waHandle()):" on WhatsApp")+". (permission-denied)");
     }else deny(email,"Error: "+code);
   }
 }
@@ -6657,7 +6662,7 @@ window.__aiPlayBankSub=async function(label,course,own){
     for(let i=mine.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[mine[i],mine[r]]=[mine[r],mine[i]]}
     const fresh=mine.filter(m=>!seen.has(aiqKey(m))),old=mine.filter(m=>seen.has(aiqKey(m)));
     mine.forEach(m=>seenS.add(aiqKey(m)));
-    const buf=fresh.slice();let first=buf.splice(0,10);
+    const buf=[];let first=fresh.slice();if(old.length){first=first.concat(old);old.length=0} /* POORA bank test me: pehle naye (fresh), phir purane — sirf 10 wala cap khatam (2026-11-23) */
     const keepNew=live=>live.filter(m=>{const k=aiqKey(m);if(seenS.has(k))return false;seenS.add(k);return true});
     const need=10-first.length;
     let restNeed=0;
@@ -10298,4 +10303,71 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 .waIc svg{width:14px;height:14px;display:block}
 .waIc:active{transform:scale(.92)}
 </style>
+
+<style id="egFixNov23Css">
+/* ===== 2026-11-23: settings ab alag premium PAGES ki tarah (overlay sheet nahi) ===== */
+#ws{padding:0!important}
+#ws>div{width:100%!important;max-width:600px!important;min-height:100%!important;margin:0 auto!important;border-radius:0!important;box-shadow:0 0 44px rgba(0,0,0,.4)!important;animation:egPageIn .25s ease-out}
+#acct{padding:0!important}
+#acct .acbx{width:100%!important;max-width:560px!important;min-height:100%!important;margin:0 auto!important;border-radius:0!important;box-shadow:0 0 44px rgba(0,0,0,.4)!important}
+@keyframes egPageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* ===== 2026-11-23: Classic/Premium look switch SMOOTH (local-site wala jhatka khatam) ===== */
+body,.ycard,.hcard,.btn,.chip,.bar,.card,.mnit,.mnai,.gbox,.acbx,#userbar{transition:background-color .35s ease,border-color .35s ease,color .35s ease,box-shadow .35s ease}
+#egLookFlash{position:fixed;inset:0;z-index:200000;pointer-events:none;background:#0B1530;opacity:0}
+/* Menu group labels (MAIN / SETTINGS / ADMIN) */
+#appmenu .egGrp{margin-top:14px!important}
+</style>
+
+<script>
+/* ===== 2026-11-23: (1) look switch smooth flash (2) Menu ko MAIN/SETTINGS/ADMIN groups me ===== */
+(function(){
+  "use strict";
+  var flash=null;
+  function ensureFlash(){ if(!flash){ flash=document.createElement("div"); flash.id="egLookFlash"; document.body.appendChild(flash); } return flash; }
+  var iv=setInterval(function(){
+    if(window.__lookToggle&&!window.__lookToggle.__egSmooth){
+      var orig=window.__lookToggle;
+      var w=function(){ orig(); try{ var f=ensureFlash(); f.style.transition="none"; f.style.opacity=".16"; void f.offsetWidth; f.style.transition="opacity .38s ease"; f.style.opacity="0"; }catch(e){} };
+      w.__egSmooth=true; window.__lookToggle=w;
+    }
+  },700);
+  setTimeout(function(){ clearInterval(iv); },30000);
+
+  function regroup(){
+    var bx=document.querySelector("#appmenu .mnbox"); if(!bx) return;
+    var items=[].slice.call(bx.children).filter(function(n){ return n.classList&&(n.classList.contains("mnit")||n.classList.contains("mnai")); });
+    if(items.length<3) return;
+    var fp=items.map(function(n){ return n.textContent.trim().slice(0,10); }).join("|");
+    if(bx.dataset.egfp===fp) return; bx.dataset.egfp=fp;
+    var defs=[
+      ["MAIN",/Dashboard|AI Tutor|Library|Jobs|Friendly Chat|Share site/],
+      ["SETTINGS",/Account settings|Change username|Website settings|Mode:/],
+      ["ADMIN",/Admin panel|AI MCQs|Settings \(important\)|AI backup keys|Bin \(|Jokes|Ads \(/]
+    ];
+    var used=new Set(), plan=[];
+    defs.forEach(function(d){
+      var ms=items.filter(function(n){ if(used.has(n))return false; if(d[1].test(n.textContent)){ used.add(n); return true; } return false; });
+      if(ms.length) plan.push({name:d[0],ms:ms});
+    });
+    var rest=items.filter(function(n){ return !used.has(n)&&!/Sign out/.test(n.textContent); });
+    var sign=items.filter(function(n){ return /Sign out/.test(n.textContent); });
+    var foot=bx.querySelector(".mnfoot"); if(!foot) return;
+    [].slice.call(bx.querySelectorAll(".egGrp")).forEach(function(l){ l.remove(); });
+    [].slice.call(bx.querySelectorAll(".mnlbl")).forEach(function(l){ if(l.textContent.trim()==="Menu") l.style.display="none"; });
+    var hr=bx.querySelector(".mnhr");
+    plan.forEach(function(g){
+      var lbl=document.createElement("div"); lbl.className="mnlbl egGrp"; lbl.textContent=g.name;
+      bx.insertBefore(lbl,foot);
+      g.ms.forEach(function(n){ bx.insertBefore(n,foot); });
+    });
+    rest.forEach(function(n){ bx.insertBefore(n,foot); });
+    if(hr) bx.insertBefore(hr,foot);
+    sign.forEach(function(n){ bx.insertBefore(n,foot); });
+  }
+  try{
+    new MutationObserver(function(){ try{regroup();}catch(e){} }).observe(document.body,{childList:true});
+  }catch(e){}
+  setInterval(function(){ try{regroup();}catch(e){} },1200);
+})();
+</script>
 </body></html>
