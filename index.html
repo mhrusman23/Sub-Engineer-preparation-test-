@@ -2916,7 +2916,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var pitems=order.map(function(id){var o=(QO[id]&&QO[id].length)?QO[id]:Q[id].opts,k=(QO[id]&&QO[id].length)?QA[id]:Q[id].ans,a2=ans[id];return{q:Q[id].text,opts:o,mine:a2?a2.sel:null,ans:k}});
       var pcfg={title:hpageTitle(),course:"",ts:Date.now(),secs:usedAtEnd,pct:Math.round(pct*10)/10,right:c.ok,total:order.length,items:pitems};
       var pb1=el("button","btn sharebtn","\u{1F4C4} Only Record (PDF)");pb1.type="button";pb1.addEventListener("click",function(){window.__egPdf(pcfg,false)});
-      var pb2=el("button","btn sharebtn","\u{1F4C4} Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){window.__egPdf(pcfg,true)});
+      var pb2=el("button","btn sharebtn","\u{1F4C4} Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){if(window.__pdfMcqGuard&&!window.__pdfMcqGuard())return;window.__egPdf(pcfg,true)});
       sr.appendChild(pb1);sr.appendChild(pb2);
       if(window.__shareResult){var pb3=el("button","btn sharebtn","\u{1F4E4} Share Result (Photo + Link)");pb3.type="button";pb3.addEventListener("click",function(){window.__shareResult(pcfg)});sr.appendChild(pb3)}
     }
@@ -4075,11 +4075,11 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
 try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);SEO_CFG=s.exists()?s.data():null;SHOW_INST=!(s.exists()&&s.data().showInstall===false);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
 /* ---------- VIP Premium lock: owner Menu se folders/subjects premium kare, sirf VIP Gmail walon ko khule ---------- */
-let VIP={on:false,courses:[],subjects:[],emails:[]};
-try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[]}}catch(_){}
+let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq}}catch(_){}
 function vipApply(x){
   if(!x||typeof x!=="object")return;
-  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()})};
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq};
   try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
 }
 try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
@@ -4112,6 +4112,10 @@ function vipShow(what){
 }
 function vipGuard(course,subject){if(vipLocked(course,subject)){vipShow(subject||course);return false}return true}
 window.__vipGuard=vipGuard;
+window.__pdfMcqGuard=function(){
+  if(VIP.on&&VIP.pdfMcq&&!vipMember()){vipShow("Record with MCQs (PDF)");return false}
+  return true;
+};
 window.__vipMarked=function(course,subject){
   const c=String(course||"").toLowerCase(),s=String(subject||"").toLowerCase();
   if(c&&VIP.courses.some(function(x){return String(x).toLowerCase()===c}))return true;
@@ -4132,7 +4136,11 @@ function studentInfo(){
   var h=0;for(var i=0;i<seed.length;i++){h=(h*31+seed.charCodeAt(i))>>>0}
   var uname="";try{uname=String(localStorage.getItem("eg23name")||"").trim()}catch(_){}
   if(!uname&&email)uname=email.split("@")[0];
-  return {name:P.name||"Student",username:uname,email:email,photo:P.photo||"",id:"EG23-"+String(100000+(h%900000)),verified:!!(email&&VERIFIED.indexOf(email)>=0)};
+  var fn="";try{fn=String(localStorage.getItem("eg23fullname")||"").trim()}catch(_){}
+  if(!fn&&P.fullName)fn=String(P.fullName).trim();
+  var ph="";try{ph=String(localStorage.getItem("eg23phone")||"").trim()}catch(_){}
+  if(!ph&&P.phone)ph=String(P.phone).trim();
+  return {name:fn||P.name||"Student",username:uname,email:email,photo:P.photo||"",phone:ph,id:"EG23-"+String(100000+(h%900000)),verified:!!(email&&VERIFIED.indexOf(email)>=0)};
 }
 window.__studentInfo=studentInfo;
 function openVerified(){
@@ -4238,6 +4246,11 @@ function openVip(){
   onRow.appendChild(onCb);
   const onTx=el("span","","");onTx.innerHTML="<b>Premium lock ON</b><br><small>ON karne se premium folders / subjects lock ho jayenge (sirf VIP Gmail walon ke liye khulenge).</small>";onRow.appendChild(onTx);
   box.appendChild(onRow);
+  const pdfRow=el("label");pdfRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const pdfCb=document.createElement("input");pdfCb.type="checkbox";pdfCb.id="vipPdf";pdfCb.style.cssText="width:20px;height:20px;flex:none";
+  pdfRow.appendChild(pdfCb);
+  const pdfTx=el("span","","");pdfTx.innerHTML="<b>\u{1F4C4} 'Record with MCQs' PDF \u2014 Premium only</b><br><small>ON ho to (aur Premium lock bhi ON ho to) ye PDF sirf VIP members download kar sakenge; baqi students ko VIP sheet aayegi. 'Only Record' PDF sab ke liye free rahega.</small>";pdfRow.appendChild(pdfTx);
+  box.appendChild(pdfRow);
   function checkList(title,items,cls){
     box.appendChild(el("div","label",title));
     const sc=el("div");sc.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;max-height:210px;overflow:auto;margin-bottom:6px";
@@ -4264,7 +4277,7 @@ function openVip(){
   const sv=el("button","btn primary","\u{1F4BE} Save VIP settings");sv.type="button";srow.appendChild(sv);
   const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
   function fillForm(){
-    onCb.checked=!!VIP.on;
+    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;
     box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
     box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
     emTx.value=(VIP.emails||[]).join("\n");
@@ -4274,7 +4287,7 @@ function openVip(){
   sv.onclick=async()=>{
     sv.disabled=true;st.textContent="Saving\u2026";
     const data={
-      on:onCb.checked,
+      on:onCb.checked,pdfMcq:pdfCb.checked,
       courses:Array.from(box.querySelectorAll(".vipCourse:checked")).map(function(cb){return cb.value}),
       subjects:Array.from(box.querySelectorAll(".vipSubject:checked")).map(function(cb){return cb.value}),
       emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
@@ -5164,10 +5177,15 @@ async function check(user){
         if(pu&&pu.exists()){
           const n=String(pu.data().name||"").trim();
           if(n){UNAME=n;try{localStorage.setItem("eg23name",UNAME)}catch(_){}}
+          const fn2=String(pu.data().fullName||"").trim();if(fn2)try{localStorage.setItem("eg23fullname",fn2)}catch(_){}
+          const ph2=String(pu.data().phone||"").trim();if(ph2)try{localStorage.setItem("eg23phone",ph2)}catch(_){}
         }
       }catch(_){}
     }
-    window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:user.photoURL||"",phone:user.phoneNumber||""};
+    let FNAME="",PHONE="";
+    try{FNAME=String(localStorage.getItem("eg23fullname")||"").trim()}catch(_){}
+    try{PHONE=String(localStorage.getItem("eg23phone")||"").trim()}catch(_){}
+    window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:user.photoURL||"",phone:PHONE||user.phoneNumber||"",fullName:FNAME};
     try{window.__RAWNAME=user.isAnonymous?"Guest":(user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email))}catch(_){window.__RAWNAME="Guest"}
     if(window.__VISITOR){window.__PROFILE.name="Visitor";window.__PROFILE.email="Free: "+V_LIMIT+" MCQs, then login";window.__PROFILE.role="Visitor";window.__RAWNAME="Visitor"}
     else{try{localStorage.setItem("eg23in","1")}catch(_){}}
@@ -5653,6 +5671,32 @@ function openAcct(focus){
   bx.appendChild(unr);
   ust.style.cssText="padding:0 16px 8px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";
   bx.appendChild(ust);
+  /* ---- full name + phone: PDF record / student ID ke liye ---- */
+  bx.appendChild(el("div","aclbl","\u{1F4DD} Full name & phone number"));
+  const fnr=el("div");fnr.style.cssText="display:flex;flex-direction:column;gap:8px;padding:0 16px 4px";
+  const fnIn=el("input");fnIn.id="fnameIn";fnIn.type="text";fnIn.maxLength=40;fnIn.placeholder="Full name \u2014 e.g. Muhammad Usman Amjad";
+  try{fnIn.value=String(localStorage.getItem("eg23fullname")||P.fullName||"")}catch(_){fnIn.value=P.fullName||""}
+  const phIn=el("input");phIn.id="phoneIn";phIn.type="tel";phIn.maxLength=16;phIn.placeholder="Phone number \u2014 e.g. 03494482609";
+  try{phIn.value=String(localStorage.getItem("eg23phone")||"")}catch(_){phIn.value=""}
+  const fnSave=el("button","btn primary","Save full name & phone");fnSave.type="button";
+  fnr.appendChild(fnIn);fnr.appendChild(phIn);fnr.appendChild(fnSave);bx.appendChild(fnr);
+  const fnote=el("div");fnote.style.cssText="padding:6px 16px 2px;font:12px/1.4 sans-serif;color:var(--muted,#666)";
+  fnote.textContent="Full name aap ke test record (PDF) aur result par aayega \u2014 username chat/menu ke liye alag rehta hai. Phone number sirf aap ke PDF record me aayega, share wali photo me nahi.";
+  bx.appendChild(fnote);
+  const fst=el("span","label st");fst.style.cssText="padding:0 16px 8px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";bx.appendChild(fst);
+  fnSave.onclick=async()=>{
+    const cu=auth.currentUser;
+    if(!cu){fst.textContent="You are not logged in.";return}
+    const fnv=fnIn.value.trim().replace(/\s+/g," "),phv=phIn.value.trim();
+    fnSave.disabled=true;fst.textContent="Saving\u2026";
+    try{
+      await setDoc(doc(db,"pubusers",cu.uid),{fullName:fnv,phone:phv,updatedAt:serverTimestamp()},{merge:true});
+      try{localStorage.setItem("eg23fullname",fnv);localStorage.setItem("eg23phone",phv)}catch(_){}
+      P.fullName=fnv;P.phone=phv;window.__PROFILE=P;
+      fst.textContent="Saved \u2713 \u2014 ab result aur PDF par yahi full name aayega.";
+    }catch(e){fst.textContent="Error: "+((e&&(e.code||e.message))||e)}
+    finally{fnSave.disabled=false}
+  };
   bx.appendChild(el("div","aclbl","\u{1F389} Membership & access"));
   const mc=el("div","acmem");
   function crow(k,v,cls){const rr=el("div","acrow"+(cls?" "+cls:""));rr.appendChild(el("span","",k));rr.appendChild(el("b","",v));mc.appendChild(rr)}
@@ -9444,7 +9488,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     ov.querySelector("#rexAgain").addEventListener("click",function(){openSetup(displayName,course)});
     var rp1=ov.querySelector("#rexPdf1"),rp2=ov.querySelector("#rexPdf2");
     if(rp1)rp1.addEventListener("click",function(){if(window.__egPdf)window.__egPdf(pdfCfg,false)});
-    if(rp2)rp2.addEventListener("click",function(){if(window.__egPdf)window.__egPdf(pdfCfg,true)});
+    if(rp2)rp2.addEventListener("click",function(){if(window.__pdfMcqGuard&&!window.__pdfMcqGuard())return;if(window.__egPdf)window.__egPdf(pdfCfg,true)});
     var rsh=ov.querySelector("#rexShare");
     if(rsh)rsh.addEventListener("click",function(){if(window.__shareResult)window.__shareResult(pdfCfg)});
     try{var _si3=window.__studentInfo?window.__studentInfo():null;var _nav=ov.querySelector(".rex-nav");
@@ -11194,7 +11238,9 @@ function studentBlock(){
   +(si.photo?'<img src="'+esc(si.photo)+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #C9A227" alt="">':"")
   +'<div style="font-size:13px;line-height:1.55"><div style="font-size:15px"><b>'+esc(si.name)+'</b>'+(si.verified?' <span style="background:#12994F;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px">\u2713 VERIFIED</span>':"")+'</div>'
   +(si.username?'<div>Username: <b>@'+esc(si.username)+'</b></div>':"")
-  +'<div>Student ID: <b style="color:#8A6D1F">'+esc(si.id)+'</b></div></div></div>';
+  +'<div>Student ID: <b style="color:#8A6D1F">'+esc(si.id)+'</b></div>'
+  +(si.phone?'<div>Phone: <b>'+esc(si.phone)+'</b></div>':"")
+  +'</div></div>';
 }
 function qrBlock(title){
   var link=subjectLink(title);if(!link)return "";
