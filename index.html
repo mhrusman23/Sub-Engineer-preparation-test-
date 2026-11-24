@@ -1771,6 +1771,53 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   /* New Template (generic centre) ke liye DATA se groups: bilkul wahi subjects jo
      Classic view us folder me dikhata hai (idsOf) - koi DOM scrape nahi, is liye
      doosre folder ke subjects kabhi mix nahi hote (2026-11-23 fix). */
+  /* ===== Live bank apply: naye MCQs bina reload shamil (2026-11-24) ===== */
+  var __pendingBank=null,__pendingTimer=null;
+  function bankBusy(){
+    var t=$("#test"),r=$("#result"),e=$("#editor");
+    return !!((t&&!t.hidden)||(r&&!r.hidden)||(e&&!e.hidden));
+  }
+  function bankSwap(nb){
+    if(!nb||!Array.isArray(nb.S)||!Array.isArray(nb.SUB)||!Array.isArray(nb.Q0))return false;
+    function swap(dst,src){dst.length=0;for(var i=0;i<src.length;i++)dst.push(src[i])}
+    swap(S,nb.S);swap(SUB,nb.SUB);
+    if(Array.isArray(nb.CARDS)){swap(CARDS,nb.CARDS);
+      YEARS=CARDS.filter(function(c){return c&&typeof c.k==="string"&&typeof c.t==="string"}).map(function(c){return {k:c.k,t:c.t,d:c.d||"",course:c.course||""}});
+    }
+    swap(Q0,nb.Q0);swap(Q,JSON.parse(JSON.stringify(nb.Q0)));
+    SUB.forEach(function(s,i){if(!s.cat||!YEARS.some(function(y){return y.k===s.cat}))s.cat=yearOf(i)});
+    QO=Q.map(function(q){return q.opts.slice()});QA=Q.map(function(q){return q.ans});perm={};   /* rebuildOpts waisa hi kaam, inline */
+    if(typeof recalcT==="function")recalcT();
+    buildPick(pickedSubs());
+    if(window.__edRefill)window.__edRefill();
+    return true;
+  }
+  window.__bankLiveApply=function(nb,ver){
+    if(bankBusy()){
+      __pendingBank={nb:nb,ver:ver};
+      if(!__pendingTimer)__pendingTimer=setInterval(function(){
+        if(__pendingBank&&!bankBusy()){
+          var p=__pendingBank;__pendingBank=null;clearInterval(__pendingTimer);__pendingTimer=null;
+          if(bankSwap(p.nb)&&p.ver)window.__BANKV=p.ver;
+        }
+      },4000);
+      return "deferred";
+    }
+    var ok=bankSwap(nb);
+    if(ok&&ver)window.__BANKV=ver;
+    return ok;
+  };
+  window.__quizPool=function(n){
+    var out=[],seen={},idx=[],i,j,t;
+    for(i=0;i<Q.length;i++)idx.push(i);
+    for(i=idx.length-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=idx[i];idx[i]=idx[j];idx[j]=t}
+    for(var k=0;k<idx.length&&out.length<n;k++){
+      var q=Q[idx[k]];if(!q||!q.text||!q.opts||q.opts.length<2)continue;
+      if(seen[q.text])continue;seen[q.text]=1;
+      out.push({q:q.text,opts:q.opts.slice(),ans:q.ans,sub:q.test||""});
+    }
+    return out;
+  };
   window.__folderGroups=function(course){
     try{
       var groups=[];
@@ -1805,9 +1852,9 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       SUB.forEach(function(s){
         if(s.name==="ACCA"&&s.cat==="y2"){s.cat="acca-ak";s.name="ACCA Fundamentals";moved.push("ACCA (Civil \u203A 2nd Year) \u2192 ACCA Fundamentals (ACCA \u203A Applied Knowledge)")}
       });
-      if(!moved.length){alert("No misplaced subject found. Sab subjects apne sahi folders me hain.");return}
+      if(!moved.length){alert("No misplaced subject found. All subjects are in their correct folders.");return}
       if(!confirm(moved.length+" subject apni sahi jagah move hoga:\n\n"+moved.join("\n")+"\n\nOK = move + save"))return;
-      afterStruct("Moved to correct folder").then(function(){alert("Ho gaya! Subject sahi folder me chala gaya hai.")}).catch(function(e){alert("Save fail: "+((e&&e.message)||e))});
+      afterStruct("Moved to correct folder").then(function(){alert("Done! The subject has been moved to the correct folder.")}).catch(function(e){alert("Save fail: "+((e&&e.message)||e))});
     }catch(e){alert("Error: "+((e&&e.message)||e))}
   };
   /* Real Exam ke liye: subject ke APNE bank MCQs (live AI generated bilkul NAHI) - naam se dhoondh kar sawal + sahi jawab */
@@ -2616,8 +2663,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     try{
       var bd=document.getElementById("srcBadge");
       if(!bd){bd=document.createElement("span");bd.id="srcBadge";document.getElementById("qmeta").parentNode.appendChild(bd)}
-      if(q.src==="search"){bd.className="label srcb srcb-s";bd.textContent="\uD83D\uDD0E AI + Web search"+(q.via?" \u00b7 "+q.via:"");bd.hidden=false}
-      else if(q.src==="ai"){bd.className="label srcb srcb-a";bd.textContent="\uD83E\uDD16 AI generated"+(q.via?" \u00b7 "+q.via:"");bd.hidden=false}
+      if(q.src==="search"||q.src==="ai"){bd.className="label srcb srcb-v";bd.textContent="\u2713 Researcher Verified";bd.hidden=false}
       else{bd.hidden=true}
     }catch(e){}
     $("#qtext").textContent=q.text;
@@ -2915,10 +2961,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     if(sr&&window.__egPdf){
       var pitems=order.map(function(id){var o=(QO[id]&&QO[id].length)?QO[id]:Q[id].opts,k=(QO[id]&&QO[id].length)?QA[id]:Q[id].ans,a2=ans[id];return{q:Q[id].text,opts:o,mine:a2?a2.sel:null,ans:k}});
       var pcfg={title:hpageTitle(),course:"",ts:Date.now(),secs:usedAtEnd,pct:Math.round(pct*10)/10,right:c.ok,total:order.length,items:pitems};
+      try{if(window.__mistakeAdd&&typeof wrongLog!=="undefined"&&wrongLog.length){window.__mistakeAdd(wrongLog.map(function(x){var q=Q[x.id];return q?{q:q.text,opts:q.opts,ans:q.ans,sub:pcfg.title}:null}).filter(Boolean),pcfg.title)}}catch(e){}
+      try{if(window.__submitScore)window.__submitScore(pcfg)}catch(e){}
       var pb1=el("button","btn sharebtn","\u{1F4C4} Only Record (PDF)");pb1.type="button";pb1.addEventListener("click",function(){window.__egPdf(pcfg,false)});
       var pb2=el("button","btn sharebtn","\u{1F4C4} Record with MCQs (PDF)");pb2.type="button";pb2.addEventListener("click",function(){if(window.__pdfMcqGuard&&!window.__pdfMcqGuard())return;window.__egPdf(pcfg,true)});
       sr.appendChild(pb1);sr.appendChild(pb2);
       if(window.__shareResult){var pb3=el("button","btn sharebtn","\u{1F4E4} Share Result (Photo + Link)");pb3.type="button";pb3.addEventListener("click",function(){window.__shareResult(pcfg)});sr.appendChild(pb3)}
+      if(window.__egCert&&pcfg.pct>=60&&(!window.__feat||window.__feat("cert"))){var pb4=el("button","btn sharebtn","\u{1F3C6} Certificate (PDF)");pb4.type="button";pb4.addEventListener("click",function(){window.__egCert(pcfg)});sr.appendChild(pb4)}
     }
     /* ---- progress on the result page ---- */
     var rd=$("#resDash");
@@ -4122,7 +4171,7 @@ window.__vipMarked=function(course,subject){
   if(s&&VIP.subjects.some(function(x){return String(x).toLowerCase()===s}))return true;
   return false;
 };
-window.__vipSigStr=function(){return (VIP.on?"1":"0")+"|"+VIP.courses.join(",")+"|"+VIP.subjects.join(",")};
+window.__vipSigStr=function(){return (VIP.on?"1":"0")+"|"+VIP.courses.join(",")+"|"+VIP.subjects.join(",")+"|F"+((window.__FEAT&&window.__FEAT.fullpdf)?"1":"0")};
 /* ===== Verified students (ID tick) — sitedata/verified + localStorage eg23verified ===== */
 let VERIFIED=[];
 try{const _v=JSON.parse(localStorage.getItem("eg23verified")||"[]");if(Array.isArray(_v))VERIFIED=_v.map(function(e){return String(e).toLowerCase()})}catch(_){}
@@ -4140,7 +4189,11 @@ function studentInfo(){
   if(!fn&&P.fullName)fn=String(P.fullName).trim();
   var ph="";try{ph=String(localStorage.getItem("eg23phone")||"").trim()}catch(_){}
   if(!ph&&P.phone)ph=String(P.phone).trim();
-  return {name:fn||P.name||"Student",username:uname,email:email,photo:P.photo||"",phone:ph,id:"EG23-"+String(100000+(h%900000)),verified:!!(email&&VERIFIED.indexOf(email)>=0)};
+  var ag="";try{ag=String(localStorage.getItem("eg23age")||"").trim()}catch(_){}
+  if(!ag&&P.age)ag=String(P.age).trim();
+  var gd="";try{gd=String(localStorage.getItem("eg23gender")||"").trim()}catch(_){}
+  if(!gd&&P.gender)gd=String(P.gender).trim();
+  return {name:fn||P.name||"Student",username:uname,email:email,photo:P.photo||"",phone:ph,age:ag,gender:gd,id:"EG23-"+String(100000+(h%900000)),verified:!!(email&&VERIFIED.indexOf(email)>=0)};
 }
 window.__studentInfo=studentInfo;
 function openVerified(){
@@ -4153,7 +4206,7 @@ function openVerified(){
   top.appendChild(el("h2","","\u2705 Verified students (ID tick)"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
   box.appendChild(top);
-  box.appendChild(el("p","label","Har student ki apni ID website khud banati hai (EG23-......) \u2014 ye ID us ke result screen, PDF record aur share photo me us ke full name, username aur photo ke sath aati hai. Jis student ki Gmail yahan add hogi, us ki ID ke sath \u2713 Verified tick bhi aayega. Apni ID har student ko Account settings me bhi nazar aati hai."));
+  box.appendChild(el("p","label","Every student gets an auto-generated ID (EG23-......) from the website \u2014 it appears on their result screen, PDF record and share photo with their full name, username and photo. Students whose Gmail is added here also get a \u2713 Verified tick with their ID. Every student can also see their own ID in Account settings."));
   box.appendChild(el("div","label","Verified Gmail list (aik line me aik Gmail):"));
   const emTx=el("textarea");emTx.id="verEmails";emTx.rows=6;emTx.placeholder="student1@gmail.com\nstudent2@gmail.com";emTx.style.cssText="width:100%";box.appendChild(emTx);
   const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
@@ -4168,13 +4221,223 @@ function openVerified(){
     try{
       await setDoc(doc(db,"sitedata","verified"),data);
       verifiedApply(data);
-      st.textContent="\u2713 Saved \u2014 verified tick ab un students ke result/PDF me aayega.";
+      st.textContent="\u2713 Saved \u2014 the verified tick will now appear on those students' results and PDFs.";
     }catch(e){st.textContent="Error: "+((e&&e.code)||e)}
     sv.disabled=false;
   };
   document.body.appendChild(wrap);
 }
 window.__openVerified=openVerified;
+/* ===== Website Doctor: error reports (errlog collection) ===== */
+window.__errReport=async function(list){
+  try{
+    if(!Array.isArray(list)||!list.length)return false;
+    var em="";
+    try{var pe=(window.__PROFILE&&window.__PROFILE.email)||"";em=(pe.indexOf("@")>0)?pe:((ME&&ME.indexOf("@")>0)?ME:"")}catch(_){}
+    var n=Math.min(list.length,5);
+    for(var i=0;i<n;i++){
+      var e=list[i]||{};
+      await addDoc(collection(db,"errlog"),{ts:+e.ts||Date.now(),kind:String(e.kind||"error").slice(0,40),msg:String(e.msg||"").slice(0,300),page:String(e.page||"").slice(0,120),email:String(em||"").slice(0,80),ua:String(navigator.userAgent||"").slice(0,140)});
+    }
+    return true;
+  }catch(_){return false}
+};
+let DOCCFG={autoFix:true};
+function docApply(d){if(!d)return;DOCCFG={autoFix:d.autoFix!==false};try{localStorage.setItem("hcAuto",DOCCFG.autoFix?"1":"0")}catch(_){}}
+try{getDoc(doc(db,"sitedata","doctor")).then(s=>{if(s.exists())docApply(s.data())}).catch(()=>{})}catch(_){}
+function openDoctor(){
+  if(!IS_OWNER){alert("Only the owner can see error reports.");return}
+  const old=document.getElementById("docP");if(old)old.remove();
+  const wrap=el("div");wrap.id="docP";wrap.style.cssText="position:fixed;inset:0;z-index:1150;background:rgba(8,12,26,.62);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto";
+  wrap.addEventListener("click",e=>{if(e.target===wrap)wrap.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);border-radius:16px;max-width:640px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:24px 0";
+  wrap.appendChild(box);
+  const top=el("div");top.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px";
+  top.appendChild(el("h2","","\u{1FA7A} Website Doctor \u2014 reports"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
+  box.appendChild(top);
+  box.appendChild(el("p","label","Every glitch the website catches (auto-fixed ones too, and the ones it could not fix) is reported here \u2014 which page, what error, which student. Reports from students' phones will start arriving once the errlog line is added to the Firebase rules."));
+  const aRow=el("label");aRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 4px;cursor:pointer";
+  const aCb=document.createElement("input");aCb.type="checkbox";aCb.style.cssText="width:20px;height:20px;flex:none";
+  aCb.checked=DOCCFG.autoFix&&!(function(){try{return localStorage.getItem("hcAuto")==="0"}catch(_){return false}})();
+  aRow.appendChild(aCb);
+  const aTx=el("span","","");aTx.innerHTML="<b>\u{1F527} Auto Repair \u2014 for all students</b><br><small>When ON, if a glitch appears on a student's phone (old cache, stuck loading, empty dashboard), their website will <b>fix itself</b> and the report will appear here. When OFF, only the report comes \u2014 no fixing. Code errors cannot fix themselves \u2014 they will be reported here and fixed through the file.</small>";aRow.appendChild(aTx);
+  box.appendChild(aRow);
+  const aSt=el("div","label st");aSt.style.cssText="min-height:16px";box.appendChild(aSt);
+  aCb.onchange=async()=>{
+    const on=aCb.checked;aSt.textContent="Saving\u2026";
+    try{await setDoc(doc(db,"sitedata","doctor"),{autoFix:on,updatedAt:Date.now()});docApply({autoFix:on});aSt.textContent=on?"\u2713 Auto Repair ON \u2014 glitches will now fix themselves.":"\u2713 Auto Repair OFF \u2014 now only reports will come."}
+    catch(e){aSt.textContent="Error: "+((e&&e.code)||e);aCb.checked=!on}
+  };
+  const fixNow=el("button","btn primary","\u{1F527} Auto Repair \u2014 run on this phone now");fixNow.type="button";fixNow.style.cssText="width:100%;margin:2px 0 10px";
+  fixNow.onclick=()=>{if(typeof window.__egUpdateFix==="function"){wrap.remove();window.__egUpdateFix()}else alert("The repair part did not load \u2014 reload the page and try again.")};
+  box.appendChild(fixNow);
+  const brow=el("div");brow.style.cssText="display:flex;gap:8px;align-items:center;margin:6px 0 10px";
+  const rf=el("button","btn","\u{1F504} Refresh");rf.type="button";brow.appendChild(rf);
+  const clr=el("button","btn danger","\u{1F5D1} Clear all");clr.type="button";brow.appendChild(clr);
+  const st=el("span","label st");brow.appendChild(st);box.appendChild(brow);
+  const list=el("div");list.style.cssText="display:flex;flex-direction:column;gap:8px";box.appendChild(list);
+  let rows=[];
+  async function load(){
+    list.textContent="";st.textContent="Loading\u2026";
+    try{
+      const snap=await getDocs(query(collection(db,"errlog"),orderBy("ts","desc"),limit(60)));
+      rows=[];snap.forEach(d=>rows.push(Object.assign({id:d.id},d.data())));
+      st.textContent=rows.length?(rows.length+" report(s) \u2014 sab se nayi pehle."):"";
+      if(!rows.length){list.appendChild(el("p","label","\u{1F389} No reports \u2014 the website is running fine."));return}
+      rows.forEach(r=>{
+        const row=el("div");row.style.cssText="border:1px solid var(--line,#E3E0D5);border-radius:12px;padding:9px 12px";
+        const hd=el("div");hd.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+        const kc=r.kind==="repair"?["#FFF7E0","#8A6D1F","AUTO REPAIR"]:r.kind==="check"?["#E8F0FE","#1D4ED8","GLITCH"]:["#FDECEA","#B3261E","ERROR"];
+        const bd=el("span","",kc[2]);bd.style.cssText="background:"+kc[0]+";color:"+kc[1]+";font:800 10.5px system-ui;padding:2px 8px;border-radius:999px";
+        hd.appendChild(bd);
+        let when="";try{when=new Date(r.ts).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}catch(_){}
+        hd.appendChild(el("small","",when));row.appendChild(hd);
+        const mg=el("div","",String(r.msg||""));mg.style.cssText="font:600 13.5px/1.45 system-ui;margin-top:4px;word-break:break-word";row.appendChild(mg);
+        const meta=[r.page?("Page: "+r.page):"",r.email||""].filter(Boolean).join(" \u00b7 ");
+        if(meta)row.appendChild(el("small","",meta));
+        const acts=el("div");acts.style.cssText="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap";
+        const fx=el("button","btn","\u{1F527} Auto Repair");fx.type="button";fx.style.cssText="padding:6px 12px;font-size:12.5px";
+        fx.onclick=async()=>{
+          fx.disabled=true;
+          try{await deleteDoc(doc(db,"errlog",r.id))}catch(_){}
+          rows=rows.filter(x=>x.id!==r.id);row.remove();
+          if(typeof window.__egUpdateFix==="function"){wrap.remove();window.__egUpdateFix()}
+          else st.textContent="Report closed. For repair, use Menu \u2192 Update & Fix Website.";
+        };
+        acts.appendChild(fx);
+        const dn=el("button","btn","\u2713 Done");dn.type="button";dn.style.cssText="padding:6px 12px;font-size:12.5px";
+        dn.onclick=async()=>{dn.disabled=true;try{await deleteDoc(doc(db,"errlog",r.id));rows=rows.filter(x=>x.id!==r.id);row.remove()}catch(e){st.textContent="Error: "+((e&&e.code)||e);dn.disabled=false}};
+        acts.appendChild(dn);
+        acts.appendChild(el("small","","Fix = repair on this phone + close report"));
+        row.appendChild(acts);
+        list.appendChild(row);
+      });
+    }catch(e){st.textContent="Error: "+((e&&e.code)||e)}
+  }
+  rf.onclick=load;
+  clr.onclick=async()=>{
+    if(!rows.length)return;
+    clr.disabled=true;st.textContent="Clearing\u2026";
+    try{const b=writeBatch(db);rows.forEach(r=>b.delete(doc(db,"errlog",r.id)));await b.commit();rows=[];await load();st.textContent="\u2713 Sab reports saaf ho gayi."}
+    catch(e){st.textContent="Error: "+((e&&e.code)||e)}
+    clr.disabled=false;
+  };
+  document.body.appendChild(wrap);
+  load();
+}
+window.__openDoctor=openDoctor;
+/* ===== Feature settings (owner) — sitedata/features + localStorage eg23feat ===== */
+let FEAT={mistake:true,daily:true,weak:true,board:true,cert:true,grand:true,activity:true,fullpdf:true};
+try{const _fc=JSON.parse(localStorage.getItem("eg23feat")||"null");if(_fc&&typeof _fc==="object")FEAT=Object.assign({},FEAT,_fc)}catch(_){}
+window.__FEAT=FEAT;
+function featApply(d){if(!d)return;FEAT=Object.assign({mistake:true,daily:true,weak:true,board:true,cert:true,grand:true,activity:true,fullpdf:true},d);window.__FEAT=FEAT;try{localStorage.setItem("eg23feat",JSON.stringify(FEAT))}catch(_){}}
+try{getDoc(doc(db,"sitedata","features")).then(s=>{if(s.exists())featApply(s.data())}).catch(()=>{})}catch(_){}
+window.__feat=function(n){return !!FEAT[n]};
+const FEAT_LIST=[
+ ["mistake","\u{1F4D5} Mistake Book","Wrong questions are saved automatically; students practise only those (in Progress)"],
+ ["daily","\u{1F525} Daily Challenge + Streak","10 fresh MCQs every day on the dashboard, with a streak count"],
+ ["weak","\u{1F4C9} Weak subjects report","Every subject's percentage in Progress, weakest first"],
+ ["board","\u{1F3C6} Leaderboard","This week's Top 10 students on the dashboard"],
+ ["cert","\u{1F3C6} Certificate PDF","Certificate button on the result screen at 60% or above"],
+ ["grand","\u{1F4DD} Grand Mock Test","100 mixed MCQs on the dashboard, 90 minutes, negative marking"],
+ ["activity","\u{1F4CA} Activity dashboard","Students/tests report in the Admin menu (this panel)"],
+ ["fullpdf","\u{1F4E5} Full MCQs PDF (all subjects)","Full MCQs download button in every subject's Exam Centre (VIP-marked ones stay locked)"]];
+function openFeat(){
+  if(!IS_OWNER){alert("Only the owner can change feature settings.");return}
+  const old=document.getElementById("featP");if(old)old.remove();
+  const wrap=el("div");wrap.id="featP";wrap.style.cssText="position:fixed;inset:0;z-index:1150;background:rgba(8,12,26,.62);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto";
+  wrap.addEventListener("click",e=>{if(e.target===wrap)wrap.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:24px 0";
+  wrap.appendChild(box);
+  const top=el("div");top.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px";
+  top.appendChild(el("h2","","\u{1F39B} Feature settings"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
+  box.appendChild(top);
+  box.appendChild(el("p","label","Features that are ON will run on the website; OFF ones stay hidden. Changes apply to all students right away."));
+  const cbs={};
+  FEAT_LIST.forEach(function(f){
+    const row=el("label");row.style.cssText="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line,#E3E0D5);border-radius:12px;padding:10px 12px;margin:0 0 8px;cursor:pointer";
+    const cb=document.createElement("input");cb.type="checkbox";cb.style.cssText="width:19px;height:19px;flex:none;margin-top:2px";cb.checked=!!FEAT[f[0]];cbs[f[0]]=cb;row.appendChild(cb);
+    const tx=el("span","","");tx.innerHTML="<b>"+f[1]+"</b><br><small>"+f[2]+"</small>";row.appendChild(tx);
+    box.appendChild(row);
+  });
+  const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:10px";
+  const sv=el("button","btn primary","\u{1F4BE} Save features");sv.type="button";srow.appendChild(sv);
+  const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
+  sv.onclick=async()=>{
+    sv.disabled=true;st.textContent="Saving\u2026";
+    const data={updatedAt:Date.now()};Object.keys(cbs).forEach(k=>{data[k]=!!cbs[k].checked});
+    try{await setDoc(doc(db,"sitedata","features"),data);featApply(data);st.textContent="\u2713 Saved \u2014 features update ho gaye."}
+    catch(e){st.textContent="Error: "+((e&&e.code)||e)}
+    sv.disabled=false;
+  };
+  document.body.appendChild(wrap);
+}
+window.__openFeat=openFeat;
+/* ===== Leaderboard scores — scores collection ===== */
+function wkKey(d){d=d||new Date();var j=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=(j.getUTCDay()+6)%7;j.setUTCDate(j.getUTCDate()-day+3);var first=new Date(Date.UTC(j.getUTCFullYear(),0,4));var week=1+Math.round(((j-first)/86400000-3+((first.getUTCDay()+6)%7))/7);return j.getUTCFullYear()+"-W"+String(week).padStart(2,"0")}
+window.__submitScore=async function(cfg){
+  try{
+    if(!FEAT.board||!cfg)return;
+    var si=studentInfo();if(!si.email)return;
+    var wk=wkKey(),ref=doc(db,"scores",si.email),cur=null;
+    try{var s=await getDoc(ref);if(s.exists())cur=s.data()}catch(_){}
+    var sameWk=cur&&cur.wk===wk;
+    var data={name:si.name,sid:si.id,wk:wk,lastSub:String(cfg.title||"").slice(0,80),ts:Date.now(),
+      best:Math.max(sameWk?(+cur.best||0):0,+cfg.pct||0),tests:(sameWk?(+cur.tests||0):0)+1};
+    await setDoc(ref,data,{merge:true});
+  }catch(_){}
+};
+window.__leaderboard=async function(){
+  try{
+    var wk=wkKey(),snap=await getDocs(query(collection(db,"scores"),orderBy("best","desc"),limit(50))),out=[];
+    snap.forEach(d=>{var x=d.data();if(x.wk===wk)out.push({name:x.name||"Student",sid:x.sid||"",best:+x.best||0,tests:+x.tests||0})});
+    return out.slice(0,10);
+  }catch(_){return []}
+};
+/* ===== Activity dashboard (owner) ===== */
+function openActivity(){
+  if(!IS_OWNER){alert("Only the owner can see activity.");return}
+  const old=document.getElementById("actP");if(old)old.remove();
+  const wrap=el("div");wrap.id="actP";wrap.style.cssText="position:fixed;inset:0;z-index:1150;background:rgba(8,12,26,.62);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto";
+  wrap.addEventListener("click",e=>{if(e.target===wrap)wrap.remove()});
+  const box=el("div");box.style.cssText="background:var(--panel,#fff);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35);margin:24px 0";
+  wrap.appendChild(box);
+  const top=el("div");top.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px";
+  top.appendChild(el("h2","","\u{1F4CA} Activity dashboard"));
+  const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
+  box.appendChild(top);
+  const grid=el("div");grid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px";box.appendChild(grid);
+  const list=el("div");list.style.cssText="margin-top:12px";box.appendChild(list);
+  const st=el("div","label st");st.textContent="Loading\u2026";box.appendChild(st);
+  function stat(label,val){
+    const c=el("div");c.style.cssText="background:#0B1E3D;border:1.5px solid #C9A227;border-radius:14px;padding:12px 14px;color:#fff";
+    c.appendChild(el("div","",String(val)));c.firstChild.style.cssText="font:800 24px system-ui;color:#FFB03A";
+    const l=el("div","",label);l.style.cssText="font:600 12px system-ui;opacity:.85;margin-top:2px";c.appendChild(l);grid.appendChild(c);
+  }
+  (async()=>{
+    var users=0,testsWk=0,glitch=0,topSub={};
+    try{var s1=await getDocs(query(collection(db,"allowed"),limit(500)));users=s1.size}catch(_){}
+    try{
+      var wk=wkKey(),s2=await getDocs(query(collection(db,"scores"),limit(300)));
+      s2.forEach(d=>{var x=d.data();if(x.wk===wk){testsWk+=(+x.tests||0);if(x.lastSub)topSub[x.lastSub]=(topSub[x.lastSub]||0)+1}});
+    }catch(_){}
+    try{var s3=await getDocs(query(collection(db,"errlog"),orderBy("ts","desc"),limit(60)));glitch=s3.size}catch(_){}
+    stat("Registered students",users);stat("Tests this week",testsWk);stat("Glitch reports (latest 60)",glitch);stat("Subjects this week",Object.keys(topSub).length);
+    var arr=Object.entries(topSub).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(arr.length){
+      list.appendChild(el("h3","","\u{1F525} Popular subjects this week"));
+      arr.forEach(function(p){
+        const r=el("div");r.style.cssText="display:flex;justify-content:space-between;border:1px solid var(--line,#E3E0D5);border-radius:10px;padding:8px 12px;margin-bottom:6px";
+        r.appendChild(el("span","",p[0]));const b=el("b","",p[1]+" tests");r.appendChild(b);list.appendChild(r);
+      });
+    }
+    st.textContent="These counts come from Leaderboard scores and reports.";
+  })();
+  document.body.appendChild(wrap);
+}
+window.__openActivity=openActivity;
 /* ===== PDF Watermark settings (owner) — sitedata/watermark + localStorage eg23wm ===== */
 let WM={on:true,logo:"",link:"ppscengr.com",name:""};
 try{const _w=JSON.parse(localStorage.getItem("eg23wm")||"null");if(_w)WM={on:_w.on!==false,logo:_w.logo||"",link:_w.link||"ppscengr.com",name:_w.name||""}}catch(_){}
@@ -4194,7 +4457,7 @@ function openWm(){
   const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer";
   const onCb=document.createElement("input");onCb.type="checkbox";onCb.id="wmOn";onCb.style.cssText="width:20px;height:20px;flex:none";
   onRow.appendChild(onCb);
-  const onTx=el("span","","");onTx.innerHTML="<b>Watermark ON</b><br><small>OFF karne se PDF pages par watermark nahi aayega.</small>";onRow.appendChild(onTx);
+  const onTx=el("span","","");onTx.innerHTML="<b>Watermark ON</b><br><small>Turning it OFF removes the watermark from PDF pages.</small>";onRow.appendChild(onTx);
   box.appendChild(onRow);
   box.appendChild(el("div","label","Watermark logo:"));
   const lrow=el("div");lrow.style.cssText="display:flex;gap:12px;align-items:center;margin-bottom:10px";
@@ -4207,9 +4470,9 @@ function openWm(){
   const dfB=el("button","btn","Default (website logo)");dfB.type="button";dfB.onclick=()=>{window.__wmNewLogo="";prev.src=siteLogo};lrow.appendChild(dfB);
   box.appendChild(lrow);
   fIn.addEventListener("change",async()=>{const f=fIn.files&&fIn.files[0];if(!f)return;try{window.__wmNewLogo=await logoDataUrl(f);prev.src=window.__wmNewLogo}catch(e){alert((e&&e.message)||e)}});
-  box.appendChild(el("div","label","Website link (ribbon par jo likha aayega):"));
+  box.appendChild(el("div","label","Website link (shown on the ribbon):"));
   const lkIn=el("input");lkIn.id="wmLink";lkIn.style.cssText="width:100%";box.appendChild(lkIn);
-  box.appendChild(el("div","label","Watermark me name (optional) \u2014 ribbon ke neeche name aayega; khaali ho to name nahi aayega:"));
+  box.appendChild(el("div","label","Name on watermark (optional) \u2014 shown under the ribbon; leave empty for no name:"));
   const nmIn=el("input");nmIn.id="wmName";nmIn.style.cssText="width:100%";box.appendChild(nmIn);
   const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
   const sv=el("button","btn primary","\u{1F4BE} Save watermark settings");sv.type="button";srow.appendChild(sv);
@@ -4240,16 +4503,16 @@ function openVip(){
   top.appendChild(el("h2","","\u{1F451} VIP Premium settings"));
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
   box.appendChild(top);
-  box.appendChild(el("p","label","Premium folders / subjects sirf un students ko khulenge jinki Gmail neeche VIP list me hogi. Owner aur managers ko hamesha sab khulta hai. Jab tak ON na karein, website sab ke liye free rahegi jaisi ab hai."));
+  box.appendChild(el("p","label","Premium folders / subjects will open only for students whose Gmail is in the VIP list below. The owner and managers always have full access. Until you turn it ON, the website stays free for everyone, just as it is now."));
   const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer";
   const onCb=document.createElement("input");onCb.type="checkbox";onCb.id="vipOn";onCb.style.cssText="width:20px;height:20px;flex:none";
   onRow.appendChild(onCb);
-  const onTx=el("span","","");onTx.innerHTML="<b>Premium lock ON</b><br><small>ON karne se premium folders / subjects lock ho jayenge (sirf VIP Gmail walon ke liye khulenge).</small>";onRow.appendChild(onTx);
+  const onTx=el("span","","");onTx.innerHTML="<b>Premium lock ON</b><br><small>Turning this ON locks the premium folders / subjects (they open only for VIP Gmail users).</small>";onRow.appendChild(onTx);
   box.appendChild(onRow);
   const pdfRow=el("label");pdfRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
   const pdfCb=document.createElement("input");pdfCb.type="checkbox";pdfCb.id="vipPdf";pdfCb.style.cssText="width:20px;height:20px;flex:none";
   pdfRow.appendChild(pdfCb);
-  const pdfTx=el("span","","");pdfTx.innerHTML="<b>\u{1F4C4} 'Record with MCQs' PDF \u2014 Premium only</b><br><small>ON ho to (aur Premium lock bhi ON ho to) ye PDF sirf VIP members download kar sakenge; baqi students ko VIP sheet aayegi. 'Only Record' PDF sab ke liye free rahega.</small>";pdfRow.appendChild(pdfTx);
+  const pdfTx=el("span","","");pdfTx.innerHTML="<b>\u{1F4C4} 'Record with MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download this PDF; other students will see the VIP sheet. The 'Only Record' PDF stays free for everyone.</small>";pdfRow.appendChild(pdfTx);
   box.appendChild(pdfRow);
   function checkList(title,items,cls){
     box.appendChild(el("div","label",title));
@@ -4264,9 +4527,9 @@ function openVip(){
     return sc;
   }
   const _vl=(window.__vipLists?window.__vipLists():{courses:[],subjects:[]});
-  const cSc=checkList("Premium folders (courses) \u2014 jo tick karein ge wo pura folder lock hoga:",_vl.courses,"vipCourse");
+  const cSc=checkList("Premium folders (courses) \u2014 ticked folders will be fully locked:",_vl.courses,"vipCourse");
   const fIn=el("input");fIn.placeholder="Search subject\u2026";fIn.style.cssText="width:100%;margin:2px 0 6px";box.appendChild(fIn);
-  const sSc=checkList("Premium subjects \u2014 jo tick karein ge wo subject lock hoga:",_vl.subjects,"vipSubject");
+  const sSc=checkList("Premium subjects \u2014 ticked subjects will be locked:",_vl.subjects,"vipSubject");
   fIn.addEventListener("input",function(){
     const q=fIn.value.toLowerCase();
     sSc.querySelectorAll("label").forEach(function(lb){lb.style.display=lb.textContent.toLowerCase().indexOf(q)>=0?"":"none"});
@@ -4296,7 +4559,7 @@ function openVip(){
     try{
       await setDoc(doc(db,"sitedata","vip"),data);
       vipApply(data);
-      st.textContent="\u2713 Saved \u2014 VIP setting ab sab phones par lag jayegi.";
+      st.textContent="\u2713 Saved \u2014 the VIP settings will now apply on all phones.";
     }catch(e){st.textContent="Error: "+((e&&e.code)||e)}
     sv.disabled=false;
   };
@@ -4385,8 +4648,9 @@ function buildWebset(){
   const wname=el("input");wname.id="wsName";wname.placeholder="Engrgroup23";wname.style.cssText="width:100%";box.appendChild(wname);
   const lab2=el("div","label","Description (tagline):");box.appendChild(lab2);
   const wdesc=el("input");wdesc.id="wsDesc";wdesc.placeholder="Past papers & solved MCQs for all subjects.";wdesc.style.cssText="width:100%";box.appendChild(wdesc);
-  box.appendChild(el("div","label","Contact email (shown on About / Contact / Privacy pages):"));
+  box.appendChild(el("div","label","\u{1F4E7} Contact Gmail \u2014 the email shown on the website (Contact / About / Privacy pages):"));
   const wmail=el("input");wmail.id="wsEmail";wmail.type="email";wmail.placeholder="maherusman1947@gmail.com";wmail.style.cssText="width:100%";box.appendChild(wmail);
+  box.appendChild(el("div","label","The Gmail you enter and Save here will automatically appear on all three pages \u2014 Contact, About and Privacy. This is only the contact email; your owner login Gmail does not change."));
   const lab3=el("div","label","\ud83d\udce2 Announcement strip (login screen + top of the app; empty = off):");box.appendChild(lab3);
   const wannc=el("input");wannc.id="wsAnnc";wannc.placeholder="New PPSC 2026 papers added!";wannc.style.cssText="width:100%";box.appendChild(wannc);
   sec("📄 Pages — About · Privacy · Contact");
@@ -4442,7 +4706,7 @@ function buildWebset(){
   }
   lf.onchange=async()=>{
     const f=lf.files&&lf.files[0];if(!f)return;
-    const wst2=document.getElementById("wsSt");if(wst2)wst2.textContent="Logo compress ho raha hai...";
+    const wst2=document.getElementById("wsSt");if(wst2)wst2.textContent="Compressing logo...";
     try{window.__wsLogo=await logoDataUrl(f);if(window.__logoPrevSync)window.__logoPrevSync();if(wst2)wst2.textContent=""}catch(e){alert((e&&e.message)||e);if(wst2)wst2.textContent=""}
     lf.value="";
   };
@@ -4482,7 +4746,7 @@ function buildWebset(){
   wrow.appendChild(pv);wrow.appendChild(pick);wrow.appendChild(rm);box.appendChild(wrow);
   wf.onchange=async()=>{
     const f=wf.files&&wf.files[0];if(!f)return;
-    const wst=document.getElementById("wsSt");if(wst)wst.textContent="Wallpaper compress ho rahi hai…";
+    const wst=document.getElementById("wsSt");if(wst)wst.textContent="Compressing wallpaper…";
     try{wsPic=await picDataUrl(f);syncWs();if(wst)wst.textContent=""}catch(e){alert((e&&e.message)||e);if(wst)wst.textContent=""}
     wf.value="";
   };
@@ -5074,8 +5338,10 @@ async function refreshBankCache(){
     if(docs.every(d=>d.exists()&&d.data().v===md.version)){
       const json=docs.map(d=>d.data().data).join("");
       idbSet("bank",{version:md.version,parts:md.parts,json,count:md.count||0,updatedAtMs:(md.updatedAt&&md.updatedAt.toMillis)?md.updatedAt.toMillis():0});
+      return json;
     }
   }catch(e){}
+  return null;
 }
 let __bankRefreshOn=false;
 async function loadBank(){
@@ -5179,13 +5445,19 @@ async function check(user){
           if(n){UNAME=n;try{localStorage.setItem("eg23name",UNAME)}catch(_){}}
           const fn2=String(pu.data().fullName||"").trim();if(fn2)try{localStorage.setItem("eg23fullname",fn2)}catch(_){}
           const ph2=String(pu.data().phone||"").trim();if(ph2)try{localStorage.setItem("eg23phone",ph2)}catch(_){}
+          const ag2=String(pu.data().age||"").trim();if(ag2)try{localStorage.setItem("eg23age",ag2)}catch(_){}
+          const gd2=String(pu.data().gender||"").trim();if(gd2)try{localStorage.setItem("eg23gender",gd2)}catch(_){}
+          const pt2=String(pu.data().photo||"").trim();if(pt2)try{localStorage.setItem("eg23photo",pt2)}catch(_){}
         }
       }catch(_){}
     }
-    let FNAME="",PHONE="";
+    let FNAME="",PHONE="",AGE="",GENDER="",SAVEDPHOTO="";
+    try{AGE=String(localStorage.getItem("eg23age")||"").trim()}catch(_){}
+    try{GENDER=String(localStorage.getItem("eg23gender")||"").trim()}catch(_){}
+    try{SAVEDPHOTO=String(localStorage.getItem("eg23photo")||"").trim()}catch(_){}
     try{FNAME=String(localStorage.getItem("eg23fullname")||"").trim()}catch(_){}
     try{PHONE=String(localStorage.getItem("eg23phone")||"").trim()}catch(_){}
-    window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:user.photoURL||"",phone:PHONE||user.phoneNumber||"",fullName:FNAME};
+    window.__PROFILE={name:UNAME||(user.isAnonymous?"Guest":user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email)),email,role:IS_OWNER?"Admin":IS_ADMIN?"Manager":"Student",expires:EXP,trial:TRIAL,photo:SAVEDPHOTO||user.photoURL||"",phone:PHONE||user.phoneNumber||"",fullName:FNAME,age:AGE,gender:GENDER};
     try{window.__RAWNAME=user.isAnonymous?"Guest":(user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email))}catch(_){window.__RAWNAME="Guest"}
     if(window.__VISITOR){window.__PROFILE.name="Visitor";window.__PROFILE.email="Free: "+V_LIMIT+" MCQs, then login";window.__PROFILE.role="Visitor";window.__RAWNAME="Visitor"}
     else{try{localStorage.setItem("eg23in","1")}catch(_){}}
@@ -5270,6 +5542,9 @@ function openMenu(){
   top.appendChild(el("b","",P.name||"User"));
   top.appendChild(el("small","",P.email||ME||""));
   top.appendChild(el("span","rolechip",(PV?"Student \u00b7 preview":(P.role||"Student"))+((IS_OWNER&&!PV)?" \u2726 VIP":"")));
+  try{const _si=studentInfo();top.appendChild(el("small","mnid","ID: "+_si.id+(_si.verified?" \u2713 Verified":"")))}catch(_){}
+  top.style.cursor="pointer";top.title="Profile settings";
+  top.addEventListener("click",()=>{dl.remove();openAcct()});
   bx.appendChild(top);
   bx.appendChild(el("div","mnlbl","Language"));
   const lr=el("div");lr.style.cssText="display:flex;gap:8px";
@@ -5301,6 +5576,9 @@ function openMenu(){
   if(IS_OWNER&&!PV)mi("\u{1F527} Fix misplaced subjects",()=>{if(window.__fixMisplaced)window.__fixMisplaced()});
   if(IS_OWNER&&!PV)mi("\u{1F5A8} PDF Watermark settings",()=>openWm());
   if(IS_OWNER&&!PV)mi("\u2705 Verified students (ID tick)",()=>openVerified());
+  if(IS_OWNER&&!PV)mi("\u{1FA7A} Website Doctor",()=>openDoctor());
+  if(IS_OWNER&&!PV)mi("\u{1F39B} Feature settings",()=>openFeat());
+  if(IS_OWNER&&!PV&&FEAT.activity)mi("\u{1F4CA} Activity dashboard",()=>openActivity());
   if(IS_OWNER&&!PV)mi("\u{1F511} AI backup keys (3 + add more)",()=>openAiBackup());
   if(IS_ADMIN||REAL_OWNER)mi("\u{1F500} Mode: Admin / Manager / User",function(){var m=document.getElementById("appmenu");if(m)m.remove();openModeChooser()});
   if(IS_OWNER&&!PV)mi("\u{1F5D1}\uFE0F Bin (deleted files) \u00b7 admin only",()=>openBin());
@@ -5639,64 +5917,103 @@ function openAcct(focus){
   rf.appendChild(el("small","",[P.email||ME||"",P.phone||""].filter(Boolean).join(" · ")));
   rf.appendChild(el("span","rolechip",P.role||"Student"));
   pr.appendChild(rf);bx.appendChild(pr);
-  /* ---- username (v3.5.0): yahi naam chat + menu mein dikhata hai; email chhupa rehta hai ---- */
-  bx.appendChild(el("div","aclbl","\u{1F464}\uFE0F Your username"));
-  const ur=el("div");ur.style.cssText="display:flex;gap:8px;padding:0 16px 4px";
-  const uin=el("input");uin.id="unameIn";uin.type="text";uin.maxLength=24;uin.placeholder="e.g. Usman Eng (1-24 letters)";
-  uin.value=String(P.name&&P.name!=="Guest"?P.name:"").trim();
-  uin.style.cssText="flex:1;min-width:0";
-  const usb=el("button","btn primary","Save");usb.type="button";
-  const ust=el("span","label st");
-  usb.onclick=async()=>{
-    const n=uin.value.trim().replace(/\s+/g," ");
-    const cu=auth.currentUser;
-    if(!cu){ust.textContent="You are not logged in.";return}
-    usb.disabled=true;ust.textContent="Saving…";
+  /* ---- PROFILE EDITOR (2026-11-24 upgrade): photo (gallery / random avatar) + full name + username + age + gender + phone — aik hi Save ---- */
+  bx.appendChild(el("div","aclbl","\u{1F4DD} Your profile"));
+  let pendPhoto="";
+  function avatarURL(name,seed){
     try{
-      await setDoc(doc(db,"pubusers",cu.uid),{name:n,updatedAt:serverTimestamp()},{merge:true});
-      try{localStorage.setItem("eg23name",n)}catch(_){}
-      P.name=n||String(window.__RAWNAME||P.name||"User");
+      var cv=document.createElement("canvas");cv.width=cv.height=256;var x=cv.getContext("2d");
+      var pals=[["#0B1E3D","#C9A227"],["#7C2D12","#F59E0B"],["#14532D","#22C55E"],["#4C1D95","#8B5CF6"],["#7F1D1D","#EF4444"],["#0F766E","#14B8A6"],["#9D174D","#EC4899"],["#1E3A8A","#3B82F6"]];
+      var p=pals[Math.abs(seed)%pals.length];
+      var g=x.createLinearGradient(0,0,256,256);g.addColorStop(0,p[0]);g.addColorStop(1,p[1]);
+      x.fillStyle=g;x.fillRect(0,0,256,256);
+      var ini=(String(name||"U").trim().split(/\s+/).map(function(w){return w.charAt(0)}).slice(0,2).join("")||"U").toUpperCase();
+      x.fillStyle="rgba(255,255,255,.96)";x.font="800 104px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(ini,128,136);
+      return cv.toDataURL("image/png");
+    }catch(_){return ""}
+  }
+  function profName(){return (fnIn.value||"").trim()||(uin.value||"").trim()||P.name||"User"}
+  const phRow=el("div","acphotorow");
+  const galB=el("button","btn","\u{1F5BC} Photo from Gallery");galB.type="button";
+  const rndB=el("button","btn","\u{1F3B2} Random avatar");rndB.type="button";
+  const fileIn=document.createElement("input");fileIn.type="file";fileIn.accept="image/*";fileIn.hidden=true;
+  phRow.appendChild(galB);phRow.appendChild(rndB);phRow.appendChild(fileIn);bx.appendChild(phRow);
+  const chipRow=el("div","acchips");bx.appendChild(chipRow);
+  function setPend(url){
+    pendPhoto=url||"";
+    const av=bx.querySelector(".acprof .u-av");
+    if(av){av.innerHTML="";if(pendPhoto){const im=el("img");im.src=pendPhoto;im.alt="";av.appendChild(im)}else av.appendChild(el("span","",String(P.name||"?").charAt(0).toUpperCase()))}
+    chipRow.querySelectorAll("img").forEach(function(im){im.style.outline=(pendPhoto&&im.src===pendPhoto)?"3px solid #C9A227":"none"});
+  }
+  function drawChips(){
+    chipRow.innerHTML="";
+    for(let i=0;i<6;i++){
+      const u=avatarURL(profName(),i*7+3);
+      if(!u)continue;
+      const im=el("img");im.src=u;im.alt="Avatar "+(i+1);im.title="Use this avatar";
+      im.onclick=()=>setPend(u);
+      chipRow.appendChild(im);
+    }
+  }
+  galB.onclick=()=>fileIn.click();
+  fileIn.onchange=async()=>{const f=fileIn.files&&fileIn.files[0];if(!f)return;try{const u=await logoDataUrl(f);if(u)setPend(u)}catch(_){}};
+  rndB.onclick=()=>{const u=avatarURL(profName(),(Date.now()%9973)+1);if(u)setPend(u)};
+  const frm=el("div","acfrm");
+  const fnIn=el("input");fnIn.id="fnameIn";fnIn.type="text";fnIn.maxLength=40;fnIn.placeholder="e.g. Muhammad Usman Amjad";
+  try{fnIn.value=String(localStorage.getItem("eg23fullname")||P.fullName||"")}catch(_){fnIn.value=P.fullName||""}
+  const uin=el("input");uin.id="unameIn";uin.type="text";uin.maxLength=24;uin.placeholder="Shown in chat and menu";
+  uin.value=String(P.name&&P.name!=="Guest"?P.name:"").trim();
+  const ageIn=el("input");ageIn.id="ageIn";ageIn.type="number";ageIn.min="5";ageIn.max="100";ageIn.placeholder="e.g. 21";
+  try{ageIn.value=String(localStorage.getItem("eg23age")||P.age||"")}catch(_){ageIn.value=P.age||""}
+  const phIn=el("input");phIn.id="phoneIn";phIn.type="tel";phIn.maxLength=16;phIn.placeholder="e.g. 03494482609";
+  try{phIn.value=String(localStorage.getItem("eg23phone")||"")}catch(_){phIn.value=""}
+  frm.appendChild(el("label","aclab","Full name"));frm.appendChild(fnIn);
+  frm.appendChild(el("label","aclab","Username"));frm.appendChild(uin);
+  const agRow=el("div");agRow.style.cssText="display:flex;gap:10px";
+  const agCol=el("div");agCol.style.cssText="flex:1;min-width:0";agCol.appendChild(el("label","aclab","Age"));agCol.appendChild(ageIn);agRow.appendChild(agCol);
+  const gdCol=el("div");gdCol.style.cssText="flex:1.4;min-width:0";gdCol.appendChild(el("label","aclab","Gender"));
+  const gdRow=el("div","acgender");
+  let gender="";try{gender=String(localStorage.getItem("eg23gender")||P.gender||"")}catch(_){gender=P.gender||""}
+  ["Male","Female","Other"].forEach(function(g){
+    const b=el("button","acgbtn"+(gender===g?" on":""),g);b.type="button";
+    b.onclick=()=>{gender=(gender===g)?"":g;gdRow.querySelectorAll(".acgbtn").forEach(function(x){x.classList.toggle("on",x.textContent===gender)})};
+    gdRow.appendChild(b);
+  });
+  gdCol.appendChild(gdRow);agRow.appendChild(gdCol);frm.appendChild(agRow);
+  frm.appendChild(el("label","aclab","Phone number"));frm.appendChild(phIn);
+  bx.appendChild(frm);
+  drawChips();
+  const svRow=el("div");svRow.style.cssText="padding:12px 16px 4px";
+  const svB=el("button","btn primary","\u{1F4BE} Save profile");svB.type="button";svB.style.cssText="width:100%;padding:13px;font-size:15px;border-radius:12px";
+  svRow.appendChild(svB);bx.appendChild(svRow);
+  const pst=el("span","label st");pst.style.cssText="padding:0 16px 6px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";bx.appendChild(pst);
+  const pnote=el("div");pnote.style.cssText="padding:2px 16px 4px;font:12px/1.5 sans-serif;color:var(--muted,#666)";
+  pnote.textContent="Your full name appears on your test record (PDF), result and certificate. Your username is shown in chat and the menu — your email is never displayed. Your phone number appears only in your PDF record, never on the share photo. Add a photo from your gallery or pick a colourful avatar — both are applied when you Save.";
+  bx.appendChild(pnote);
+  svB.onclick=async()=>{
+    const cu=auth.currentUser;
+    if(!cu){pst.textContent="You are not logged in.";return}
+    const unv=uin.value.trim().replace(/\s+/g," "),fnv=fnIn.value.trim().replace(/\s+/g," ");
+    const agN=parseInt(ageIn.value,10);const agv=isNaN(agN)?"":String(Math.max(5,Math.min(100,agN)));
+    const phv=phIn.value.trim();
+    const data={name:unv,fullName:fnv,phone:phv,age:agv,gender:gender,updatedAt:serverTimestamp()};
+    if(pendPhoto)data.photo=pendPhoto;
+    svB.disabled=true;pst.textContent="Saving\u2026";
+    try{
+      await setDoc(doc(db,"pubusers",cu.uid),data,{merge:true});
+      try{localStorage.setItem("eg23name",unv);localStorage.setItem("eg23fullname",fnv);localStorage.setItem("eg23phone",phv);localStorage.setItem("eg23age",agv);localStorage.setItem("eg23gender",gender);if(pendPhoto)localStorage.setItem("eg23photo",pendPhoto)}catch(_){}
+      P.name=unv||String(window.__RAWNAME||P.name||"User");P.fullName=fnv;P.phone=phv;P.age=agv;P.gender=gender;if(pendPhoto)P.photo=pendPhoto;
       window.__PROFILE=P;
       const em=document.querySelector("#userbar .em");
       if(em)em.textContent=(P.name||"")+((IS_OWNER&&!PV)?" (admin)":(IS_ADMIN&&!PV)?" (manager)":"");
       const pn=document.getElementById("pfName");if(pn)pn.textContent=P.name||"";
-      ust.textContent="Saved \u2713 "+(n?"shown in chat and menu as '"+n+"'":"username removed — your Google name is shown again");
-      mtStatus(n?"Username saved \u2713":"Username removed \u2014 Google name restored",100,true);
-    }catch(e){ust.textContent=(e&&e.code==="permission-denied")?"Publish the rules: Firebase Console \u2192 Firestore \u2192 Rules \u2192 paste the file \u2192 Publish.":("Error: "+((e&&(e.code||e.message))||e))}
-    finally{usb.disabled=false}
+      const rfB=bx.querySelector(".acpen b");if(rfB)rfB.textContent=P.name||"User";
+      pst.textContent="Saved \u2713 — your profile has been updated.";
+      mtStatus("Profile saved \u2713",100,true);
+    }catch(e){pst.textContent=(e&&e.code==="permission-denied")?"Publish the rules: Firebase Console \u2192 Firestore \u2192 Rules.":("Error: "+((e&&(e.code||e.message))||e))}
+    finally{svB.disabled=false}
   };
-  ur.appendChild(uin);ur.appendChild(usb);bx.appendChild(ur);
-  const unr=el("div");unr.style.cssText="padding:6px 16px 2px;font:12px/1.4 sans-serif;color:var(--muted,#666)";
-  unr.textContent="This name is visible to everyone in ☰ Menu and \ud83d\udcac Friendly Chat — your email is never shown. Leave it empty and Save to restore your Google name.";
-  bx.appendChild(unr);
-  ust.style.cssText="padding:0 16px 8px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";
-  bx.appendChild(ust);
-  /* ---- full name + phone: PDF record / student ID ke liye ---- */
-  bx.appendChild(el("div","aclbl","\u{1F4DD} Full name & phone number"));
-  const fnr=el("div");fnr.style.cssText="display:flex;flex-direction:column;gap:8px;padding:0 16px 4px";
-  const fnIn=el("input");fnIn.id="fnameIn";fnIn.type="text";fnIn.maxLength=40;fnIn.placeholder="Full name \u2014 e.g. Muhammad Usman Amjad";
-  try{fnIn.value=String(localStorage.getItem("eg23fullname")||P.fullName||"")}catch(_){fnIn.value=P.fullName||""}
-  const phIn=el("input");phIn.id="phoneIn";phIn.type="tel";phIn.maxLength=16;phIn.placeholder="Phone number \u2014 e.g. 03494482609";
-  try{phIn.value=String(localStorage.getItem("eg23phone")||"")}catch(_){phIn.value=""}
-  const fnSave=el("button","btn primary","Save full name & phone");fnSave.type="button";
-  fnr.appendChild(fnIn);fnr.appendChild(phIn);fnr.appendChild(fnSave);bx.appendChild(fnr);
-  const fnote=el("div");fnote.style.cssText="padding:6px 16px 2px;font:12px/1.4 sans-serif;color:var(--muted,#666)";
-  fnote.textContent="Full name aap ke test record (PDF) aur result par aayega \u2014 username chat/menu ke liye alag rehta hai. Phone number sirf aap ke PDF record me aayega, share wali photo me nahi.";
-  bx.appendChild(fnote);
-  const fst=el("span","label st");fst.style.cssText="padding:0 16px 8px;font:600 12.5px/1.4 sans-serif;display:block;min-height:16px";bx.appendChild(fst);
-  fnSave.onclick=async()=>{
-    const cu=auth.currentUser;
-    if(!cu){fst.textContent="You are not logged in.";return}
-    const fnv=fnIn.value.trim().replace(/\s+/g," "),phv=phIn.value.trim();
-    fnSave.disabled=true;fst.textContent="Saving\u2026";
-    try{
-      await setDoc(doc(db,"pubusers",cu.uid),{fullName:fnv,phone:phv,updatedAt:serverTimestamp()},{merge:true});
-      try{localStorage.setItem("eg23fullname",fnv);localStorage.setItem("eg23phone",phv)}catch(_){}
-      P.fullName=fnv;P.phone=phv;window.__PROFILE=P;
-      fst.textContent="Saved \u2713 \u2014 ab result aur PDF par yahi full name aayega.";
-    }catch(e){fst.textContent="Error: "+((e&&(e.code||e.message))||e)}
-    finally{fnSave.disabled=false}
-  };
+
   bx.appendChild(el("div","aclbl","\u{1F389} Membership & access"));
   const mc=el("div","acmem");
   function crow(k,v,cls){const rr=el("div","acrow"+(cls?" "+cls:""));rr.appendChild(el("span","",k));rr.appendChild(el("b","",v));mc.appendChild(rr)}
@@ -5720,7 +6037,7 @@ function openAcct(focus){
     const iv=setInterval(tick,1000);tick();
   } else {crow("Time period:","Permanent \u2713");crow("Status:","\u2713 Active member")}
   bx.appendChild(mc);
-  bx.appendChild(el("div","acnote","Your name and photo come from your Google account. Member expiry is changed in Admin panel \u2192 Users tab."));
+  bx.appendChild(el("div","acnote","Member expiry is changed in Admin panel \u2192 Users tab."));
   const brow=el("div","acbtns");
   const so=el("button","btn","\u21A9 Sign out");so.type="button";so.onclick=()=>{signOut(auth).then(()=>location.reload())};brow.appendChild(so);
   const cl=el("button","btn primary","Close");cl.type="button";cl.onclick=()=>dl.remove();brow.appendChild(cl);
@@ -5810,37 +6127,34 @@ async function publishBank(bank){
   BANK_JSON=json;BANK_META={version,parts:pieces.length,count:bank.Q0.length,updatedAt:Timestamp.fromMillis(version)};
 }
 
-/* ---------------- live bank update (v3.4.0): naye MCQs publish hone par sab par toast ---------------- */
-function bankToast(){
-  if(document.getElementById("bktoast"))return;
-  const t=el("div");t.id="bktoast";
-  t.setAttribute("role","status");
-  t.style.cssText="position:fixed;left:12px;right:12px;bottom:88px;z-index:1250;background:linear-gradient(145deg,#FFE89A,#C9A227 70%,#7A5A06);color:#3B2A00;border:1px solid #7A5A06;border-radius:16px;padding:13px 15px;box-shadow:0 12px 34px rgba(0,0,0,.4);font:600 14px/1.5 sans-serif;display:flex;flex-direction:column;gap:8px";
-  t.appendChild(el("b","","🔄 New questions are on the site!"));
-  t.appendChild(el("div","","The admin has published new MCQs / files. Refresh the page and everything will appear on the dashboard instantly."));
-  const rb=el("button","btn primary","🔄 Refresh");rb.type="button";rb.style.cssText="width:100%";
-  rb.onclick=()=>location.reload();
-  const xb=el("button","btn","Later");xb.type="button";xb.style.cssText="width:100%";
-  xb.onclick=()=>t.remove();
-  t.appendChild(rb);t.appendChild(xb);
-  document.body.appendChild(t);
-}
+/* ---------------- live bank update: naye MCQs bina reload, peeche se live shamil ----------------
+   Pehle ek gold toast ata tha "Refresh the page" — ab koi toast nahi. Nayi version
+   peeche se download hoti hai aur window.__bankLiveApply (app ke andar) use usi
+   waqt dashboard par laga deta hai; test chal raha ho to apply test ke baad hota hai. */
 function bankWatch(){
   try{
     if(window.__BKWATCHED)return;
     window.__BKWATCHED=1;
-    onSnapshot(doc(db,"meta","bank"),s=>{
+    onSnapshot(doc(db,"meta","bank"),async s=>{
       if(!s||!s.exists())return;
       const v=+s.data().version||0;
       if(!v||!window.__BANKV||!started)return;
-      if(v>window.__BANKV)bankToast();
+      if(v<=window.__BANKV)return;
+      try{
+        let json=await refreshBankCache();
+        if(!json){const c=await idbGet("bank");if(c&&+c.version===v&&typeof c.json==="string")json=c.json}
+        if(json&&window.__bankLiveApply){
+          const r=window.__bankLiveApply(JSON.parse(json),v);
+          if(r===true)window.__BANKV=v;
+        }else if(json){window.__BANKV=v}
+      }catch(_){}
     });
   }catch(_){}
 }
 
 /* ---------------- admin panel ---------------- */
 let adm=null;const tabs={};
-function openAdmin(tab){if(PV||!IS_OWNER){alert("Ye admin setting sirf owner ke liye hai.");return}if(!adm)buildAdmin();adm.hidden=false;showTab(tab||"users")}
+function openAdmin(tab){if(PV||!IS_OWNER){alert("This admin setting is for the owner only.");return}if(!adm)buildAdmin();adm.hidden=false;showTab(tab||"users")}
 function buildAdmin(){
   adm=el("div");adm.id="adm";
   const box=el("div","box");adm.appendChild(box);
@@ -7707,7 +8021,7 @@ async function jobsLoad(){
       if(canJobs()){
         const eb=el("button","btn","\u270e Edit");eb.type="button";eb.onclick=()=>jobForm(it,d.id);
         const dbtn=el("button","btn danger","Delete");dbtn.type="button";
-        dbtn.onclick=async()=>{if(!confirm("Delete job '"+(it.title||"")+"'?"))return;try{await deleteDoc(doc(db,"jobs",d.id));mtStatus("Job delete ho gaya \u2713",100,true);jobsLoad()}catch(e){alert("Error: "+((e&&(e.code||e.message))||e))}};
+        dbtn.onclick=async()=>{if(!confirm("Delete job '"+(it.title||"")+"'?"))return;try{await deleteDoc(doc(db,"jobs",d.id));mtStatus("Job deleted \u2713",100,true);jobsLoad()}catch(e){alert("Error: "+((e&&(e.code||e.message))||e))}};
         ft.appendChild(eb);ft.appendChild(dbtn);
       }
       ft.appendChild(el("span","jdate",it.createdAt&&it.createdAt.toDate?it.createdAt.toDate().toLocaleDateString():new Date(Date.now()).toLocaleDateString()));
@@ -8020,7 +8334,7 @@ function jsonQuizHtml(raw,title,aiOn){
      +"b.onclick=function(){bs.forEach(function(z){z.disabled=true});if(x.a<0){b.className='o';up();return}"
      +"if(k===x.a){b.className='o ok';ok++}else{b.className='o no';bad++;bs[x.a].className='o ok'}"
      +"if(x.e){var e=document.createElement('div');e.className='e';e.textContent=x.e;c.appendChild(e)}"
-     +"if(AI){var ab=document.createElement('button');ab.type='button';ab.className='ai';ab.textContent='\u2728 AI se samjhein';var bx=document.createElement('div');bx.className='e';bx.style.display='none';bx.style.whiteSpace='pre-wrap';BX[i]=bx;ab.onclick=function(){bx.style.display='block';bx.textContent='AI soch raha hai...';ab.disabled=true;parent.postMessage({t:'eg23ai',i:i,q:x.q,o:x.o,a:x.a,p:k},'*')};c.appendChild(ab);c.appendChild(bx)}up();"
+     +"if(AI){var ab=document.createElement('button');ab.type='button';ab.className='ai';ab.textContent='\u2728 Understand with AI';var bx=document.createElement('div');bx.className='e';bx.style.display='none';bx.style.whiteSpace='pre-wrap';BX[i]=bx;ab.onclick=function(){bx.style.display='block';bx.textContent='AI is thinking...';ab.disabled=true;parent.postMessage({t:'eg23ai',i:i,q:x.q,o:x.o,a:x.a,p:k},'*')};c.appendChild(ab);c.appendChild(bx)}up();"
      +"if(ok+bad===D.length){var r=document.createElement('div');r.className='r';r.textContent='Test khatam: '+ok+' / '+D.length+' ('+Math.round(ok*100/D.length)+'%)';R.appendChild(r);r.scrollIntoView({behavior:'smooth'})}};"
      +"c.appendChild(b)});R.appendChild(c)});var rb=document.createElement('button');rb.type='button';rb.className='btn';rb.textContent='Start again';rb.onclick=function(){build();window.scrollTo(0,0)};R.appendChild(rb);up()}build();window.addEventListener('message',function(ev){var d=ev.data;if(d&&d.t==='eg23aires'&&BX[d.i]){BX[d.i].textContent=d.text;BX[d.i].style.display='block'}});";
     return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+ttl+"</title><style>"+css+"</style></head><body><div class=\"top\"><b>"+ttl+"</b><span id=\"s\"></span><div class=\"bar\"><i id=\"b\"></i></div></div><div class=\"w\" id=\"r\"></div><scr"+"ipt>"+js+"</scr"+"ipt></body></html>";
@@ -8180,7 +8494,7 @@ async function mtOpenFolder(fid){
   mtCur=fid;
 }
 async function mtAddFolderFlow(name,then){
-  const nm=(name!=null&&name!=="")?name:prompt("Naya folder — naam likhein (e.g. 'PPSC 2026 Papers'):");
+  const nm=(name!=null&&name!=="")?name:prompt("New folder — type the name (e.g. 'PPSC 2026 Papers'):");
   if(nm===null||!nm.trim())return;
   const id=mtNid();
   try{
@@ -8734,7 +9048,8 @@ hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</scr
 .srcb[hidden]{display:none}
 .srcb-s{background:rgba(37,99,235,.14);color:#1d4ed8;border:1px solid rgba(37,99,235,.35)}
 .srcb-a{background:rgba(124,58,237,.13);color:#6d28d9;border:1px solid rgba(124,58,237,.35)}
-@media (prefers-color-scheme:dark){.srcb-s{color:#93c5fd}.srcb-a{color:#c4b5fd}}
+.srcb-v{background:rgba(18,153,79,.13);color:#0B7A3E;border:1px solid rgba(18,153,79,.45)}
+@media (prefers-color-scheme:dark){.srcb-s{color:#93c5fd}.srcb-a{color:#c4b5fd}.srcb-v{color:#4ADE80}}
 </style>
 <style id="fitCss">
 /* phone: the whole question (statement, options, Previous/Next) fits on one screen; Next stays pinned at the bottom */
@@ -9189,11 +9504,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
         var name=s[1]+" ("+s[0]+")";
         if(q&&name.toLowerCase().indexOf(q)<0)return;
         var courseLbl=cur==="acca"?"ACCA":"CA",plainNm=name.replace(/\s*\([^)]+\)\s*$/,"");
-        html+='<div class="acc-card"><div class="acc-main"><div class="acc-name">'+name+'</div><div class="acc-type">'+(cur==="acca"?"ACCA Computer Based Exam":"CA Exam - ICAP")+' &middot; Solved MCQs</div></div><span class="acc-pill">Past Papers</span><span class="acc-pill spec">Specimen</span><button type="button" class="acc-btn" data-name="'+name.replace(/"/g,"")+'">Take the exam</button>'+((window.__vipMarked&&window.__vipMarked(courseLbl,plainNm))?'<button type="button" class="acc-full" data-name="'+name.replace(/"/g,"")+'">\u{1F4E5} Full MCQs (PDF)</button>':"")+'</div>';
+        html+='<div class="acc-card"><div class="acc-main"><div class="acc-name">'+name+'</div><div class="acc-type">'+(cur==="acca"?"ACCA Computer Based Exam":"CA Exam - ICAP")+' &middot; Solved MCQs</div></div><span class="acc-pill">Past Papers</span><span class="acc-pill spec">Specimen</span><button type="button" class="acc-btn" data-name="'+name.replace(/"/g,"")+'">Take the exam</button>'+(((window.__vipMarked&&window.__vipMarked(courseLbl,plainNm))||(window.__feat&&window.__feat("fullpdf")))?'<button type="button" class="acc-full" data-name="'+name.replace(/"/g,"")+'">\u{1F4E5} Full MCQs (PDF)</button>':"")+'</div>';
       });
       list.innerHTML=html||'<div class="acc-empty">No subject found. Try another name.</div>';
       list.querySelectorAll(".acc-btn").forEach(function(b){b.addEventListener("click",function(){go(b.getAttribute("data-name"))})});
-      list.querySelectorAll(".acc-full").forEach(function(b){b.addEventListener("click",function(){var nm=b.getAttribute("data-name");if(window.__vipGuard&&!window.__vipGuard(cur==="acca"?"ACCA":"CA",nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,cur==="acca"?"ACCA":"CA")})});
+      list.querySelectorAll(".acc-full").forEach(function(b){b.addEventListener("click",function(){var nm=b.getAttribute("data-name");var mk=window.__vipMarked&&window.__vipMarked(cur==="acca"?"ACCA":"CA",nm);if(mk&&window.__vipGuard&&!window.__vipGuard(cur==="acca"?"ACCA":"CA",nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,cur==="acca"?"ACCA":"CA")})});
     }
     function go(name){
       var start=document.getElementById("start");
@@ -9491,6 +9806,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     if(rp2)rp2.addEventListener("click",function(){if(window.__pdfMcqGuard&&!window.__pdfMcqGuard())return;if(window.__egPdf)window.__egPdf(pdfCfg,true)});
     var rsh=ov.querySelector("#rexShare");
     if(rsh)rsh.addEventListener("click",function(){if(window.__shareResult)window.__shareResult(pdfCfg)});
+    try{if(window.__mistakeAdd){var _wi=pdfCfg.items.filter(function(it){return it.mine!==it.ans});if(_wi.length)window.__mistakeAdd(_wi.map(function(it){return {q:it.q,opts:it.opts,ans:it.ans,sub:pdfCfg.title}}),pdfCfg.title)}}catch(e){}
+    try{if(window.__submitScore)window.__submitScore(pdfCfg)}catch(e){}
+    try{if(window.__egCert&&pdfCfg.pct>=60&&(!window.__feat||window.__feat("cert"))){var _cb=document.createElement("button");_cb.type="button";_cb.className="rex-btn";_cb.textContent="\u{1F3C6} Certificate (PDF)";_cb.addEventListener("click",function(){window.__egCert(pdfCfg)});var _nv=ov.querySelector(".rex-nav");if(_nv)_nv.appendChild(_cb)}}catch(e){}
     try{var _si3=window.__studentInfo?window.__studentInfo():null;var _nav=ov.querySelector(".rex-nav");
     if(_si3&&_nav&&_nav.parentNode){var _sd3=document.createElement("div");_sd3.style.cssText="text-align:center;font:600 13.5px system-ui,sans-serif;color:#5A6B82;margin-top:12px";
     _sd3.textContent=_si3.name+" \u00b7 ID "+_si3.id+(_si3.username?" \u00b7 @"+_si3.username:"")+(_si3.verified?" \u00b7 \u2713 Verified":"");
@@ -10478,7 +10796,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
           +'<span class="cc2Pill">'+esc(g.title)+'</span><span class="cc2Pill cc2Unlock">\uD83D\uDD13 Unlocked \u00B7 Unlimited</span>'
           +'<button type="button" class="cc2Btn" data-cat="'+esc(g.title)+'" data-idx="'+s.idx+'">Take the exam</button>'
           +'<button type="button" class="cc2Rex" data-nm2="'+esc(s.name)+'">\u23F1 Real Exam Test</button>'
-          +((window.__vipMarked&&window.__vipMarked(curCourseName,s.name))?'<button type="button" class="cc2Full" data-nm3="'+esc(s.name)+'">\u{1F4E5} Full MCQs (PDF)</button>':"")
+          +(((window.__vipMarked&&window.__vipMarked(curCourseName,s.name))||(window.__feat&&window.__feat("fullpdf")))?'<button type="button" class="cc2Full" data-nm3="'+esc(s.name)+'">\u{1F4E5} Full MCQs (PDF)</button>':"")
           +'</div>';
       });
     });
@@ -10491,7 +10809,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       b.addEventListener("click",function(){if(window.__openRealExam)window.__openRealExam(b.getAttribute("data-nm2"),curCourseName)});
     });
     listEl.querySelectorAll(".cc2Full").forEach(function(b){
-      b.addEventListener("click",function(){var nm=b.getAttribute("data-nm3");if(window.__vipGuard&&!window.__vipGuard(curCourseName,nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,curCourseName)});
+      b.addEventListener("click",function(){var nm=b.getAttribute("data-nm3");var mk=window.__vipMarked&&window.__vipMarked(curCourseName,nm);if(mk&&window.__vipGuard&&!window.__vipGuard(curCourseName,nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,curCourseName)});
     });
   }
   function yvOpen(){var yv=document.getElementById("yearView");return !!(yv&&!yv.hidden)}
@@ -10866,6 +11184,76 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
 #appmenu .mnfoot{color:rgba(233,196,106,.55)!important;font-size:12px!important}
 </style>
 
+<style id="proMenuCss">
+/* ===== PRO MENU + ACCOUNT (2026-11-24): official / professional polish ===== */
+#appmenu .mnbox{width:min(348px,94vw)!important}
+#appmenu .mnhead{background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02))!important;border:1px solid rgba(233,196,106,.35)!important;border-radius:18px!important;padding:18px 12px 14px!important;margin-bottom:4px;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+#appmenu .mnhead .u-av{box-shadow:0 0 0 2.5px #E9C46A,0 8px 20px rgba(0,0,0,.45)!important}
+#appmenu .rolechip{background:rgba(233,196,106,.16);border:1px solid rgba(233,196,106,.6);color:#E9C46A;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:800;letter-spacing:.04em}
+#appmenu .mnid{color:#E9C46A!important;font-weight:700;font-size:12.5px!important}
+#appmenu .mnit{display:flex;align-items:center;width:100%;transition:background .15s ease,transform .1s ease!important}
+#appmenu .mnit::after{content:"\203A";margin-left:auto;color:rgba(233,196,106,.75);font-size:20px;font-weight:800;line-height:1;padding-left:8px}
+#appmenu .mnit:active{transform:scale(.985)!important}
+#acct .acprof{background:linear-gradient(145deg,#0B1E3D,#12325E);color:#fff;border-bottom:2px solid #C9A227}
+#acct .acprof .acpen small{color:rgba(255,255,255,.75)}
+#acct .acprof .u-av{box-shadow:0 0 0 2.5px #E9C46A,0 8px 20px rgba(0,0,0,.4)}
+#acct .acprof .rolechip{background:rgba(233,196,106,.16);border:1px solid rgba(233,196,106,.6);color:#E9C46A;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:800}
+#acct .acphotorow{display:flex;gap:8px;padding:12px 16px 0}
+#acct .acphotorow .btn{flex:1;border-radius:999px;padding:10px 8px;font-weight:800}
+#acct .acchips{display:flex;gap:9px;padding:11px 16px 2px;flex-wrap:wrap}
+#acct .acchips img{width:46px;height:46px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid rgba(201,162,39,.35);transition:transform .12s}
+#acct .acchips img:active{transform:scale(.92)}
+#acct .acfrm{padding:2px 16px 0;display:flex;flex-direction:column;gap:7px}
+#acct .acfrm input{width:100%;box-sizing:border-box;border:1.5px solid var(--line,#D9D2BE);border-radius:12px;padding:11px 13px;font-size:14.5px;background:var(--panel,#fff);color:inherit}
+#acct .acfrm input:focus{outline:2px solid rgba(201,162,39,.55);border-color:#C9A227}
+#acct .aclab{font:800 11.5px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#8A6D1F;margin-top:7px}
+#acct .acgender{display:flex;gap:6px}
+#acct .acgbtn{flex:1;border:1.5px solid var(--line,#D9D2BE);background:transparent;color:inherit;border-radius:999px;padding:9px 4px;font:700 13px system-ui,sans-serif;cursor:pointer}
+#acct .acgbtn.on{background:linear-gradient(135deg,#0B1E3D,#12325E);color:#FFB03A;border-color:#C9A227}
+</style>
+
+<style id="royalMenuCss">
+/* ===== ROYAL GOLD MENU (2026-11-24, user pick Design 3): sunehri patti wale cards,
+   double gold frame profile, spring stagger opening ===== */
+#appmenu .mnbox{border-left:2px solid rgba(201,162,39,.65)!important;box-shadow:-22px 0 48px rgba(0,0,0,.55)!important;animation:royalIn .38s cubic-bezier(.22,1,.36,1)}
+@keyframes royalIn{from{transform:translateX(48px);opacity:.35}to{transform:translateX(0);opacity:1}}
+@keyframes royalItem{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+#appmenu .mnbox>*{animation:royalItem .45s cubic-bezier(.22,1,.36,1) backwards}
+#appmenu .mnbox>*:nth-child(2){animation-delay:28ms}
+#appmenu .mnbox>*:nth-child(3){animation-delay:56ms}
+#appmenu .mnbox>*:nth-child(4){animation-delay:84ms}
+#appmenu .mnbox>*:nth-child(5){animation-delay:112ms}
+#appmenu .mnbox>*:nth-child(6){animation-delay:140ms}
+#appmenu .mnbox>*:nth-child(7){animation-delay:168ms}
+#appmenu .mnbox>*:nth-child(8){animation-delay:196ms}
+#appmenu .mnbox>*:nth-child(9){animation-delay:224ms}
+#appmenu .mnbox>*:nth-child(10){animation-delay:252ms}
+#appmenu .mnbox>*:nth-child(11){animation-delay:280ms}
+#appmenu .mnbox>*:nth-child(12){animation-delay:308ms}
+#appmenu .mnbox>*:nth-child(13){animation-delay:336ms}
+#appmenu .mnbox>*:nth-child(14){animation-delay:364ms}
+#appmenu .mnbox>*:nth-child(15){animation-delay:392ms}
+#appmenu .mnbox>*:nth-child(16){animation-delay:420ms}
+#appmenu .mnbox>*:nth-child(17){animation-delay:448ms}
+#appmenu .mnbox>*:nth-child(18){animation-delay:476ms}
+#appmenu .mnbox>*:nth-child(19){animation-delay:504ms}
+#appmenu .mnbox>*:nth-child(20){animation-delay:532ms}
+#appmenu .mnbox>*:nth-child(21){animation-delay:560ms}
+#appmenu .mnbox>*:nth-child(22){animation-delay:588ms}
+#appmenu .mnbox>*:nth-child(23){animation-delay:616ms}
+#appmenu .mnbox>*:nth-child(24){animation-delay:644ms}
+#appmenu .mnbox>*:nth-child(25){animation-delay:672ms}
+#appmenu .mnbox>*:nth-child(26){animation-delay:700ms}
+#appmenu .mnhead{border:1.5px solid #C9A227!important;outline:1px solid rgba(233,196,106,.4);outline-offset:3px;background:linear-gradient(160deg,rgba(201,162,39,.13),rgba(255,255,255,.02))!important;border-radius:16px!important}
+#appmenu .rolechip{background:linear-gradient(135deg,#E9C46A,#C9A227)!important;color:#241A00!important;border:none!important}
+#appmenu .mnlbl{display:flex!important;align-items:center;gap:10px}
+#appmenu .mnlbl::before,#appmenu .mnlbl::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(233,196,106,.55),transparent)}
+#appmenu .mnit{position:relative;overflow:hidden;background:linear-gradient(135deg,#14294E,#0B1E3D)!important;border:1px solid rgba(233,196,106,.28)!important;border-radius:14px!important;box-shadow:0 12px 24px rgba(0,0,0,.42),0 6px 18px rgba(201,162,39,.10)!important;padding-left:17px!important}
+#appmenu .mnit::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4.5px;background:linear-gradient(180deg,#FFE89A,#C9A227)}
+@media (prefers-reduced-motion:reduce){#appmenu .mnbox,#appmenu .mnbox>*{animation:none!important}}
+</style>
+
+
 <script>
 /* ===== CREDIT LINE APPLIER (2026-11-22): Website Settings wali credit line ko
    login gate ke footer, file credits aur test watermark par bhi lagata hai.
@@ -11010,7 +11398,7 @@ body,.ycard,.hcard,.btn,.chip,.bar,.card,.mnit,.mnai,.gbox,.acbx,#userbar{transi
     var defs=[
       ["MAIN",/Dashboard|AI Tutor|Library|Jobs|Friendly Chat|Share site/],
       ["SETTINGS",/Account settings|Change username|Website settings|Mode:/],
-      ["ADMIN",/Admin panel|AI MCQs|Settings \(important\)|AI backup keys|VIP Premium settings|PDF Watermark settings|Verified students|Fix misplaced subjects|Bin \(|Jokes|Ads \(/]
+      ["ADMIN",/Admin panel|AI MCQs|Settings \(important\)|AI backup keys|VIP Premium settings|PDF Watermark settings|Verified students|Website Doctor|Feature settings|Activity dashboard|Fix misplaced subjects|Bin \(|Jokes|Ads \(/]
     ];
     var used=new Set(), plan=[];
     defs.forEach(function(d){
@@ -11240,6 +11628,7 @@ function studentBlock(){
   +(si.username?'<div>Username: <b>@'+esc(si.username)+'</b></div>':"")
   +'<div>Student ID: <b style="color:#8A6D1F">'+esc(si.id)+'</b></div>'
   +(si.phone?'<div>Phone: <b>'+esc(si.phone)+'</b></div>':"")
+  +((si.age||si.gender)?'<div>'+(si.age?'Age: <b>'+esc(si.age)+'</b>':'')+(si.age&&si.gender?' \u00b7 ':'')+(si.gender?'Gender: <b>'+esc(si.gender)+'</b>':'')+'</div>':"")
   +'</div></div>';
 }
 function qrBlock(title){
@@ -11351,6 +11740,30 @@ function buildFull(name,course,qs){
   h+='</div></div>';
   return h;
 }
+function buildCert(cfg){
+  var si=null;try{si=window.__studentInfo?window.__studentInfo():null}catch(e){}
+  var nm=(si&&si.name)||"Student";
+  var site="Engrgroup23";try{site=window.__siteName?window.__siteName():site}catch(e){}
+  var L=logoSrc();
+  var link="";try{link=subjectLink(cfg.title)}catch(e){}
+  var h='<div style="border:3px solid #C9A227;padding:10px;background:#fff"><div style="border:1.5px solid #C9A227;padding:26px 30px;text-align:center;background:#FFFDF4">'
+   +(L?'<img src="'+L+'" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:2.5px solid #C9A227" alt="">':"")
+   +'<div style="font:800 15px Georgia,serif;letter-spacing:3px;color:#8A6D1F;margin-top:8px">'+esc(site.toUpperCase())+'</div>'
+   +'<div style="font:800 34px Georgia,serif;color:#0B1E3D;margin-top:10px">Certificate of Achievement</div>'
+   +'<div style="font:600 13px Georgia,serif;color:#5A6B82;margin-top:6px">This is to certify that</div>'
+   +'<div style="margin-top:10px"><span style="font:800 28px Georgia,serif;color:#0B1E3D;border-bottom:2px solid #E9C46A;padding:0 26px 6px;display:inline-block">'+esc(nm)+'</span>'+(si&&si.verified?' <span style="background:#12994F;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px">\u2713 VERIFIED</span>':"")+'</div>'
+   +'<div style="font:600 14.5px/1.6 Georgia,serif;color:#33475B;margin-top:12px">has successfully completed the test<br><b style="color:#0B1E3D;font-size:17px">'+esc(cfg.title)+'</b>'+(cfg.course?' \u00b7 '+esc(cfg.course):"")+'<br>with a score of <b style="color:#8A6D1F;font-size:19px">'+cfg.pct+'%</b> ('+cfg.right+' / '+cfg.total+' correct)</div>'
+   +'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;text-align:left">'
+   +'<div style="font:600 12.5px Georgia,serif;color:#5A6B82">Date: '+fdate(cfg.ts)+(si?'<br>Student ID: <b style="color:#8A6D1F">'+esc(si.id)+'</b>'+(si.username?'<br>Username: @'+esc(si.username):""):"")+'</div>'
+   +(link?'<div style="text-align:center"><div class="egqr" style="width:74px;height:74px;margin:0 auto">'+qrSvg(link)+'</div><div style="font:600 10.5px Georgia,serif;color:#8A6D1F;margin-top:3px">Scan to open this test</div></div>':"")
+   +'<div style="font:600 12.5px Georgia,serif;color:#5A6B82;text-align:right">Awarded by<br><b style="color:#0B1E3D">'+esc(site)+'</b><br>ppscengr.com</div>'
+   +'</div></div></div>';
+  return h;
+}
+window.__egCert=function(cfg){
+  if(!cfg)return;
+  printHtml(buildCert(cfg));
+};
 window.__egFullPdf=function(name,course){
   var qs=[];try{qs=window.__bankQsByName?window.__bankQsByName(name):[]}catch(e){}
   if(!qs||!qs.length){alert("No MCQs found for this subject yet.");return}
@@ -11443,4 +11856,428 @@ fp.innerHTML='<span class="fpF">FREE</span><span class="fpA">and</span><span cla
 w.parentNode.insertBefore(fp,w.nextSibling);
 }catch(e){}})();
 </script>
+
+<script>
+/* ===== AUTO HEALTH CHECK + AUTO REPAIR (Option 1) =====
+   Website khulte hi khamoshi se check: loading atki to nahi, dashboard khali to nahi,
+   core hisse load hue ya nahi. Glitch mile to Update & Fix wala proven repair khud chal
+   jata hai. Loop protection: aik session me sirf aik dafa, aur 6 ghante me aik dafa se zyada nahi.
+   Test chal raha ho to kabhi repair nahi hota. */
+(function(){
+  "use strict";
+  function L(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function S(k,v){try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+  function SS(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+  function SSS(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}
+  function log(what){
+    try{var a=JSON.parse(L("hcLog")||"[]");a.push({ts:Date.now(),what:what});if(a.length>5)a=a.slice(a.length-5);S("hcLog",JSON.stringify(a))}catch(e){}
+  }
+  function toast(msg,ms){
+    try{
+      var t=document.createElement("div");
+      t.style.cssText="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100005;background:#0B1E3D;color:#fff;border:1.5px solid #C9A227;border-radius:999px;padding:10px 18px;font:700 13.5px system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:92vw;text-align:center";
+      t.textContent=msg;document.body.appendChild(t);
+      setTimeout(function(){try{t.remove()}catch(e){}},ms||3200);
+    }catch(e){}
+  }
+  /* pichli auto-repair kamyab hui ho to aik dafa bata do */
+  try{
+    if(SS("hcFixedMsg")==="1"){ SSS("hcFixedMsg","0"); setTimeout(function(){ toast("\u2713 A glitch on the website was fixed automatically.",3600); },3500); }
+  }catch(e){}
+  /* ===== Option 2: error reports ki queue (Website Doctor ke liye) ===== */
+  var EQ=[]; try{EQ=JSON.parse(L("hcErrQ")||"[]");if(!Array.isArray(EQ))EQ=[]}catch(e){EQ=[]}
+  var seenErr={};
+  function queue(kind,msg,page){
+    try{
+      var key=kind+"|"+msg;
+      if(seenErr[key])return; seenErr[key]=1;
+      EQ.push({ts:Date.now(),kind:kind,msg:String(msg||"").slice(0,300),page:String(page||"").slice(0,120)});
+      if(EQ.length>10)EQ=EQ.slice(EQ.length-10);
+      S("hcErrQ",JSON.stringify(EQ));
+    }catch(e){}
+  }
+  window.addEventListener("error",function(ev){
+    try{ queue("error",(ev.message||"Script error")+(ev.lineno?" @line "+ev.lineno:""),location.hash||location.pathname); }catch(e){}
+  });
+  window.addEventListener("unhandledrejection",function(ev){
+    try{ var r=ev.reason; queue("error","Promise: "+((r&&(r.message||r.code))||String(r||"rejected")),location.hash||location.pathname); }catch(e){}
+  });
+  function flush(){
+    try{
+      if(!EQ.length)return;
+      if(typeof window.__errReport!=="function")return;
+      var batch=EQ.slice(0,5);
+      window.__errReport(batch).then(function(ok){
+        if(ok){ EQ=EQ.slice(batch.length); S("hcErrQ",JSON.stringify(EQ)); }
+      }).catch(function(){});
+    }catch(e){}
+  }
+  setTimeout(flush,15000); setTimeout(flush,30000); setTimeout(flush,60000);
+  /* kharab saved settings ka khamosh ilaaj (bina reload) */
+  ["eg23vip","eg23wm","eg23verified"].forEach(function(k){
+    try{var v=L(k);if(v)JSON.parse(v)}catch(e){S(k,null);log("corrupt pref reset: "+k)}
+  });
+  function entered(){ return !document.getElementById("gate"); }
+  function lgStuck(){ var w=document.getElementById("lgWait"); return !!(w&&!w.hidden); }
+  function dashEmpty(){
+    var hc=document.getElementById("homeCards"); if(!hc) return false;
+    return hc.querySelectorAll(".ycard").length===0;
+  }
+  function testActive(){
+    try{
+      var q=document.getElementById("qtext");
+      if(q&&q.textContent&&q.textContent.trim()) return true;
+      if(document.querySelector(".rexOv,#rexOv")) return true;
+    }catch(e){}
+    return false;
+  }
+  function canRepair(){
+    try{
+      if(SS("hcFixTry")==="1") return false;               /* is session me aik dafa ho chuka */
+      var last=+L("hcFixLast")||0;
+      if(Date.now()-last<6*3600*1000) return false;         /* 6 ghante me aik dafa se zyada nahi */
+      if(L("hcAuto")==="0") return false;                    /* owner ne Doctor se Auto Repair band kiya hai */
+      if(navigator.onLine===false) return false;            /* offline me repair bekaar hai */
+    }catch(e){}
+    return true;
+  }
+  function found(what){
+    if(canRepair()){ repair(what); }
+    else{ try{queue("check",what+" (repair guard on tha)","auto health check")}catch(e){} }
+  }
+  function repair(what){
+    log("auto repair: "+what);
+    try{queue("repair",what,"auto health check")}catch(e){}
+    try{SSS("hcFixTry","1");SSS("hcFixedMsg","1");S("hcFixLast",String(Date.now()))}catch(e){}
+    toast("\u{1F6E0} A glitch was found \u2014 the website is fixing itself, one moment\u2026",4000);
+    setTimeout(function(){
+      if(typeof window.__egUpdateFix==="function"){ window.__egUpdateFix(); return; }
+      /* fallback: agar Update & Fix wala hisa hi load na hua ho */
+      try{ if(window.caches&&caches.keys) caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}); }catch(e){}
+      try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.unregister()}catch(e){}})}); }catch(e){}
+      setTimeout(function(){ try{ location.replace(location.pathname+"?upd="+Date.now()+location.hash); }catch(e){ location.reload(); } },700);
+    },1400);
+  }
+  var emptyHits=0;
+  function check(final){
+    try{
+      if(document.visibilityState&&document.visibilityState!=="visible") return;
+      if(!entered()) return;                 /* login screen par check nahi */
+      if(testActive()) return;               /* test ke darmiyan kabhi nahi */
+      if(lgStuck()&&final){ found("loading screen stuck"); return; }
+      if(dashEmpty()){
+        emptyHits++;
+        if(final&&emptyHits>=2){ found("dashboard empty (bank/cards did not load)"); }
+        return;
+      }
+      if(final&&typeof window.__folderGroups!=="function"){
+        found("core part of the website did not load");
+      }
+    }catch(e){}
+  }
+  setTimeout(function(){ check(false); },12000);
+  setTimeout(function(){ check(true); },25000);
+})();
+</script>
+
+<script>
+/* ===== FEATURE EXTRAS: quizBox + Mistake Book + Weak report + Daily/Grand/Leaderboard cards ===== */
+(function(){
+"use strict";
+function featOn(n){try{return !window.__feat||window.__feat(n)}catch(e){return true}}
+function L(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function S(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+var LET=["A","B","C","D","E","F"];
+var QB=null,qbTimerInt=null;
+function qbCleanup(){if(qbTimerInt){clearInterval(qbTimerInt);qbTimerInt=null}}
+function qbClose(){qbCleanup();if(QB){QB.remove();QB=null}}
+function qbBtn(txt,primary){return '<button type="button" class="qbBtn" style="border-radius:999px;padding:12px 20px;font:800 14.5px system-ui,sans-serif;cursor:pointer;'+(primary?'background:linear-gradient(135deg,#0B1E3D,#12325E);color:#FFB03A;border:1.5px solid #C9A227':'background:#fff;color:#0B1E3D;border:1.5px solid #C9A227')+'">'+txt+'</button>'}
+function qbCard(html){return '<div style="background:#fff;border:1px solid #E5DCC8;border-radius:16px;padding:16px;box-shadow:0 4px 14px rgba(11,30,61,.06)">'+html+'</div>'}
+function qbShell(title){
+  qbClose();
+  var ov=document.createElement("div");ov.id="quizBox";
+  ov.style.cssText="position:fixed;inset:0;z-index:100004;background:#F6F1E7;overflow:auto;font-family:system-ui,sans-serif;color:#13222D";
+  ov.innerHTML='<div style="max-width:640px;margin:0 auto;padding:16px">'
+   +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+   +'<div style="font:800 19px system-ui,sans-serif;color:#0B1E3D">'+esc(title)+'</div>'
+   +'<div style="display:flex;gap:8px;align-items:center"><span id="qbTimer" style="font:800 14px system-ui,sans-serif;color:#8A6D1F"></span>'
+   +'<button type="button" id="qbX" style="border:1.5px solid #C9A227;background:#fff;border-radius:999px;padding:7px 14px;font:700 13px system-ui,sans-serif;cursor:pointer">\u2715 Close</button></div></div>'
+   +'<div id="qbBody" style="margin-top:12px"></div></div>';
+  document.body.appendChild(ov);QB=ov;
+  ov.querySelector("#qbX").addEventListener("click",function(){qbClose()});
+  return ov;
+}
+function practice(items,title,onDone){
+  var ov=qbShell(title),body=ov.querySelector("#qbBody"),pos=0,right=0,rightQs=[];
+  function render(){
+    if(pos>=items.length){
+      body.innerHTML=qbCard('<div style="text-align:center"><div style="font:800 26px system-ui,sans-serif;color:#0B1E3D">'+right+' / '+items.length+' correct</div>'
+       +'<p style="color:#5A6B82;font:600 13.5px system-ui,sans-serif">Practice complete!</p>'
+       +'<div style="margin-top:10px">'+qbBtn("Close",true)+'</div></div>');
+      body.querySelector(".qbBtn").addEventListener("click",function(){qbClose();if(onDone)onDone(rightQs)});
+      return;
+    }
+    var it=items[pos],answered=false;
+    var h='<div style="font:700 12px system-ui,sans-serif;color:#8A6D1F">Question '+(pos+1)+' / '+items.length+(it.sub?' \u00b7 '+esc(it.sub):'')+'</div>'
+     +'<div style="font:700 17px/1.5 system-ui,sans-serif;margin:8px 0 12px">'+esc(it.q)+'</div>';
+    it.opts.forEach(function(o,i){h+='<button type="button" class="qbOpt" data-i="'+i+'" style="display:flex;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid #D9C58A;border-radius:12px;padding:11px 13px;margin-bottom:8px;font:600 15px system-ui,sans-serif;cursor:pointer"><b>'+LET[i]+'.</b><span>'+esc(o)+'</span></button>'});
+    h+='<div id="qbNext" style="margin-top:6px;text-align:right"></div>';
+    body.innerHTML=qbCard(h);
+    body.querySelectorAll(".qbOpt").forEach(function(b){
+      b.addEventListener("click",function(){
+        if(answered)return;answered=true;
+        var i=+b.getAttribute("data-i");
+        body.querySelectorAll(".qbOpt").forEach(function(x,xi){
+          if(xi===it.ans){x.style.background="#E5F6EC";x.style.borderColor="#12994F"}
+          else if(xi===i){x.style.background="#FDECEA";x.style.borderColor="#D64541"}
+          x.style.cursor="default";
+        });
+        if(i===it.ans){right++;rightQs.push(it.q)}
+        body.querySelector("#qbNext").innerHTML=qbBtn(pos+1>=items.length?"See result":"Next question \u2192",true);
+        body.querySelector("#qbNext .qbBtn").addEventListener("click",function(){pos++;render()});
+      });
+    });
+  }
+  render();
+}
+function exam(items,title,opt,onDone){
+  opt=opt||{};var mins=opt.mins||90,neg=opt.neg||0;
+  var ov=qbShell(title),body=ov.querySelector("#qbBody"),tm=ov.querySelector("#qbTimer");
+  var pos=0,answers={},started=Date.now(),left=mins*60,done=false;
+  function fmt(s){var m=Math.floor(s/60),ss=s%60;return (m<10?"0":"")+m+":"+(ss<10?"0":"")+ss}
+  tm.textContent="\u23F1 "+fmt(left);
+  qbTimerInt=setInterval(function(){left--;if(left<=0){qbCleanup();finish(true)}else{tm.textContent="\u23F1 "+fmt(left)}},1000);
+  function render(){
+    var it=items[pos];
+    var h='<div style="display:flex;justify-content:space-between;font:700 12px system-ui,sans-serif;color:#8A6D1F"><span>Question '+(pos+1)+' / '+items.length+'</span><span>Answered: '+Object.keys(answers).length+'</span></div>'
+     +'<div style="font:700 17px/1.5 system-ui,sans-serif;margin:8px 0 12px">'+esc(it.q)+'</div>';
+    it.opts.forEach(function(o,i){var sel=answers[pos]===i;h+='<button type="button" class="qbOpt" data-i="'+i+'" style="display:flex;gap:10px;width:100%;text-align:left;background:'+(sel?'#FFF3D6':'#fff')+';border:1.5px solid '+(sel?'#C9A227':'#D9C58A')+';border-radius:12px;padding:11px 13px;margin-bottom:8px;font:600 15px system-ui,sans-serif;cursor:pointer"><b>'+LET[i]+'.</b><span>'+esc(o)+'</span></button>'});
+    h+='<div style="display:flex;justify-content:space-between;margin-top:8px"><span>'+(pos>0?qbBtn("\u2190 Previous"):"")+'</span><span>'+(pos+1<items.length?qbBtn("Next \u2192",true):qbBtn("\u2713 Submit",true))+'</span></div>';
+    body.innerHTML=qbCard(h);
+    body.querySelectorAll(".qbOpt").forEach(function(b){b.addEventListener("click",function(){answers[pos]=+b.getAttribute("data-i");render()})});
+    body.querySelectorAll(".qbBtn").forEach(function(b){
+      b.addEventListener("click",function(){
+        var t=b.textContent;
+        if(t.indexOf("Previous")>=0){pos--;render()}
+        else if(t.indexOf("Submit")>=0){finish(false)}
+        else{pos++;render()}
+      });
+    });
+  }
+  function finish(auto){
+    if(done)return;done=true;qbCleanup();
+    var right=0,wrong=0,review=[];
+    items.forEach(function(it,i){var mine=(answers[i]==null?-1:answers[i]);if(mine===it.ans)right++;else if(mine>=0)wrong++;review.push({q:it.q,opts:it.opts,mine:mine,ans:it.ans})});
+    var score=Math.max(0,right-wrong*neg),pct=items.length?Math.round(score/items.length*100):0,pass=pct>=50;
+    var secs=Math.round((Date.now()-started)/1000);
+    var rh="";review.forEach(function(r,i){rh+='<div style="border-top:1px solid #EFE7D2;padding:9px 0"><div style="font:700 14.5px/1.45 system-ui,sans-serif">'+(i+1)+'. '+esc(r.q)+'</div><div style="font:600 13px system-ui,sans-serif;color:'+(r.mine===r.ans?'#12994F':'#D64541')+'">Your answer: '+(r.mine>=0?LET[r.mine]+'. '+esc(r.opts[r.mine]):"(none)")+' \u00b7 Correct: '+LET[r.ans]+'. '+esc(r.opts[r.ans])+'</div></div>'});
+    body.innerHTML=qbCard('<div style="text-align:center"><div style="font:800 34px system-ui,sans-serif;color:#0B1E3D">'+pct+'%</div>'
+     +'<div style="font:800 15px system-ui,sans-serif;color:'+(pass?'#12994F':'#D64541')+'">'+(pass?"\u2713 PASS":"\u2717 FAIL")+'</div>'
+     +'<p style="color:#5A6B82;font:600 13.5px system-ui,sans-serif">Correct '+right+' \u00b7 Wrong '+wrong+(neg?' \u00b7 Score after negative marking: '+score.toFixed(2):'')+' \u00b7 Total '+items.length+'<br>Time: '+fmt(secs)+'</p>'
+     +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px"><span id="qbPdf"></span><span id="qbClose2">'+qbBtn("Close",true)+'</span></div></div>')
+     +'<div style="margin-top:12px">'+qbCard('<div style="font:800 15px system-ui,sans-serif;color:#0B1E3D;margin-bottom:4px">Review \u2014 Correct Answers</div>'+rh)+'</div>';
+    var cfg={title:title,course:"",ts:Date.now(),secs:secs,pct:pct,right:right,total:items.length,items:review};
+    var pdfHost=body.querySelector("#qbPdf");
+    if(window.__egPdf&&pdfHost){pdfHost.innerHTML=qbBtn("\u{1F4C4} Record (PDF)");pdfHost.querySelector(".qbBtn").addEventListener("click",function(){window.__egPdf(cfg,true)})}
+    body.querySelector("#qbClose2 .qbBtn").addEventListener("click",function(){qbClose()});
+    if(onDone)onDone({pct:pct,right:right,wrong:wrong,total:items.length,secs:secs,cfg:cfg,items:items,answers:answers});
+  }
+  render();
+}
+window.__quizBox={practice:practice,exam:exam,close:qbClose};
+/* ---------- Mistake Book ---------- */
+function mLoad(){try{var a=JSON.parse(L("eg23mistakes")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+function mSave(a){S("eg23mistakes",JSON.stringify(a.slice(0,300)))}
+window.__mistakeAdd=function(items){
+  try{
+    if(!featOn("mistake")||!items||!items.length)return;
+    var a=mLoad(),seen={};a.forEach(function(x){seen[x.q]=1});
+    items.forEach(function(it){if(it&&it.q&&!seen[it.q]){a.unshift({q:it.q,opts:it.opts,ans:it.ans,sub:it.sub||"",ts:Date.now()});seen[it.q]=1}});
+    mSave(a);
+  }catch(e){}
+};
+function mistakeSection(host){
+  if(!featOn("mistake")&&!featOn("weak"))return;
+  if(host.querySelector("#mbSec"))return;
+  var sec=document.createElement("div");sec.id="mbSec";sec.style.cssText="margin-top:14px";
+  if(featOn("mistake")){
+    var a=mLoad(),box=document.createElement("div");
+    box.style.cssText="background:#fff;border:1.5px solid #D9C58A;border-radius:14px;padding:12px 14px";
+    box.innerHTML='<div style="font:800 16px system-ui,sans-serif;color:#0B1E3D">\u{1F4D5} Mistake Book <span style="color:#8A6D1F">('+a.length+' wrong questions)</span></div>'
+     +'<p style="font:600 12.5px system-ui,sans-serif;color:#5A6B82;margin:6px 0 10px">Questions you get wrong in tests are saved here automatically. When you answer one correctly in practice, it leaves the book.</p>'
+     +(a.length?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="mbGo" style="border-radius:999px;padding:10px 18px;font:800 13.5px system-ui,sans-serif;cursor:pointer;background:linear-gradient(135deg,#0B1E3D,#12325E);color:#FFB03A;border:1.5px solid #C9A227">\u25B6 Practice mistakes</button><button type="button" id="mbClr" style="border-radius:999px;padding:10px 18px;font:800 13.5px system-ui,sans-serif;cursor:pointer;background:#fff;color:#B3261E;border:1.5px solid #D64541">\u{1F5D1} Clear all</button></div>':'<div style="font:600 13px system-ui,sans-serif;color:#889">No mistakes yet \u2014 take a test and your wrong questions will appear here.</div>');
+    sec.appendChild(box);
+    var go=box.querySelector("#mbGo");
+    if(go)go.addEventListener("click",function(){
+      var items=mLoad();if(!items.length)return;
+      window.__quizBox.practice(items,"\u{1F4D5} Mistake Book",function(rightQs){
+        if(rightQs&&rightQs.length)mSave(mLoad().filter(function(x){return rightQs.indexOf(x.q)<0}));
+        var s=document.getElementById("mbSec");if(s)s.remove();
+      });
+    });
+    var clr=box.querySelector("#mbClr");
+    if(clr)clr.addEventListener("click",function(){mSave([]);var s=document.getElementById("mbSec");if(s)s.remove()});
+  }
+  if(featOn("weak")){
+    var wk=document.createElement("div");wk.id="wkSec";wk.style.cssText="margin-top:10px";
+    wk.innerHTML='<div style="background:#fff;border:1.5px solid #D9C58A;border-radius:14px;padding:12px 14px"><div style="font:800 16px system-ui,sans-serif;color:#0B1E3D">\u{1F4C9} Subject Report</div><div id="wkBody" style="font:600 13px system-ui,sans-serif;color:#5A6B82;margin-top:6px">Loading\u2026</div></div>';
+    sec.appendChild(wk);
+    if(window.__hxGetHist)window.__hxGetHist().then(function(l){
+      var g={};(l||[]).forEach(function(r){if(!r||!r.t)return;var x=g[r.t]||(g[r.t]={n:0,sum:0});x.n++;x.sum+=(+r.p||0)});
+      var arr=Object.keys(g).map(function(k){return {t:k,n:g[k].n,avg:Math.round(g[k].sum/g[k].n)}}).sort(function(a,b){return a.avg-b.avg}).slice(0,6);
+      var wb=wk.querySelector("#wkBody");if(!wb)return;
+      if(!arr.length){wb.textContent="No history yet \u2014 take your first test and the report will appear.";return}
+      wb.innerHTML=arr.map(function(x){
+        var col=x.avg>=60?"#12994F":x.avg>=40?"#D9930D":"#D64541";
+        return '<div style="margin:7px 0"><div style="display:flex;justify-content:space-between"><span style="color:#13222D">'+esc(x.t)+'</span><b style="color:'+col+'">'+x.avg+'%'+(x.avg<50?' \u00b7 Weak':'')+'</b></div><div style="height:7px;background:#EFE7D2;border-radius:99px;margin-top:3px"><div style="height:7px;width:'+x.avg+'%;background:'+col+';border-radius:99px"></div></div><div style="font-size:11px;color:#889">'+x.n+' attempts</div></div>';
+      }).join("");
+    }).catch(function(){});
+  }
+  host.appendChild(sec);
+}
+setInterval(function(){
+  try{var h=document.getElementById("dashCard");if(h&&!h.hidden&&h.children.length)mistakeSection(h)}catch(e){}
+},2500);
+/* ---------- Dashboard cards: Daily + Grand + Leaderboard ---------- */
+function todayStr(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dailyState(){try{return JSON.parse(L("eg23daily")||"{}")}catch(e){return{}}}
+function buildCards(){
+  var hc=document.getElementById("homeCards");if(!hc)return;
+  if(document.getElementById("featCards"))return;
+  if(!featOn("daily")&&!featOn("grand")&&!featOn("board"))return;
+  var wrap=document.createElement("div");wrap.id="featCards";
+  wrap.style.cssText="grid-column:1/-1;display:flex;flex-direction:column;gap:10px;margin-bottom:6px;width:100%";
+  var html="";
+  if(featOn("daily")){
+    var st=dailyState(),done=st.last===todayStr();
+    html+='<div style="background:linear-gradient(135deg,#0B1E3D,#12325E);border:1.5px solid #C9A227;border-radius:16px;padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
+     +'<div><div style="font:800 17px system-ui,sans-serif;color:#FFB03A">\u{1F525} Daily Challenge</div><div style="font:600 12.5px system-ui,sans-serif;opacity:.9">Today: 10 MCQs \u00b7 Streak: '+(st.streak||0)+' days'+(done?' \u00b7 Challenge done for today \u2713':'')+'</div></div>'
+     +(done?'<span style="font:800 13px system-ui,sans-serif;color:#4ADE80">\u2713 Done</span>':'<button type="button" id="fcDaily" style="border-radius:999px;padding:11px 20px;font:800 14px system-ui,sans-serif;cursor:pointer;background:#FFB03A;color:#0B1E3D;border:none">\u25B6 Start</button>')
+     +'</div>';
+  }
+  if(featOn("grand")){
+    html+='<div style="background:#fff;border:1.5px solid #C9A227;border-radius:16px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'
+     +'<div><div style="font:800 17px system-ui,sans-serif;color:#0B1E3D">\u{1F4DD} Grand Mock Test</div><div style="font:600 12.5px system-ui,sans-serif;color:#5A6B82">100 mixed MCQs \u00b7 90 minutes \u00b7 \u22120.25 negative marking for wrong answers</div></div>'
+     +'<button type="button" id="fcGrand" style="border-radius:999px;padding:11px 20px;font:800 14px system-ui,sans-serif;cursor:pointer;background:linear-gradient(135deg,#0B1E3D,#12325E);color:#FFB03A;border:1.5px solid #C9A227">\u25B6 Start</button></div>';
+  }
+  if(featOn("board")){
+    html+='<div style="background:#fff;border:1.5px solid #D9C58A;border-radius:16px;padding:14px 16px">'
+     +'<div style="font:800 17px system-ui,sans-serif;color:#0B1E3D">\u{1F3C6} Leaderboard \u2014 Top 10 this week</div>'
+     +'<div id="fcBoard" style="font:600 13px system-ui,sans-serif;color:#5A6B82;margin-top:6px">Loading\u2026</div></div>';
+  }
+  wrap.innerHTML=html;
+  hc.insertBefore(wrap,hc.firstChild);
+  var d=wrap.querySelector("#fcDaily");
+  if(d)d.addEventListener("click",function(){
+    if(!window.__quizPool)return;
+    var pool=window.__quizPool(10);if(!pool.length)return;
+    window.__quizBox.practice(pool,"\u{1F525} Daily Challenge",function(){
+      var st=dailyState(),today=todayStr(),yd=new Date();yd.setDate(yd.getDate()-1);
+      if(st.last!==today){st.streak=(st.last===todayStr(yd))?(st.streak||0)+1:1;st.last=today;S("eg23daily",JSON.stringify(st))}
+      var w=document.getElementById("featCards");if(w)w.remove();
+    });
+  });
+  var g=wrap.querySelector("#fcGrand");
+  if(g)g.addEventListener("click",function(){
+    if(!window.__quizPool)return;
+    var pool=window.__quizPool(100);if(pool.length<10)return;
+    window.__quizBox.exam(pool,"\u{1F4DD} Grand Mock Test",{mins:90,neg:0.25},function(res){
+      try{if(window.__hxAdd)window.__hxAdd({ts:Date.now(),t:"Grand Mock Test",a:res.right,n:res.total,p:res.pct,o:res.total,b:0,time:res.secs,subs:[]})}catch(e){}
+      try{if(window.__submitScore)window.__submitScore({title:"Grand Mock Test",pct:res.pct,right:res.right,total:res.total})}catch(e){}
+      try{if(window.__mistakeAdd){var wi=[];res.items.forEach(function(it,i){if(res.answers[i]!==it.ans)wi.push({q:it.q,opts:it.opts,ans:it.ans,sub:"Grand Mock"})});window.__mistakeAdd(wi,"Grand Mock Test")}}catch(e){}
+    });
+  });
+  var bd=wrap.querySelector("#fcBoard");
+  if(bd&&window.__leaderboard){
+    window.__leaderboard().then(function(rows){
+      var host=document.getElementById("fcBoard");if(!host)return;
+      if(!rows||!rows.length){host.textContent="No scores yet \u2014 take a test and reach the top!";return}
+      host.innerHTML=rows.map(function(r,i){
+        return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #EFE7D2"><span style="color:#13222D"><b style="color:#8A6D1F">'+(i+1)+'.</b> '+esc(r.name)+' <span style="color:#889;font-size:11.5px">'+esc(r.sid||"")+'</span></span><b style="color:#0B1E3D">'+r.best+'%</b></div>';
+      }).join("");
+    }).catch(function(){});
+  }
+}
+setInterval(function(){
+  try{
+    if(document.getElementById("gate"))return;
+    var hc=document.getElementById("homeCards");
+    if(hc&&hc.children.length)buildCards();
+  }catch(e){}
+},2500);
+})();
+
+</script>
+<style id="voiceSearchCss">
+#gsMic{flex:none;width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;font-size:19px;box-shadow:0 6px 16px rgba(201,162,39,.4);cursor:pointer;padding:0;line-height:1}
+#gsMic.on{animation:gsPulse 1.1s ease-in-out infinite}
+@keyframes gsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,90,60,.45)}50%{box-shadow:0 0 0 9px rgba(255,90,60,0)}}
+#gsListen{display:flex;align-items:center;gap:8px;width:fit-content;margin:10px auto 0;background:#0B1E3D;color:#FFD968;border-radius:999px;padding:7px 16px;font:700 13px system-ui,sans-serif}
+#gsListen[hidden]{display:none}
+#gsListen .gldot{width:9px;height:9px;border-radius:50%;background:#FF5A3C;box-shadow:0 0 0 5px rgba(255,90,60,.22);flex:none}
+</style>
+<script>
+/* ===== VOICE SEARCH (2026-11-24): Search MCQs me mic — bol kar search.
+   AUTO-DETECT: pehle English (en-US) sunta hai; result na mile to KHUD Urdu (ur-PK)
+   try karta hai — student ko language select nahi karni padti.
+   Sirf un browsers me jahan SpeechRecognition hai; warna button banta hi nahi. ===== */
+(function(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  var tries=0;
+  var iv=setInterval(function(){
+    tries++;
+    var inp=document.getElementById("gsIn");
+    if(!inp){ if(tries>90)clearInterval(iv); return; }
+    clearInterval(iv);
+    if(document.getElementById("gsMic"))return;
+    var row=inp.parentNode; if(!row)return;
+    var mic=document.createElement("button");
+    mic.type="button"; mic.id="gsMic"; mic.textContent="\u{1F3A4}"; mic.setAttribute("aria-label","Voice search");
+    var clr=document.getElementById("gsClr");
+    row.insertBefore(mic,clr||null);
+    var pill=document.createElement("div");
+    pill.id="gsListen"; pill.hidden=true;
+    pill.innerHTML='<span class="gldot"></span><span id="gsListenTx">Listening\u2026 speak now</span>';
+    var card=document.getElementById("gsrch");
+    if(card&&card.children.length>1)card.insertBefore(pill,card.children[1]); else row.parentNode.appendChild(pill);
+    var rec=null,listening=false,attempt=0,got=false,stopped=false;
+    var LANGS=["en-US","ur-PK"];
+    function pillShow(tx){var t=document.getElementById("gsListenTx");if(t)t.textContent=tx;pill.hidden=false}
+    function pillHide(){pill.hidden=true}
+    function fire(){try{inp.dispatchEvent(new Event("input",{bubbles:true}))}catch(e){}}
+    function start(att){
+      attempt=att; got=false;
+      try{rec=new SR()}catch(e){listening=false;return}
+      rec.lang=LANGS[att]; rec.interimResults=true; rec.maxAlternatives=1;
+      rec.onresult=function(ev){
+        var txt="",fin=false,i;
+        for(i=ev.resultIndex;i<ev.results.length;i++){txt+=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin=true}
+        txt=txt.trim(); if(!txt)return;
+        got=true; inp.value=txt; fire();
+        if(fin){try{rec.stop()}catch(e){}}
+      };
+      rec.onerror=function(ev){
+        if(ev.error==="not-allowed"||ev.error==="service-not-allowed"){stopped=true;pillShow("Microphone permission is needed for voice search");setTimeout(pillHide,2600)}
+      };
+      rec.onend=function(){
+        listening=false; mic.classList.remove("on");
+        if(stopped){stopped=false;pillHide();return}
+        if(!got&&attempt===0){start(1);return}
+        if(!got){pillShow("Nothing heard \u2014 tap the mic and try again");setTimeout(pillHide,2200)}
+        else pillHide();
+      };
+      listening=true; mic.classList.add("on");
+      pillShow(att===0?"Listening\u2026 speak now":"Listening\u2026 speak now (Urdu)");
+      try{rec.start()}catch(e){listening=false;mic.classList.remove("on");pillHide()}
+    }
+    mic.addEventListener("click",function(){
+      if(listening){stopped=true;try{rec&&rec.stop()}catch(e){}return}
+      stopped=false; start(0);
+    });
+  },1000);
+})();
+</script>
+
 </body></html>
