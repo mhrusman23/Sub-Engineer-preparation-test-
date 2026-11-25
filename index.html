@@ -4180,11 +4180,11 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
 try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);SEO_CFG=s.exists()?s.data():null;SHOW_INST=!(s.exists()&&s.data().showInstall===false);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
 /* ---------- VIP Premium lock: owner Menu se folders/subjects premium kare, sirf VIP Gmail walon ko khule ---------- */
-let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false};
-try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq}}catch(_){}
+let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false,fullMcq:false};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq}}catch(_){}
 function vipApply(x){
   if(!x||typeof x!=="object")return;
-  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq};
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq};
   try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
 }
 try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
@@ -4219,6 +4219,10 @@ function vipGuard(course,subject){if(vipLocked(course,subject)){vipShow(subject|
 window.__vipGuard=vipGuard;
 window.__pdfMcqGuard=function(){
   if(VIP.on&&VIP.pdfMcq&&!vipMember()){vipShow("Record with MCQs (PDF)");return false}
+  return true;
+};
+window.__fullMcqGuard=function(){
+  if(VIP.on&&VIP.fullMcq&&!vipMember()){vipShow("Full MCQs (PDF)");return false}
   return true;
 };
 window.__vipMarked=function(course,subject){
@@ -4570,6 +4574,11 @@ function openVip(){
   pdfRow.appendChild(pdfCb);
   const pdfTx=el("span","","");pdfTx.innerHTML="<b>\u{1F4C4} 'Record with MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download this PDF; other students will see the VIP sheet. The 'Only Record' PDF stays free for everyone.</small>";pdfRow.appendChild(pdfTx);
   box.appendChild(pdfRow);
+  const fullRow=el("label");fullRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const fullCb=document.createElement("input");fullCb.type="checkbox";fullCb.id="vipFullMcq";fullCb.style.cssText="width:20px;height:20px;flex:none";
+  fullRow.appendChild(fullCb);
+  const fullTx=el("span","","");fullTx.innerHTML="<b>\u{1F4E5} 'Full MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download the Full MCQs PDF of any subject; other students will see the VIP sheet.</small>";fullRow.appendChild(fullTx);
+  box.appendChild(fullRow);
   function checkList(title,items,cls){
     box.appendChild(el("div","label",title));
     const sc=el("div");sc.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;max-height:210px;overflow:auto;margin-bottom:6px";
@@ -4596,7 +4605,7 @@ function openVip(){
   const sv=el("button","btn primary","\u{1F4BE} Save VIP settings");sv.type="button";srow.appendChild(sv);
   const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
   function fillForm(){
-    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;
+    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;
     box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
     box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
     emTx.value=(VIP.emails||[]).join("\n");
@@ -4606,7 +4615,7 @@ function openVip(){
   sv.onclick=async()=>{
     sv.disabled=true;st.textContent="Saving\u2026";
     const data={
-      on:onCb.checked,pdfMcq:pdfCb.checked,
+      on:onCb.checked,pdfMcq:pdfCb.checked,fullMcq:fullCb.checked,
       courses:Array.from(box.querySelectorAll(".vipCourse:checked")).map(function(cb){return cb.value}),
       subjects:Array.from(box.querySelectorAll(".vipSubject:checked")).map(function(cb){return cb.value}),
       emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
@@ -9707,7 +9716,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
       });
       list.innerHTML=html||'<div class="acc-empty">No subject found. Try another name.</div>';
       list.querySelectorAll(".acc-btn").forEach(function(b){b.addEventListener("click",function(){go(b.getAttribute("data-name"))})});
-      list.querySelectorAll(".acc-full").forEach(function(b){b.addEventListener("click",function(){var nm=b.getAttribute("data-name");var mk=window.__vipMarked&&window.__vipMarked(cur==="acca"?"ACCA":"CA",nm);if(mk&&window.__vipGuard&&!window.__vipGuard(cur==="acca"?"ACCA":"CA",nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,cur==="acca"?"ACCA":"CA")})});
+      list.querySelectorAll(".acc-full").forEach(function(b){b.addEventListener("click",function(){if(window.__fullMcqGuard&&!window.__fullMcqGuard())return;var nm=b.getAttribute("data-name");var mk=window.__vipMarked&&window.__vipMarked(cur==="acca"?"ACCA":"CA",nm);if(mk&&window.__vipGuard&&!window.__vipGuard(cur==="acca"?"ACCA":"CA",nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,cur==="acca"?"ACCA":"CA")})});
     }
     function go(name){
       var start=document.getElementById("start");
@@ -11008,7 +11017,7 @@ body.acNewMode2 #homeCards .ycard:not(.add){display:none!important}
       b.addEventListener("click",function(){if(window.__openRealExam)window.__openRealExam(b.getAttribute("data-nm2"),curCourseName)});
     });
     listEl.querySelectorAll(".cc2Full").forEach(function(b){
-      b.addEventListener("click",function(){var nm=b.getAttribute("data-nm3");var mk=window.__vipMarked&&window.__vipMarked(curCourseName,nm);if(mk&&window.__vipGuard&&!window.__vipGuard(curCourseName,nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,curCourseName)});
+      b.addEventListener("click",function(){if(window.__fullMcqGuard&&!window.__fullMcqGuard())return;var nm=b.getAttribute("data-nm3");var mk=window.__vipMarked&&window.__vipMarked(curCourseName,nm);if(mk&&window.__vipGuard&&!window.__vipGuard(curCourseName,nm))return;if(window.__egFullPdf)window.__egFullPdf(nm,curCourseName)});
     });
   }
   function yvOpen(){var yv=document.getElementById("yearView");return !!(yv&&!yv.hidden)}
