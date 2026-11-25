@@ -20,6 +20,7 @@ h2{font-size:20px;margin:30px 0 8px}
 .intro{font-size:15.5px;color:#33475C}
 .btn{display:inline-block;background:#1d4ed8;color:#fff!important;text-decoration:none;font-weight:800;padding:13px 26px;border-radius:12px;margin:14px 0 4px}
 .links a{display:block;padding:5px 0;font-size:15.5px}
+.links a.nw::after{content:" \2022 NEW";color:#B8860B;font-weight:800;font-size:10.5px}
 .foot{margin-top:36px;font-size:13px;color:#5A6B7E}
 </style>
 </head>
@@ -28,6 +29,7 @@ h2{font-size:20px;margin:30px 0 8px}
 <h1>Past Papers &amp; Solved MCQs for All Subjects</h1>
 <p class="intro">Choose a past paper or subject — <strong>Civil, Electrical, Mechanical, IT, ACCA, CA</strong> and <strong>General Knowledge</strong>. Each page has solved MCQs with correct answers; the app has the complete tests.</p>
 <a class="btn" href="/">Open the app</a>
+<div id="hubGroups">
 <h2>ACCA subject MCQs</h2>
 <div class="links">
 <a href="/papers/acca-mcqs.html">ACCA MCQs (PPSC)</a>
@@ -286,6 +288,52 @@ h2{font-size:20px;margin:30px 0 8px}
 <a href="/papers/css-law-mcqs.html">CSS Law MCQs (CSS &amp; PMS)</a>
 <a href="/papers/css-sociology-mcqs.html">CSS Sociology MCQs (CSS &amp; PMS)</a>
 </div>
+</div>
 <div class="foot"><a href="/about.html">About</a> &middot; <a href="/privacy-policy.html">Privacy Policy</a> &middot; <a href="/contact.html">Contact</a></div>
+<script>
+/* Auto Papers Hub: website ki taza subjects list (sitedata/hub) se khud update.
+   Naya subject pehle app ke test se jurta hai; us ka paper page mojood ho to
+   link khud paper page par chala jata hai. List na mile to neeche wali
+   static list hi rehti hai. */
+(function(){
+  var HUBU="https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(default)/documents/sitedata/hub?key=AIzaSyCKBEzgDUfbvPODuCBzMoNaDIVTV6ryb8A";
+  function sv(f){return (f&&f.stringValue)||""}
+  function render(groups){
+    var host=document.getElementById("hubGroups");if(!host)return;
+    var baked={};Array.prototype.forEach.call(host.querySelectorAll("a"),function(a){baked[a.getAttribute("href")]=1});
+    var total=0;groups.forEach(function(g){total+=g.links.length});
+    if(!groups.length||total<1)return;
+    var frag=document.createDocumentFragment(),jobs=[];
+    groups.forEach(function(g){
+      var h=document.createElement("h2");h.textContent=g.title;frag.appendChild(h);
+      var d=document.createElement("div");d.className="links";
+      g.links.forEach(function(L){
+        var a=document.createElement("a");a.textContent=L.t;
+        if(baked[L.p]){a.href=L.p}
+        else{a.href=L.a;a.className="nw";jobs.push({a:a,p:L.p,p2:L.p2})}
+        d.appendChild(a);
+      });
+      frag.appendChild(d);
+    });
+    host.textContent="";host.appendChild(frag);
+    jobs.forEach(function(jb){
+      fetch(jb.p,{method:"HEAD"}).then(function(r){
+        if(r.ok){jb.a.href=jb.p;return null}
+        return jb.p2?fetch(jb.p2,{method:"HEAD"}):null;
+      }).then(function(r2){if(r2&&r2.ok)jb.a.href=jb.p2}).catch(function(){});
+    });
+  }
+  fetch(HUBU).then(function(r){return r.json()}).then(function(j){
+    var f=j&&j.fields;if(!f||!f.groups||!f.groups.arrayValue)return;
+    var groups=f.groups.arrayValue.values.map(function(gv){
+      var gf=gv.mapValue.fields||{};
+      return {title:sv(gf.title),links:((gf.links&&gf.links.arrayValue&&gf.links.arrayValue.values)||[]).map(function(lv){
+        var lf=lv.mapValue.fields||{};return {t:sv(lf.t),p:sv(lf.p),p2:sv(lf.p2),a:sv(lf.a)};
+      })};
+    });
+    render(groups);
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>
