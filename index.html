@@ -4172,7 +4172,7 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
     const sc=document.getElementById("seoInfo");
     if(sc&&SEO_CFG){
       if(SEO_CFG.seoOn===false)sc.setAttribute("data-off","1");else sc.removeAttribute("data-off");
-      const t=String(SEO_CFG.seoTitle||"").trim(),b=String(SEO_CFG.seoBody||"").trim();
+      const t0=String(SEO_CFG.seoTitle||"").trim(),b0=String(SEO_CFG.seoBody||"").trim(),staleTxt=/coming soon/i.test(b0)||/ppsc civil/i.test(t0),t=staleTxt?"":t0,b=staleTxt?"":b0;
       const tt=document.getElementById("seoT");if(tt&&t)tt.textContent=t;
       const bb=document.getElementById("seoB");
       if(bb&&b){bb.textContent="";b.split(/\n\s*\n/).forEach(x=>{x=x.trim();if(!x)return;const p=document.createElement("p");p.textContent=x;bb.appendChild(p)})}
@@ -12595,4 +12595,861 @@ body{top:0!important}
 })();
 </script>
 
+<style id="crispCss">
+/* Crisp fix (2026-11-24): cards par backdrop blur + 76% translucent background se poori site dhundli (blur) lagti thi — blur khatam, card solid, decorative orbs band */
+.card,.sheet,.hstat,.hstats>*,.ybar,#adm .tabs,#fitNav,.kmenu,.mdch{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.card{background-color:var(--panel)}
+.px-orbs{display:none!important}
+.px-aurora{opacity:.4!important}
+#userbar,#appmenu{backdrop-filter:blur(4px)!important;-webkit-backdrop-filter:blur(4px)!important}
+</style>
+<style id="engLabCss">
+.englab{position:fixed;inset:0;z-index:100005;background:#F6F1E7;color:#12233F;overflow-y:auto;font-family:system-ui,sans-serif}
+.elhd{position:sticky;top:0;background:linear-gradient(135deg,#0B1E3D,#123063);color:#FFD964;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #C9A227;z-index:2}
+.elt{font:800 18px system-ui}
+.elx{background:#C9A227;color:#12233F;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}
+.elbd{max-width:760px;margin:0 auto;padding:16px}
+.elwotd{background:#FFF7DD;border:1.5px solid #C9A227;border-radius:12px;padding:10px 12px;font:14px system-ui;margin-bottom:12px}
+.elgrid{display:grid;gap:10px}
+.elgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eltile{display:block;width:100%;text-align:left;background:#fff;border:2px solid #C9A227;border-radius:14px;padding:14px;cursor:pointer;margin-bottom:10px}
+.elic{font-size:26px;display:block}
+.elt1{font:800 16px system-ui;color:#0B1E3D;display:block;margin-top:2px}
+.elt2{font:13px system-ui;color:#5A6B85;display:block;margin-top:2px}
+.elnote{font:13px system-ui;color:#5A6B85;margin:8px 0;line-height:1.5}
+.elsearch{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.elin{flex:1;min-width:180px;padding:12px;border:2px solid #C9A227;border-radius:10px;font:15px system-ui}
+.elbtn{background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;border:none;border-radius:10px;padding:11px 16px;font:700 14px system-ui;cursor:pointer;margin:6px 4px 6px 0}
+.elbtn:disabled{opacity:.55}
+.elbtn2{background:#0B1E3D;color:#FFD964;border:none;border-radius:10px;padding:10px 14px;font:700 13px system-ui;cursor:pointer;margin:6px 4px 6px 0}
+.elchip{background:#fff;border:1.5px solid #C9A227;border-radius:999px;padding:5px 11px;font:13px system-ui;cursor:pointer;margin:2px}
+.elazhd{font:700 14px system-ui;margin:14px 0 6px;color:#0B1E3D}
+.elaz{display:flex;flex-wrap:wrap}
+.elword{font:800 22px system-ui;color:#0B1E3D;margin:14px 0 4px}
+.elpos{font:italic 600 13px system-ui;color:#0B7A3E}
+.elph{font:14px system-ui;color:#5A6B85}
+.elsay{background:#0B7A3E;color:#fff;border:none;border-radius:8px;padding:6px 10px;font:700 12px system-ui;cursor:pointer}
+.elpos2{font:800 13px system-ui;color:#0B1E3D;margin-top:10px;text-transform:capitalize}
+.eldef{font:14.5px/1.55 system-ui;margin:3px 0}
+.elur{font:700 15px system-ui;color:#0B7A3E;margin:4px 0}
+.elex{font:italic 13.5px system-ui;color:#5A6B85}
+.elsyn{font:13px system-ui;color:#5A6B85}
+.elqhd{font:800 14px system-ui;color:#0B1E3D;margin:8px 0}
+.elpass{background:#fff;border:1.5px solid #E3D9BE;border-radius:12px;padding:12px;font:14.5px/1.65 system-ui;white-space:pre-wrap;margin:8px 0}
+.elq{font:700 15.5px/1.5 system-ui;margin:12px 0 8px;color:#12233F}
+.elopt{display:block;width:100%;text-align:left;background:#fff;border:2px solid #D8CFB2;border-radius:10px;padding:11px 13px;font:14.5px system-ui;cursor:pointer;margin:6px 0}
+.elopt.ok{background:#DFF5E3;border-color:#0B7A3E}
+.elopt.bad{background:#FDE3E3;border-color:#C0392B}
+.elopt.sel{background:#FFF3C4;border-color:#C9A227}
+.elresult{background:#0B1E3D;color:#FFD964;border-radius:14px;padding:18px;font:16px/1.7 system-ui;text-align:center;margin:12px 0}
+.elcard{background:#fff;border:1.5px solid #E3D9BE;border-radius:14px;padding:14px;margin:10px 0}
+.elsh{font:800 15px system-ui;color:#0B1E3D;margin:16px 0 6px}
+.elta{width:100%;box-sizing:border-box;border:2px solid #C9A227;border-radius:10px;padding:10px;font:14.5px/1.6 system-ui;background:#FFFDF5}
+.elmodel{background:#FFF7DD;border:1.5px dashed #C9A227;border-radius:10px;padding:10px;font:13.5px/1.6 system-ui;white-space:pre-wrap;margin-top:8px}
+.eltimer{font:800 26px system-ui;color:#0B1E3D;margin:8px 0}
+.eltimer2{font:800 15px system-ui;color:#C0392B}
+</style>
+<script>
+/* ================= English Lab: Dictionary + Skills Practice + IELTS Full Mock (A to Z) ================= */
+(function(){
+"use strict";
+function $(s,r){return (r||document).querySelector(s)}
+function ce(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+/* ---------- built-in IELTS dictionary (offline) ---------- */
+var WORDS=[
+["abandon","verb","to leave someone or something completely","چھوڑ دینا","They had to abandon the car in the snow."],
+["accurate","adjective","correct and exact","درست","The information must be accurate."],
+["achieve","verb","to succeed in reaching a goal","حاصل کرنا","You can achieve your goals with hard work."],
+["acquire","verb","to get or obtain something","حاصل کرنا","He acquired a new skill."],
+["adapt","verb","to change to fit new conditions","ڈھل جانا","Animals adapt to their environment."],
+["adequate","adjective","enough for what is needed","کافی","The food was adequate for everyone."],
+["advocate","verb","to publicly support an idea","حمایت کرنا","She advocates free education."],
+["allocate","verb","to give something for a special purpose","مختص کرنا","The government allocated funds for schools."],
+["ambiguous","adjective","unclear, having more than one meaning","مبہم","His answer was ambiguous."],
+["annual","adjective","happening once every year","سالانہ","The annual report is published in June."],
+["apparent","adjective","clear and easy to see","واضح","It was apparent that he was tired."],
+["approach","noun","a way of dealing with something","طریقہ کار","We need a new approach to the problem."],
+["appropriate","adjective","suitable for a situation","مناسب","Wear appropriate clothes for the interview."],
+["approximate","adjective","almost correct, not exact","تقریباً","The approximate cost is 500 dollars."],
+["aspect","noun","one part or feature of something","پہلو","We must consider every aspect of the plan."],
+["assess","verb","to judge or measure the value or quality","جانچنا","The teacher will assess your work."],
+["assign","verb","to give someone a task","سونپنا","The manager assigned the task to Ali."],
+["assist","verb","to help someone","مدد کرنا","He assisted the old man across the road."],
+["assume","verb","to think something is true without proof","فرض کرنا","I assume you are coming tomorrow."],
+["authority","noun","the power to give orders or make decisions","اختیار","The police have the authority to stop cars."],
+["available","adjective","ready for use or able to be obtained","دستیاب","Tickets are still available."],
+["aware","adjective","knowing about something","آگاہ","She was not aware of the problem."],
+["benefit","noun","an advantage or helpful effect","فائدہ","Exercise has many health benefits."],
+["challenge","noun","a difficult task that tests ability","چیلنج","Learning English is a challenge."],
+["circumstance","noun","a condition or fact affecting a situation","حالات","Under no circumstances should you lie."],
+["clarify","verb","to make something clear","واضح کرنا","Please clarify your answer."],
+["collapse","verb","to fall down suddenly","گر جانا","The building collapsed in the earthquake."],
+["compensate","verb","to pay someone for loss or damage","معاوضہ دینا","The company compensated the workers."],
+["complex","adjective","having many parts, complicated","پیچیدہ","It is a complex problem."],
+["component","noun","one part of a larger whole","جز","Each component of the machine is important."],
+["comprehensive","adjective","complete, including everything","جامع","The book gives a comprehensive guide."],
+["concentrate","verb","to focus all attention on something","توجہ دینا","I cannot concentrate with this noise."],
+["concept","noun","an idea or principle","تصور","The concept of freedom is important."],
+["conclude","verb","to end or to reach a decision after thinking","نتیجہ نکالنا","We concluded that the plan would work."],
+["conduct","verb","to organise and carry out","انجام دینا","They conducted a survey of 500 students."],
+["confirm","verb","to state that something is true or definite","تصدیق کرنا","Please confirm your booking."],
+["conflict","noun","a serious disagreement","تنازعہ","There was a conflict between the two groups."],
+["consequence","noun","a result of something","نتیجہ","Every action has consequences."],
+["considerable","adjective","large in amount or importance","خاصا زیادہ","It cost a considerable amount of money."],
+["consistent","adjective","always behaving in the same way, regular","مستقل","She is consistent in her studies."],
+["consume","verb","to use up or eat/drink","استعمال کرنا","Cars consume a lot of fuel."],
+["contribute","verb","to give or add something","حصہ ڈالنا","Everyone contributed to the discussion."],
+["controversial","adjective","causing disagreement or argument","متنازعہ","It is a controversial topic."],
+["convenient","adjective","easy and suitable for you","آسان، سہولت والا","The shop is in a convenient location."],
+["conventional","adjective","traditional and usual","روایتی","He has conventional views."],
+["convert","verb","to change something into another form","تبدیل کرنا","They converted the house into flats."],
+["crucial","adjective","extremely important","انتہائی اہم","The next few weeks are crucial."],
+["culture","noun","the customs and beliefs of a group","ثقافت","Pakistan has a rich culture."],
+["decline","verb","to decrease or become worse","کم ہونا","Sales declined last year."],
+["demonstrate","verb","to show clearly","دکھانا","The teacher demonstrated the experiment."],
+["device","noun","a tool or machine made for a purpose","آلہ","A phone is a communication device."],
+["diverse","adjective","including many different types","متنوع","The class has diverse students."],
+["domestic","adjective","relating to one's own country or home","ملکی، گھریلو","Domestic flights are cheaper."],
+["dominant","adjective","most important or powerful","غالب","He has a dominant personality."],
+["efficient","adjective","working well without wasting time or energy","موثر","The new system is more efficient."],
+["eliminate","verb","to completely remove or get rid of","ختم کرنا","We must eliminate errors."],
+["emerge","verb","to appear or come out","ظاہر ہونا","New problems emerged."],
+["emphasis","noun","special importance given to something","زور","The course places emphasis on speaking."],
+["encounter","verb","to meet or face something unexpectedly","سامنا کرنا","We encountered many problems."],
+["enhance","verb","to improve the quality of something","بہتر بنانا","Practice will enhance your English."],
+["enormous","adjective","extremely large","بہت بڑا","An enormous amount of work is needed."],
+["ensure","verb","to make certain that something happens","یقینی بنانا","Please ensure the door is locked."],
+["environment","noun","the natural world around us","ماحول","We must protect the environment."],
+["establish","verb","to set up or start something","قائم کرنا","The school was established in 1990."],
+["estimate","verb","to roughly calculate or judge","اندازہ لگانا","They estimated the cost at 1,000 dollars."],
+["evidence","noun","facts that show something is true","ثبوت","There is evidence of life on Mars."],
+["expand","verb","to become larger or make larger","پھیلانا","The company plans to expand."],
+["factor","noun","something that influences a result","عامل","Price is an important factor."],
+["feature","noun","an important part or quality of something","خصوصیت","The main feature of the phone is its camera."],
+["flexible","adjective","able to change easily","لچکدار","Our plans are flexible."],
+["fluctuate","verb","to go up and down irregularly","اتار چڑھاؤ ہونا","Prices fluctuate daily."],
+["focus","verb","to give full attention to something","توجہ مرکوز کرنا","Focus on your goals."],
+["generate","verb","to produce or create","پیدا کرنا","Wind can generate electricity."],
+["global","adjective","relating to the whole world","عالمی","Climate change is a global problem."],
+["gradual","adjective","happening slowly over time","تدریجی","There was a gradual improvement."],
+["guarantee","verb","to promise that something will happen","ضمانت دینا","We guarantee quality."],
+["highlight","verb","to draw special attention to something","نمایاں کرنا","The report highlights the problem."],
+["identical","adjective","exactly the same","ایک جیسا","The two bags look identical."],
+["identify","verb","to recognise and name someone or something","شناخت کرنا","Can you identify this plant?"],
+["ignore","verb","to pay no attention to something","نظر انداز کرنا","Do not ignore the warning signs."],
+["illustrate","verb","to explain with examples or pictures","مثال سے سمجھانا","Let me illustrate with an example."],
+["impact","noun","a strong effect on something","اثر","The internet has a huge impact on society."],
+["impose","verb","to force a rule or tax on people","عائد کرنا","The government imposed a new tax."],
+["incentive","noun","something that encourages you to do something","ترغیب","Tax incentives help new businesses."],
+["income","noun","money earned from work or business","آمدنی","His monthly income has increased."],
+["indicate","verb","to point out or show","ظاہر کرنا","The results indicate a problem."],
+["individual","noun","a single person","فرد","Each individual has rights."],
+["inevitable","adjective","certain to happen, unavoidable","ناگزیر","Change is inevitable."],
+["infrastructure","noun","basic systems like roads, power and water","بنیادی ڈھانچہ","The city needs better infrastructure."],
+["initial","adjective","at the beginning, first","ابتدائی","The initial cost is high."],
+["injure","verb","to hurt someone physically","زخمی کرنا","He injured his leg while playing."],
+["innovative","adjective","using new ideas and methods","جدت والا","It is an innovative design."],
+["insert","verb","to put something inside something else","داخل کرنا","Insert the card into the machine."],
+["insight","noun","a clear, deep understanding","گہری سمجھ","The book gives insight into village life."],
+["inspect","verb","to look at something carefully","معائنہ کرنا","Officials inspected the building."],
+["instance","noun","an example of something","مثال","For instance, many students work part-time."],
+["institute","noun","an organisation for education or research","ادارہ","He studies at a language institute."],
+["integral","adjective","necessary and important as part of a whole","لازمی جز","Trust is integral to teamwork."],
+["intense","adjective","very strong or extreme","شدید","The competition was intense."],
+["interpret","verb","to explain the meaning of something","تشریح کرنا","How do you interpret this graph?"],
+["interval","noun","a period of time between events","وقفہ","There is a 15-minute interval."],
+["invest","verb","to put money or time into something for benefit","سرمایہ کاری کرنا","Invest in your education."],
+["involve","verb","to include or require something","شامل ہونا","The job involves travelling."],
+["isolate","verb","to separate someone or something","الگ کرنا","Patients were isolated."],
+["issue","noun","an important topic or problem","معاملہ، مسئلہ","Pollution is a serious issue."],
+["item","noun","a single thing in a list","شے، چیز","Each item costs five dollars."],
+["journal","noun","a magazine of specialist or academic articles","جریدہ","It was published in a medical journal."],
+["justify","verb","to give a good reason for something","جواز پیش کرنا","How can you justify this price?"],
+["label","noun","a small piece giving information on something","لیبل","Read the label before use."],
+["labour","noun","work, especially physical work","محنت، مزدوری","Building roads needs a lot of labour."],
+["layer","noun","a level or thickness of material","تہہ","Add another layer of paint."],
+["lecture","noun","a formal talk on a subject","لیکچر","The professor gave a lecture on history."],
+["legal","adjective","allowed by law","قانونی","It is legal to drive at 18."],
+["legislate","verb","to make laws","قانون سازی کرنا","Parliament legislated on the issue."],
+["levy","verb","to officially demand a tax or payment","ٹیکس لگانا","A levy was placed on imports."],
+["liberal","adjective","open to new ideas, not strict","آزاد خیال","She has liberal views on education."],
+["licence","noun","an official document giving permission","لائسنس","You need a driving licence."],
+["likewise","adverb","in the same way, also","اسی طرح","Do likewise and you will succeed."],
+["link","verb","to connect two things","جوڑنا","The bridge links the two towns."],
+["locate","verb","to find the position of something","تلاش کرنا، واقع ہونا","The school is located in the city centre."],
+["logic","noun","reasonable thinking","منطق","There is no logic in his argument."],
+["maintain","verb","to keep something in good condition","برقرار رکھنا","Maintain a healthy diet."],
+["major","adjective","very large or important","بڑا، اہم","A major problem is unemployment."],
+["manual","adjective","done by hand, not by machine","دستی","Manual work is tiring."],
+["margin","noun","the edge or border; a small amount","حاشیہ، معمولی فرق","He won by a small margin."],
+["mature","adjective","fully grown or developed; sensible","بالغ","She is very mature for her age."],
+["maximise","verb","to increase something as much as possible","زیادہ سے زیادہ کرنا","We must maximise our resources."],
+["mechanism","noun","a system or part of a machine that works in a set way","طریقہ کار، نظام","The mechanism of the clock is complex."],
+["media","noun","TV, newspapers, internet etc. for communication","میڈیا","Social media is powerful."],
+["mediate","verb","to help end a disagreement between others","ثالثی کرنا","He mediated between the two sides."],
+["medical","adjective","relating to medicine and health","طبی","She needs medical help."],
+["medium","noun","a way of communicating or expressing something","ذریعہ","English is the medium of instruction."],
+["mental","adjective","relating to the mind","ذہنی","Mental health is important."],
+["method","noun","a way of doing something","طریقہ","This is the best method to learn words."],
+["migrate","verb","to move from one place to another","ہجرت کرنا","Birds migrate in winter."],
+["minimum","noun","the smallest amount possible","کم از کم","The minimum age is 18."],
+["minor","adjective","small or not very important","معمولی","There are a few minor problems."],
+["mode","noun","a way of doing something","طریقہ، انداز","Use the silent mode on your phone."],
+["modify","verb","to change something slightly","تبدیل کرنا","We modified the plan."],
+["monitor","verb","to watch and check something over time","نگرانی کرنا","Monitor your progress weekly."],
+["motivate","verb","to make someone want to do something","حوصلہ دینا","Teachers motivate students."],
+["mutual","adjective","shared by two or more people","باہمی","It was a mutual decision."],
+["neutral","adjective","not supporting either side","غیر جانبدار","The referee must stay neutral."],
+["nevertheless","adverb","in spite of that, however","اس کے باوجود","It was raining; nevertheless, we went out."],
+["norm","noun","a usual standard or pattern","معیار","Working from home is becoming the norm."],
+["notion","noun","an idea or belief","خیال","I have no notion of what he means."],
+["notwithstanding","preposition","in spite of something","کے باوجود","Notwithstanding the rain, the match continued."],
+["nuclear","adjective","relating to the central part of an atom; atomic power","جوہری","Nuclear energy is powerful."],
+["objective","noun","a goal or aim","مقصد","Our objective is to pass the exam."],
+["obtain","verb","to get something","حاصل کرنا","You can obtain the form online."],
+["obvious","adjective","easy to see or understand","واضح","It is obvious that he is lying."],
+["occupy","verb","to fill or take up space or time","قبضہ کرنا، مشغول رکھنا","The meeting occupied two hours."],
+["occur","verb","to happen","واقع ہونا","Accidents occur on this road often."],
+["odd","adjective","strange or unusual; (number) not even","عجیب","It is odd that he is late."],
+["offset","verb","to balance the effect of something","تلافی کرنا","The benefits offset the cost."],
+["ongoing","adjective","continuing to happen","جاری","It is an ongoing project."],
+["option","noun","a choice","اختیار","You have two options."],
+["output","noun","the amount produced","پیداوار","Factory output increased."],
+["overall","adjective","in general, considering everything","مجموعی","The overall result was good."],
+["overlap","verb","to partly cover or share with something","مشترک ہونا","Our duties overlap."],
+["overseas","adverb","in or to a foreign country","بیرون ملک","He works overseas."],
+["panel","noun","a group of people chosen to discuss or judge","پینل","A panel of experts decided the winner."],
+["paradigm","noun","a typical example or model","نمونہ","This is a new paradigm in teaching."],
+["paragraph","noun","a section of writing with one main idea","پیراگراف","Write a paragraph about your city."],
+["parallel","adjective","similar; side by side at the same distance","متوازی","The road runs parallel to the river."],
+["parameter","noun","a limit or rule that controls something","حد، پیرامیٹر","We must work within these parameters."],
+["participate","verb","to take part in an activity","شرکت کرنا","Everyone participated in the game."],
+["partner","noun","a person you work or do something with","ساتھی","He is my business partner."],
+["passive","adjective","not active; accepting without resisting","غیر فعال","A passive listener learns less."],
+["perceive","verb","to see or understand something in a way","محسوس کرنا","Students perceive the test as difficult."],
+["percent","noun","out of every hundred","فیصد","Fifty percent of students passed."],
+["period","noun","a length of time","عرصہ","It rained for a long period."],
+["persist","verb","to continue despite difficulties","قائم رہنا","If you persist, you will succeed."],
+["perspective","noun","a point of view","نقطہ نظر","Try to see it from his perspective."],
+["phase","noun","a stage in a process","مرحلہ","The first phase of the project is complete."],
+["phenomenon","noun","something that happens and can be observed","مظہر","Rain is a natural phenomenon."],
+["philosophy","noun","the study of ideas about life and knowledge","فلسفہ","He studied philosophy at university."],
+["physical","adjective","relating to the body or real things","جسمانی","Physical exercise is healthy."],
+["plus","preposition","with the addition of","جمع","Two plus two is four."],
+["policy","noun","a set of plans or rules of an organisation","پالیسی","The company changed its policy."],
+["portion","noun","a part of a larger amount","حصہ","A large portion of the book is about history."],
+["pose","verb","to present or create (a problem/question)","پیش کرنا، کھڑا کرنا","Pollution poses a threat to health."],
+["positive","adjective","good, useful, or certain","مثبت","She has a positive attitude."],
+["potential","adjective","possible in the future","ممکنہ","He has great potential."],
+["precise","adjective","exact and accurate","بالکل درست","Give precise instructions."],
+["predict","verb","to say what will happen in the future","پیش گوئی کرنا","Experts predict more rain."],
+["predominant","adjective","most common or powerful","غالب","The predominant colour is blue."],
+["preliminary","adjective","happening before the main event, introductory","ابتدائی","Preliminary results look good."],
+["presume","verb","to suppose something is true","فرض کرنا","I presume you are ready."],
+["previous","adjective","coming before in time","پچھلا","The previous lesson was about grammar."],
+["primary","adjective","most important, main","بنیادی","Our primary goal is education."],
+["prime","adjective","main or most important","اہم ترین","The prime reason is cost."],
+["principal","adjective","main, most important","اہم ترین","The principal cause is poverty."],
+["principle","noun","a basic rule or belief","اصول","Honesty is a key principle."],
+["prior","adjective","before something else in time","پہلے","Prior experience is needed."],
+["priority","noun","the most important thing to deal with first","ترجیح","Safety is our top priority."],
+["procedure","noun","an official way of doing something","طریقہ کار","Follow the correct procedure."],
+["proceed","verb","to continue or go forward","آگے بڑھنا","Please proceed with your answer."],
+["process","noun","a series of actions to achieve something","عمل","Learning is a slow process."],
+["prohibit","verb","to officially forbid something","منع کرنا","Smoking is prohibited here."],
+["project","noun","a planned piece of work","منصوبہ","The project will finish next year."],
+["promote","verb","to help something develop; to advance in a job","فروغ دینا","The campaign promotes healthy eating."],
+["proportion","noun","a part compared with the whole","تناسب","A large proportion of students agreed."],
+["prospect","noun","the possibility of something happening","امکان","There is little prospect of rain."],
+["protocol","noun","a set of rules for formal behaviour or data exchange","ضابطہ","Follow the safety protocol."],
+["psychology","noun","the study of the mind and behaviour","نفسیات","She studies child psychology."],
+["publication","noun","a book or magazine that is printed; the act of printing","اشاعت","The publication date is June."],
+["publish","verb","to make a book or article available to the public","شائع کرنا","He published a new book."],
+["purchase","verb","to buy something","خریدنا","They purchased a new house."],
+["pursue","verb","to try to achieve something over time","پیچھا کرنا، حاصل کرنے کی کوشش","She pursues her goals with passion."],
+["qualitative","adjective","relating to quality rather than numbers","معیاری","We did a qualitative study."],
+["quote","verb","to repeat someone's exact words","حوالہ دینا","He quoted the famous poet."],
+["radical","adjective","very different from the usual; extreme","بنیادی، انتہائی","The plan needs radical change."],
+["random","adjective","chosen without a plan or pattern","بے ترتیب","Pick a random number."],
+["range","noun","a variety of things; the distance something covers","حد، سلسلہ","The shop sells a wide range of goods."],
+["ratio","noun","the relationship between two amounts","تناسب","The ratio of boys to girls is 2 to 1."],
+["rational","adjective","based on reason, sensible","معقول","Make a rational decision."],
+["react","verb","to respond to something","ردعمل دینا","How did he react to the news?"],
+["recover","verb","to get well again or get something back","صحت یاب ہونا","She recovered quickly from the illness."],
+["refine","verb","to improve something by small changes","بہتر بنانا","Refine your essay before submitting."],
+["reform","verb","to change something to improve it","اصلاح کرنا","The government reformed the tax system."],
+["regime","noun","a system of government or rules","نظام حکومت","The new regime changed many laws."],
+["region","noun","an area of a country or the world","علاقہ","This region is famous for mangoes."],
+["register","verb","to record a name officially","اندراج کرنا","Register for the course online."],
+["regulate","verb","to control by rules","ضابطے میں رکھنا","The body regulates temperature."],
+["reinforce","verb","to make something stronger","مضبوط کرنا","Examples reinforce the main idea."],
+["reject","verb","to refuse to accept something","مسترد کرنا","The proposal was rejected."],
+["relax","verb","to rest and become less tense","آرام کرنا","Relax before the exam."],
+["relevant","adjective","connected with the subject","متعلقہ","Give relevant examples only."],
+["reluctant","adjective","unwilling and hesitant","ہچکچاہٹ والا","He was reluctant to speak."],
+["rely","verb","to depend on someone or something","انحصار کرنا","You can rely on me."],
+["remove","verb","to take something away","ہٹانا","Remove your shoes at the door."],
+["require","verb","to need something","ضرورت ہونا","This job requires experience."],
+["research","noun","careful study to find new knowledge","تحقیق","She is doing research on cancer."],
+["resemble","verb","to look like or be similar to","مشابہ ہونا","He resembles his father."],
+["resident","noun","a person who lives in a place","رہائشی","The residents of this area are friendly."],
+["resign","verb","to leave a job officially","استعفیٰ دینا","He resigned from his post."],
+["resolve","verb","to solve a problem","حل کرنا","We resolved the issue peacefully."],
+["resource","noun","something useful that a country or person has","وسیلہ","Water is a precious resource."],
+["respond","verb","to say or do something as a reply","جواب دینا","Please respond to the email."],
+["restore","verb","to bring something back to its original state","بحال کرنا","They restored the old building."],
+["restrain","verb","to hold back or control","روکنا","He could not restrain his anger."],
+["restrict","verb","to limit something","محدود کرنا","Access is restricted to members."],
+["retain","verb","to keep something","برقرار رکھنا","Retain your ticket."],
+["reveal","verb","to show something that was hidden","ظاہر کرنا","The study reveals new facts."],
+["revenue","noun","money that a government or company receives","آمدنی، محصول","Tax revenue increased this year."],
+["reverse","verb","to change to the opposite direction","الٹا کرنا","The car reversed into the road."],
+["revise","verb","to change and improve; to study again","نظر ثانی کرنا","Revise your notes daily."],
+["revolution","noun","a big change; an overthrow of a government","انقلاب","The internet started a revolution in communication."],
+["rigid","adjective","stiff, not flexible","سخت","The rules are too rigid."],
+["role","noun","the function or part played by someone","کردار","Teachers play a key role."],
+["route","noun","a way from one place to another","راستہ","This is the shortest route."],
+["scenario","noun","a description of a possible future situation","منظر نامہ","The worst-case scenario is flooding."],
+["schedule","noun","a plan of times for activities","شیڈول","Check the exam schedule."],
+["scheme","noun","an official plan or system","اسکیم، منصوبہ","The scheme helps poor students."],
+["scope","noun","the range of a subject or activity","دائرہ کار","The scope of the study is wide."],
+["section","noun","one part of something","حصہ","Read the first section of the book."],
+["sector","noun","one part of an economy or society","شعبہ","The health sector needs funding."],
+["secure","adjective","safe and protected","محفوظ","Keep your password secure."],
+["seek","verb","to try to find or get something","تلاش کرنا","They seek a better life."],
+["select","verb","to choose something carefully","منتخب کرنا","Select the correct answer."],
+["sequence","noun","a series of things in order","ترتیب","Follow the sequence of steps."],
+["series","noun","a number of similar things one after another","سلسلہ","A series of lectures is planned."],
+["severe","adjective","very bad or serious","شدید","The storm caused severe damage."],
+["shift","verb","to move or change position or focus","منتقل ہونا","Attention shifted to the economy."],
+["significant","adjective","important or large in amount","اہم","There was a significant increase in sales."],
+["similar","adjective","almost the same","ملتا جلتا","The two words have similar meanings."],
+["simulate","verb","to imitate real conditions for practice","نقل کرنا","The mock test simulates the real exam."],
+["site","noun","a place where something is located","جگہ، مقام","The construction site is busy."],
+["so-called","adjective","named by some people, often doubtfully","نام نہاد","The so-called expert was wrong."],
+["sole","adjective","only one","واحد","He was the sole survivor."],
+["somewhat","adverb","slightly, to some degree","کچھ حد تک","I am somewhat tired."],
+["source","noun","where something comes from","ذریعہ","The sun is a source of energy."],
+["specific","adjective","particular and exact","مخصوص","Give specific details."],
+["specify","verb","to state something exactly","واضح کرنا","Please specify your needs."],
+["sphere","noun","an area of activity; a ball shape","دائرہ","He is famous in the political sphere."],
+["stable","adjective","not changing or falling","مستحکم","Prices are stable now."],
+["statistic","noun","a number that gives information","اعداد و شمار","The statistics show growth."],
+["status","noun","the position or state of something","حیثیت، صورتحال","Check your application status."],
+["straightforward","adjective","simple and easy to understand","سیدھا سادہ","The instructions are straightforward."],
+["strategy","noun","a plan to achieve a goal","حکمت عملی","We need a new strategy."],
+["stress","noun","pressure or worry","دباؤ","Exams cause stress."],
+["structure","noun","the way something is built or organised","ساخت، ڈھانچہ","The essay has a clear structure."],
+["style","noun","a way of doing something","انداز","Her writing style is simple."],
+["submit","verb","to hand in or present for decision","جمع کرانا","Submit your assignment by Friday."],
+["subordinate","adjective","lower in rank or importance","ماتحت","He has three subordinate officers."],
+["subsequent","adjective","coming after something","بعد والا","Subsequent events proved him right."],
+["subsidy","noun","money given by the government to help with costs","رعایت، امداد","Farmers receive a subsidy."],
+["substitute","verb","to use one thing instead of another","متبادل رکھنا","You can substitute honey for sugar."],
+["subtle","adjective","not obvious, delicate","باریک، لطیف","There is a subtle difference."],
+["sufficient","adjective","enough for the need","کافی","We have sufficient food."],
+["sum","noun","the total of added numbers; an amount of money","مجموعہ، رقم","A large sum of money was spent."],
+["summary","noun","a short statement of the main points","خلاصہ","Write a summary of the passage."],
+["supplement","verb","to add something to complete or improve","اضافہ کرنا","Supplement your diet with vitamins."],
+["survey","noun","an examination or questioning of people for information","سروے","A survey of 1,000 people was conducted."],
+["survive","verb","to continue to live despite difficulties","زندہ رہنا","Plants cannot survive without water."],
+["suspend","verb","to stop something temporarily","معطل کرنا","The match was suspended due to rain."],
+["sustain","verb","to keep something going over time","برقرار رکھنا","We must sustain this progress."],
+["symbol","noun","a sign that represents something","علامت","The dove is a symbol of peace."],
+["tape","noun","a long thin strip of material; recording material","ٹیپ، پٹی","Use tape to fix the box."],
+["target","noun","a goal or object aimed at","ہدف","Set a clear target."],
+["task","noun","a piece of work to be done","کام","Complete the task on time."],
+["team","noun","a group working together","ٹیم","Our team won the match."],
+["technical","adjective","relating to special skills or machines","تکنیکی","There is a technical problem."],
+["technique","noun","a skilful way of doing something","تکنیک","Use the right technique to solve it."],
+["technology","noun","machines and methods from scientific knowledge","ٹیکنالوجی","Technology is changing fast."],
+["temporary","adjective","lasting for a short time only","عارضی","It is a temporary job."],
+["tense","adjective","nervous and worried; (grammar) a verb form showing time","کشیدہ، (گرامر) زمانہ","He felt tense before the test."],
+["terminal","adjective","at the end; (illness) leading to death","آخری","The bus terminal is near the station."],
+["terminate","verb","to end something","ختم کرنا","The contract was terminated."],
+["text","noun","written words in a book or article","متن","Read the text carefully."],
+["theme","noun","the main subject or idea","موضوع","The theme of the story is love."],
+["theory","noun","an idea that explains something","نظریہ","Darwin's theory of evolution is famous."],
+["thereby","adverb","as a result of that","اس طرح، جس سے","He studied hard, thereby passing the exam."],
+["thesis","noun","a long research paper for a degree","مضمون، تحقیقی مقالہ","She is writing her thesis."],
+["topic","noun","a subject of discussion or writing","موضوع","Choose a topic for your essay."],
+["trace","verb","to find or follow the course of something","سراغ لگانا","Police traced the call."],
+["tradition","noun","a custom passed from generation to generation","روایت","Hospitality is a tradition here."],
+["transfer","verb","to move from one place to another","منتقل کرنا","Transfer the money to my account."],
+["transform","verb","to change completely in form or nature","تبدیل کرنا","The internet transformed education."],
+["transit","noun","the process of moving from one place to another","آمد و رفت، گزر","Goods are in transit."],
+["transmit","verb","to send or pass something on","منتقل کرنا، نشر کرنا","The signal is transmitted by satellite."],
+["transport","noun","vehicles for moving people or goods","نقل و حمل","Public transport is cheap here."],
+["trend","noun","a general direction of change","رجحان","The trend is towards online learning."],
+["trigger","verb","to cause something to start","شروع کروانا","The news triggered protests."],
+["ultimate","adjective","final and most important","حتمی، آخری","Our ultimate goal is success."],
+["undergo","verb","to experience something, often unpleasant","گزرنا، برداشت کرنا","He underwent surgery."],
+["underlie","verb","to be the hidden cause or basis of something","بنیاد ہونا","Fear underlies many problems."],
+["undermine","verb","to gradually weaken something","کمزور کرنا","Rumours undermined his position."],
+["undertake","verb","to agree to do something","ذمہ لینا","They undertook the difficult task."],
+["undoubtedly","adverb","certainly, without doubt","بلا شبہ","She is undoubtedly the best student."],
+["uniform","adjective","always the same; a set of clothes worn by a group","یکساں، وردی","Students wear a uniform."],
+["unique","adjective","the only one of its kind","انوکھا","Each person has a unique style."],
+["utility","noun","usefulness; a public service like water or electricity","افادیت","The utility of this tool is clear."],
+["utilise","verb","to use something effectively","استعمال کرنا","Utilise your time well."],
+["valid","adjective","based on truth or acceptable reasons","درست، جائز","You need a valid passport."],
+["vary","verb","to differ or change","مختلف ہونا","Prices vary from shop to shop."],
+["vehicle","noun","a machine used for transporting people or goods","گاڑی","Buses are public vehicles."],
+["venue","noun","the place where an event happens","مقام","The venue for the exam is the main hall."],
+["verbal","adjective","relating to words, spoken","زبانی","We had a verbal agreement."],
+["verify","verb","to check that something is true","تصدیق کرنا","Verify your email address."],
+["version","noun","a form of something different from others","نسخہ، شکل","This is the latest version of the app."],
+["via","preposition","through or by way of","کے ذریعے","Send it via email."],
+["violate","verb","to break a rule or law","خلاف ورزی کرنا","Do not violate the rules."],
+["virtual","adjective","existing on computers, not physically real","ورچوئل","We held a virtual meeting."],
+["visible","adjective","able to be seen","نظر آنے والا","The mountains are visible today."],
+["vision","noun","the ability to see; an idea of the future","نظر، تصور","He has a clear vision for the company."],
+["visual","adjective","relating to seeing","بصری","Use visual aids in class."],
+["volume","noun","the amount of space something fills; a book; loudness","حجم، جلد","The volume of the box is large."],
+["voluntary","adjective","done by choice, not forced","رضاکارانہ","It is voluntary work."],
+["welfare","noun","health, happiness and well-being","فلاح و بہبود","The state cares for public welfare."],
+["whereas","conjunction","in contrast, while on the other hand","جبکہ","He likes tea, whereas I prefer coffee."],
+["whereby","adverb","by which means","جس کے ذریعے","A system whereby students can learn free."],
+["widespread","adjective","found in many places","وسیع پیمانے پر","The disease is widespread."],
+["willing","adjective","ready and happy to do something","رضامند","She is willing to help."],
+["withstand","verb","to resist or survive something difficult","برداشت کرنا","The bridge can withstand floods."],
+["witness","noun","a person who sees an event happen","گواہ","There were two witnesses to the accident."]];
+/* ---------- reading passages (practice + mock) ---------- */
+var PASSAGES=[
+{t:"The Story of Tea",x:"Tea is one of the most popular drinks in the world. According to legend, tea was discovered in China around 2737 BC, when leaves from a wild tea plant fell into water being boiled for the Chinese emperor Shen Nung. He tasted the drink and found it refreshing.\nFor centuries, tea remained mainly a Chinese drink, used both as a medicine and as a pleasure. In the 1600s, Dutch traders brought tea to Europe, where it was very expensive and only rich people could afford it. Later, Britain developed a huge tea trade, and tea became a daily habit for ordinary people too.\nToday, tea is grown in many countries, including India, Sri Lanka, Kenya and Turkey. It is the second most consumed drink in the world, after water. Scientists say tea contains antioxidants, which may protect the body against some diseases, although drinking too much strong tea can also disturb sleep because of its caffeine.",qs:[
+["According to the passage, tea was discovered in:",["India","China","Turkey","Britain"],1],
+["At first in Europe, tea was:",["Drunk by everyone","Cheap and common","Expensive, for rich people","Banned"],2],
+["Which country is NOT mentioned as growing tea today?",["India","Kenya","Brazil","Turkey"],2],
+["Tea is the world's second most consumed drink after:",["Coffee","Milk","Juice","Water"],3]]},
+{t:"Farming in the City",x:"Urban farming — growing food inside cities — is becoming popular around the world. Rooftops, empty plots and even old warehouses are being turned into small farms. Supporters say city farms reduce the distance food travels, which cuts pollution and keeps vegetables fresh.\nCity farms also bring social benefits. They give local people green spaces, teach children where food comes from, and can provide jobs. In some cities, community gardens have helped neighbours to know each other better.\nHowever, urban farming has limits. Land in cities is expensive, and city farms can only produce a small part of the food a city needs. Most experts agree that urban farming will not replace traditional farming, but it can be a useful and healthy addition to it.",qs:[
+["The main idea of the passage is that urban farming:",["Will replace all farms","Has benefits but also limits","Is a waste of money","Only helps children"],1],
+["City farms reduce pollution mainly because:",["They use no water","Food travels a shorter distance","They are on rooftops","They employ many people"],1],
+["Which is mentioned as a social benefit?",["Cheaper land","Helping neighbours know each other","More traffic","Bigger warehouses"],1],
+["According to experts, urban farming will:",["Feed whole cities alone","Be a useful addition to traditional farming","Disappear soon","Only grow flowers"],1]]},
+{t:"Secrets of the Deep Sea",x:"The deep sea begins about 200 metres below the surface of the ocean, where sunlight can no longer reach. Below 1,000 metres, the water is completely dark, very cold, and under enormous pressure. For a long time, scientists believed that almost nothing could live there.\nThey were wrong. Using special submarines, researchers have found thousands of species in the deep sea, from glowing fish to giant squid. Many of these animals create their own light, a process called bioluminescence, which they use to attract food or escape from enemies.\nThe deep sea is also important for the whole planet. It stores huge amounts of carbon and helps to control the Earth's temperature. Scientists warn that deep-sea mining and pollution could damage this fragile world before we fully understand it.",qs:[
+["The deep sea is difficult for life because it is:",["Too warm and bright","Dark, cold and under great pressure","Too shallow","Full of boats"],1],
+["Bioluminescence means deep-sea animals can:",["Fly","Make their own light","Live without food","Swim very fast"],1],
+["Scientists explore the deep sea using:",["Ordinary boats only","Special submarines","Aeroplanes","Satellites only"],1],
+["The passage suggests the deep sea should be:",["Ignored","Protected from mining and pollution","Used for farming","Emptied of water"],1]]}];
+/* ---------- listening practice (TTS) ---------- */
+var LISTEN=[
+{s:"Hello, this is Green City Library. We open at nine in the morning and close at eight in the evening, Monday to Saturday.",q:"What time does the library close?",o:["7 pm","8 pm","9 pm","10 pm"],a:1},
+{s:"Attention passengers. The train to Lahore, scheduled for three fifteen, will now depart at four o'clock from platform two.",q:"From which platform will the train depart?",o:["Platform 1","Platform 2","Platform 3","Platform 4"],a:1},
+{s:"To improve your English speaking, listen to English for fifteen minutes daily, repeat sentences aloud, and record your own voice once a week.",q:"How often should you record your voice?",o:["Every day","Once a week","Once a month","Never"],a:1},
+{s:"The museum is free for students on Fridays. On other days, a ticket costs three hundred rupees for adults and one hundred and fifty for children.",q:"How much is a child's ticket on a normal day?",o:["Free","100 rupees","150 rupees","300 rupees"],a:2},
+{s:"Our new course in computer science begins on the fifth of September. Registration closes on the thirtieth of August, so please apply before that date.",q:"When does registration close?",o:["5 September","30 August","1 September","15 August"],a:1},
+{s:"If you want to stay healthy, drink at least eight glasses of water a day, walk for thirty minutes, and sleep for seven to eight hours every night.",q:"How long should you walk each day?",o:["10 minutes","20 minutes","30 minutes","60 minutes"],a:2}];
+/* ---------- speaking content ---------- */
+var READALOUD=["Education is the most powerful weapon which you can use to change the world.","Practice makes a man perfect, so never stop learning and never stop trying.","A journey of a thousand miles begins with a single step.","The best way to predict the future is to create it yourself.","Good communication opens doors that hard work alone cannot.","Reading books regularly improves vocabulary, knowledge and confidence."];
+var CUECARDS=[
+{t:"Describe a book you enjoyed reading",pts:["What the book was","Who wrote it / who gave it to you","What it was about","Why you enjoyed it"]},
+{t:"Describe a person who has influenced you",pts:["Who the person is","How you know them","What they did","Why they influenced you"]},
+{t:"Describe a place you would like to visit",pts:["Where it is","How you know about it","What you would do there","Why you want to go"]}];
+var WRITEPROMPTS=[
+{t:"IELTS Writing Task 2",p:"Some people believe that university education should be free for all students. To what extent do you agree or disagree?",m:"Model plan: Introduction — paraphrase + your opinion. Body 1 — free education helps poor talented students and the whole economy. Body 2 — but it costs the government a lot; not all degrees give equal benefit; a middle way (loans / merit scholarships). Conclusion — restate your position clearly. Aim: 260-290 words, 4 paragraphs."},
+{t:"IELTS Writing Task 1",p:"The table below shows the percentage of households with internet access in three countries in 2010 and 2020. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.\nCountry A: 2010 — 25%, 2020 — 78%\nCountry B: 2010 — 40%, 2020 — 85%\nCountry C: 2010 — 10%, 2020 — 55%",m:"Model plan: Introduction — paraphrase the title. Overview — access rose in all three countries; B stayed highest, C lowest but grew fastest in proportion. Details — compare 2010 figures, then 2020 figures, note the biggest rise (A: +53 points). No opinion in Task 1. Aim: 170-190 words."},
+{t:"Letter (General Training)",p:"You recently moved to a new city. Write a letter to a friend telling them about your new home, your new job, and inviting them to visit you.",m:"Model plan: Dear + name. Para 1 — purpose of the letter. Para 2 — the new home (area, rooms, rent). Para 3 — the new job (role, office, feelings). Para 4 — invitation with a suggested date. Friendly tone, 170-200 words."}];
+/* ---------- IELTS full mock content ---------- */
+var MOCK_L=[
+{p:"Part 1 — Conversation (course registration)",s:"Woman: Good morning, City Language School. How can I help you? Man: Good morning. I want to join the English speaking course. Woman: Certainly. The course starts on Monday, the twelfth of June, and classes are held three times a week: Monday, Wednesday and Friday, from five to seven in the evening. Man: What is the fee for the full course? Woman: The fee is twelve thousand rupees for two months. Books are included in the fee. Man: Great. Can I pay by card? Woman: Yes, we accept cards and cash. Please bring your ID card for registration.",qs:[
+["When does the course start?",["5 June","12 June","20 June","1 July"],1],
+["How many classes are held each week?",["Two","Three","Four","Five"],1],
+["The course fee for two months is:",["8,000 rupees","10,000 rupees","12,000 rupees","15,000 rupees"],2]]},
+{p:"Part 2 — Talk (city museum)",s:"Welcome to the City Museum. The museum was built in nineteen twenty and has four main galleries. On the ground floor, you can see ancient coins and pottery. The first floor is famous for its paintings, including the largest painting in the country, which is twelve metres long. The museum is open every day except Tuesday, from nine in the morning to six in the evening. Entry is free for school groups, but please book at least one week in advance.",qs:[
+["When was the museum built?",["1900","1910","1920","1950"],2],
+["The museum is closed on:",["Monday","Tuesday","Friday","Sunday"],1],
+["How long is the largest painting?",["8 metres","10 metres","12 metres","20 metres"],2]]},
+{p:"Part 3 — Discussion (group project)",s:"Sara: Our project presentation is next Thursday, and we still need the results of the survey. Bilal: I have finished the survey. Two hundred students answered it. Most students said they prefer studying in the library because it is quiet. Sara: Good. I will prepare the slides, and Ahmed will present the conclusion. Bilal: Let us meet on Tuesday afternoon to practise together before the final day.",qs:[
+["How many students answered the survey?",["100","150","200","250"],2],
+["Why do most students prefer the library?",["It is near their homes","It is quiet","It has free food","It is big"],1]]},
+{p:"Part 4 — Lecture (sleep and health)",s:"Today we will talk about sleep. Research shows that adults need between seven and nine hours of sleep each night. Sleep helps the brain organise memories, which is why students who sleep well often remember their lessons better. Lack of sleep, on the other hand, reduces concentration and weakens the immune system. Experts advise keeping a regular sleep schedule, avoiding screens one hour before bed, and keeping the bedroom dark and cool. Interestingly, a short nap of twenty minutes in the afternoon can improve alertness, but long naps may disturb night sleep.",qs:[
+["How much sleep do adults need each night?",["5-6 hours","7-9 hours","9-11 hours","4-5 hours"],1],
+["Sleep helps students mainly by:",["Making lessons shorter","Helping the brain organise memories","Reducing homework","Improving eyesight"],1],
+["Experts advise avoiding screens for how long before bed?",["10 minutes","30 minutes","One hour","Three hours"],2]]}];
+var MOCK_W1="The chart below shows the percentage of people using three forms of transport (car, bus and bicycle) in a city in 2000 and 2020.\nCar: 2000 — 45%, 2020 — 38%\nBus: 2000 — 35%, 2020 — 30%\nBicycle: 2000 — 20%, 2020 — 32%\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant. (Minimum 150 words)";
+var MOCK_W2="Many people believe that social media has had a negative effect on face-to-face communication. To what extent do you agree or disagree? (Minimum 250 words)";
+var MOCK_S1=["Do you work or do you study?","What do you like about your hometown?","Do you enjoy reading books? Why?","How often do you use the internet?"];
+var MOCK_S2={t:"Describe a skill you would like to learn",pts:["What the skill is","Why you want to learn it","How you would learn it","How it would help you"]};
+var MOCK_S3=["How important is reading for children today?","Do you think technology will replace teachers in the future?","What are the advantages of learning a new skill later in life?"];
+
+/* ---------- helpers: voice ---------- */
+function speak(text,rate){
+  try{
+    var u=new SpeechSynthesisUtterance(text);u.lang="en-GB";u.rate=rate||0.95;
+    var vs=speechSynthesis.getVoices(),i;for(i=0;i<vs.length;i++){if(/^en[-_]GB/i.test(vs[i].lang)){u.voice=vs[i];break}}
+    speechSynthesis.cancel();speechSynthesis.speak(u);return true;
+  }catch(e){return false}
+}
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function listenOnce(cb){
+  if(!SR){cb(null,"not supported");return null}
+  var r=new SR();r.lang="en-GB";r.interimResults=false;r.maxAlternatives=1;
+  r.onresult=function(ev){cb(ev.results[0][0].transcript,"")};
+  r.onerror=function(ev){cb(null,ev.error||"error")};
+  try{r.start()}catch(e){cb(null,"error")}
+  return r;
+}
+function bandOf(pct){return pct>=93?9:pct>=87?8.5:pct>=80?8:pct>=73?7.5:pct>=67?7:pct>=60?6.5:pct>=53?6:pct>=47?5.5:pct>=40?5:pct>=33?4.5:4}
+function wc(t){return (String(t||"").trim().match(/\S+/g)||[]).length}
+/* ---------- overlay ---------- */
+var ov=null,bodyEl=null,titleEl=null;
+function openLab(){
+  if(ov){ov.style.display="block";home();return}
+  ov=ce("div","englab");ov.id="engLab";
+  var hd=ce("div","elhd");
+  titleEl=ce("div","elt","🎓 English Lab");
+  var cl=ce("button","elx","✕");cl.onclick=closeLab;
+  hd.appendChild(titleEl);hd.appendChild(cl);
+  bodyEl=ce("div","elbd");
+  ov.appendChild(hd);ov.appendChild(bodyEl);
+  document.body.appendChild(ov);
+  home();
+}
+function closeLab(){if(ov)ov.style.display="none";try{speechSynthesis.cancel()}catch(e){}stopTimer()}
+function setT(t){titleEl.textContent=t}
+function home(){
+  stopTimer();setT("🎓 English Lab — IELTS & English Tests");
+  bodyEl.innerHTML="";
+  var d=new Date(),wotd=WORDS[(d.getFullYear()*372+d.getMonth()*31+d.getDate())%WORDS.length];
+  var top=ce("div","elwotd","<b>📖 Word of the Day:</b> <b>"+esc(wotd[0])+"</b> ("+esc(wotd[1])+") — "+esc(wotd[2])+" · اردو: "+esc(wotd[3]));
+  bodyEl.appendChild(top);
+  var g=ce("div","elgrid");
+  var items=[
+    ["📖","Dictionary","Search any English word — meaning, Urdu, pronunciation","dict"],
+    ["🎧","Skills Practice","Reading · Listening · Speaking · Writing (Duolingo style)","skills"],
+    ["🏆","IELTS Full Mock Test","The real exam, A to Z — Listening, Reading, Writing, Speaking","mock"]];
+  items.forEach(function(it){
+    var b=ce("button","eltile","<span class='elic'>"+it[0]+"</span><span class='elt1'>"+it[1]+"</span><span class='elt2'>"+it[2]+"</span>");
+    b.onclick=function(){if(it[3]==="dict")dictView();else if(it[3]==="skills")skillsView();else mockIntro()};
+    g.appendChild(b);
+  });
+  bodyEl.appendChild(g);
+  bodyEl.appendChild(ce("div","elnote","Free for all students · Dictionary & listening need internet for full results"));
+}
+/* ---------- dictionary ---------- */
+function dictView(){
+  stopTimer();setT("📖 English Dictionary");
+  bodyEl.innerHTML="";
+  var row=ce("div","elsearch");
+  var inp=ce("input","elin");inp.type="text";inp.placeholder="Type any English word… (e.g. achieve)";inp.setAttribute("autocapitalize","off");
+  var go=ce("button","elbtn","Search");
+  row.appendChild(inp);row.appendChild(go);bodyEl.appendChild(row);
+  var res=ce("div","elres");bodyEl.appendChild(res);
+  var rec=[];try{rec=JSON.parse(localStorage.getItem("eg23dict")||"[]")}catch(e){}
+  if(rec.length){var rc=ce("div","elrec","Recent: ");rec.slice(0,8).forEach(function(w){var c=ce("button","elchip",esc(w));c.onclick=function(){inp.value=w;lookup(w,res)};rc.appendChild(c)});bodyEl.appendChild(rc)}
+  var az=ce("div","elazhd","IELTS Word Bank — tap any word (works offline):");
+  bodyEl.appendChild(az);
+  var azw=ce("div","elaz");WORDS.forEach(function(w){var c=ce("button","elchip",esc(w[0]));c.onclick=function(){inp.value=w[0];lookup(w[0],res);window.scrollTo(0,0)};azw.appendChild(c)});bodyEl.appendChild(azw);
+  function goFn(){var w=inp.value.trim().toLowerCase();if(w)lookup(w,res)}
+  go.onclick=goFn;inp.addEventListener("keydown",function(e){if(e.key==="Enter")goFn()});
+  inp.focus();
+}
+function saveRecent(w){
+  try{var r=JSON.parse(localStorage.getItem("eg23dict")||"[]");r=r.filter(function(x){return x!==w});r.unshift(w);localStorage.setItem("eg23dict",JSON.stringify(r.slice(0,12)))}catch(e){}
+}
+function localWord(w){for(var i=0;i<WORDS.length;i++)if(WORDS[i][0]===w)return WORDS[i];return null}
+function lookup(w,res){
+  saveRecent(w);
+  res.innerHTML="<div class='elnote'>Searching…</div>";
+  var lw=localWord(w),html="";
+  if(lw)html+="<div class='elword'><b>"+esc(lw[0])+"</b> <span class='elpos'>"+esc(lw[1])+"</span></div><div class='eldef'>"+esc(lw[2])+"</div><div class='elur'>اردو: "+esc(lw[3])+"</div><div class='elex'>“"+esc(lw[4])+"”</div>";
+  res.innerHTML=html||"<div class='elnote'>Searching the full dictionary…</div>";
+  /* Urdu meaning via free translate endpoint */
+  fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ur&dt=t&q="+encodeURIComponent(w))
+    .then(function(r){return r.json()}).then(function(j){
+      try{var ur=j[0][0][0];if(ur&&!lw){res.innerHTML+="<div class='elur'>اردو: "+esc(ur)+"</div>"}}catch(e){}
+    }).catch(function(){});
+  /* full dictionary via free API */
+  fetch("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(w))
+    .then(function(r){if(!r.ok)throw new Error("nf");return r.json()})
+    .then(function(j){
+      var e=j[0],out="";
+      out+="<div class='elword'><b>"+esc(e.word)+"</b> "+(e.phonetic?"<span class='elph'>"+esc(e.phonetic)+"</span>":"");
+      var au="";try{for(var i=0;i<(e.phonetics||[]).length;i++)if(e.phonetics[i].audio){au=e.phonetics[i].audio;break}}catch(x){}
+      if(au)out+=" <button class='elsay' id='elSay'>🔊 Listen</button>";
+      out+="</div>";
+      (e.meanings||[]).forEach(function(m){
+        out+="<div class='elpos2'>"+esc(m.partOfSpeech)+"</div>";
+        (m.definitions||[]).slice(0,3).forEach(function(d){
+          out+="<div class='eldef'>• "+esc(d.definition)+(d.example?"<div class='elex'>“"+esc(d.example)+"”</div>":"")+"</div>";
+        });
+        if(m.synonyms&&m.synonyms.length)out+="<div class='elsyn'>Similar: "+esc(m.synonyms.slice(0,6).join(", "))+"</div>";
+      });
+      res.innerHTML=out;
+      var sb=document.getElementById("elSay");
+      if(sb)sb.onclick=function(){try{new Audio(au).play()}catch(x){speak(e.word,0.9)}};
+    })
+    .catch(function(){
+      if(!lw)res.innerHTML="<div class='elnote'>“"+esc(w)+"” not found. Check the spelling, or check your internet connection for the full dictionary.</div>";
+      else res.innerHTML+="<div class='elnote'>(Full dictionary needs internet — the IELTS word bank meaning above works offline.)</div>";
+    });
+}
+/* ---------- skills practice ---------- */
+function skillsView(){
+  stopTimer();setT("🎧 Skills Practice — Duolingo Style");
+  bodyEl.innerHTML="";
+  var g=ce("div","elgrid2");
+  [["📖","Reading","Passages with questions","read"],["🎧","Listening","Listen and answer","listen"],["🎤","Speaking","Read aloud + cue cards","speak"],["✍️","Writing","Prompts, word count, model answers","write"]].forEach(function(it){
+    var b=ce("button","eltile","<span class='elic'>"+it[0]+"</span><span class='elt1'>"+it[1]+"</span><span class='elt2'>"+it[2]+"</span>");
+    b.onclick=function(){skillRun(it[3])};g.appendChild(b);
+  });
+  bodyEl.appendChild(g);
+  var bk=ce("button","elbtn2","← Back");bk.onclick=home;bodyEl.appendChild(bk);
+}
+function mcqRun(title,items,done){
+  bodyEl.innerHTML="";var idx=0,score=0;
+  var hd=ce("div","elqhd");bodyEl.appendChild(hd);
+  var box=ce("div");bodyEl.appendChild(box);
+  function render(){
+    if(idx>=items.length){box.innerHTML="<div class='elresult'>🏁 Finished!<br><b>"+score+" / "+items.length+"</b> correct</div>";hd.textContent="";var b=ce("button","elbtn","Done");b.onclick=done||skillsView;box.appendChild(b);return}
+    var it=items[idx];
+    hd.textContent=title+" — Question "+(idx+1)+" of "+items.length+" · Score "+score;
+    box.innerHTML="";
+    if(it.passage){var p=ce("div","elpass",esc(it.passage));box.appendChild(p)}
+    box.appendChild(ce("div","elq",esc(it.q)));
+    it.o.forEach(function(op,i){
+      var b=ce("button","elopt",esc(op));
+      b.onclick=function(){
+        var opts=box.querySelectorAll(".elopt");opts.forEach(function(x){x.disabled=true});
+        if(i===it.a){b.classList.add("ok");score++}else{b.classList.add("bad");opts[it.a].classList.add("ok")}
+        var n=ce("button","elbtn","Next →");n.onclick=function(){idx++;render()};box.appendChild(n);
+      };
+      box.appendChild(b);
+    });
+  }
+  render();
+}
+function skillRun(kind){
+  stopTimer();
+  if(kind==="read"){
+    setT("📖 Reading Practice");
+    bodyEl.innerHTML="";
+    PASSAGES.forEach(function(p,i){
+      var b=ce("button","eltile","<span class='elt1'>"+esc(p.t)+"</span><span class='elt2'>"+p.qs.length+" questions</span>");
+      b.onclick=function(){
+        var items=p.qs.map(function(q){return {passage:p.x,q:q[0],o:q[1],a:q[2]}});
+        mcqRun("📖 "+p.t,items,skillsView);
+      };
+      bodyEl.appendChild(b);
+    });
+    var bk=ce("button","elbtn2","← Back");bk.onclick=skillsView;bodyEl.appendChild(bk);
+  }
+  else if(kind==="listen"){
+    setT("🎧 Listening Practice");
+    bodyEl.innerHTML="<div class='elnote'>Tap Play, listen carefully, then choose the answer. You may replay in practice.</div>";
+    var items=LISTEN.map(function(L){return {q:L.q,o:L.o,a:L.a,script:L.s}});
+    var idx=0,score=0,box=ce("div");bodyEl.appendChild(box);
+    (function render(){
+      if(idx>=items.length){box.innerHTML="<div class='elresult'>🏁 Finished!<br><b>"+score+" / "+items.length+"</b> correct</div>";var d=ce("button","elbtn","Done");d.onclick=skillsView;box.appendChild(d);return}
+      var it=items[idx];box.innerHTML="";
+      box.appendChild(ce("div","elqhd","Listening "+(idx+1)+" of "+items.length+" · Score "+score));
+      var pl=ce("button","elbtn","▶ Play");pl.onclick=function(){if(!speak(it.script,0.95))alert("Audio is not supported on this browser.")};box.appendChild(pl);
+      box.appendChild(ce("div","elq",esc(it.q)));
+      it.o.forEach(function(op,i){
+        var b=ce("button","elopt",esc(op));
+        b.onclick=function(){var os=box.querySelectorAll(".elopt");os.forEach(function(x){x.disabled=true});if(i===it.a){b.classList.add("ok");score++}else{b.classList.add("bad");os[it.a].classList.add("ok")}var n=ce("button","elbtn","Next →");n.onclick=function(){idx++;render()};box.appendChild(n)};
+        box.appendChild(b);
+      });
+    })();
+  }
+  else if(kind==="speak"){
+    setT("🎤 Speaking Practice");
+    bodyEl.innerHTML="";
+    bodyEl.appendChild(ce("div","elsh","Read Aloud — tap the mic and read the sentence:"));
+    READALOUD.forEach(function(s){
+      var card=ce("div","elcard");
+      card.appendChild(ce("div","elq",esc(s)));
+      var row=ce("div","elsearch");
+      var mic=ce("button","elbtn","🎤 Speak");var hear=ce("button","elbtn2","🔊 Hear it");
+      var out=ce("div","elnote","");
+      hear.onclick=function(){speak(s,0.92)};
+      mic.onclick=function(){
+        out.textContent="Listening… speak now";
+        listenOnce(function(tr,err){
+          if(!tr){out.textContent="Mic not available ("+err+"). Use Chrome and allow the microphone.";return}
+          var want=s.toLowerCase().replace(/[^a-z0-9 ]/g,"").split(/\s+/),got=tr.toLowerCase().replace(/[^a-z0-9 ]/g,"").split(/\s+/),hit=0;
+          want.forEach(function(w){if(got.indexOf(w)>=0)hit++});
+          var pct=Math.round(hit/want.length*100);
+          out.innerHTML="You said: “"+esc(tr)+"”<br><b>Match: "+pct+"%</b>"+(pct>=80?" — Excellent! 🎉":pct>=55?" — Good, keep practising.":" — Listen once more and try again.");
+        });
+      };
+      row.appendChild(mic);row.appendChild(hear);card.appendChild(row);card.appendChild(out);bodyEl.appendChild(card);
+    });
+    bodyEl.appendChild(ce("div","elsh","Cue Card — speak for 2 minutes (timer):"));
+    CUECARDS.forEach(function(c){
+      var card=ce("div","elcard");
+      card.appendChild(ce("div","elq",esc(c.t)));
+      card.appendChild(ce("div","elnote","You should say: "+c.pts.join(" · ")));
+      var tm=ce("div","eltimer","2:00");
+      var st=ce("button","elbtn","▶ Start 2-minute timer");
+      st.onclick=function(){startCountdown(tm,120,function(){tm.textContent="⏰ Time up!"})};
+      card.appendChild(tm);card.appendChild(st);bodyEl.appendChild(card);
+    });
+    var bk=ce("button","elbtn2","← Back");bk.onclick=skillsView;bodyEl.appendChild(bk);
+  }
+  else if(kind==="write"){
+    setT("✍️ Writing Practice");
+    bodyEl.innerHTML="";
+    WRITEPROMPTS.forEach(function(w){
+      var card=ce("div","elcard");
+      card.appendChild(ce("div","elsh",esc(w.t)));
+      card.appendChild(ce("div","elq",esc(w.p)));
+      var ta=ce("textarea","elta");ta.rows=8;ta.placeholder="Write your answer here…";
+      var cnt=ce("div","elnote","Words: 0");
+      ta.addEventListener("input",function(){cnt.textContent="Words: "+wc(ta.value)});
+      var mb=ce("button","elbtn2","Show model plan & checklist");
+      var md=ce("div","elmodel","");md.style.display="none";md.textContent=w.m+"\n\nChecklist: ✓ Clear paragraphs ✓ Your position is clear ✓ Linking words (Firstly, However, Therefore) ✓ A range of sentences ✓ No spelling mistakes";
+      mb.onclick=function(){md.style.display=md.style.display==="none"?"block":"none"};
+      card.appendChild(ta);card.appendChild(cnt);card.appendChild(mb);card.appendChild(md);bodyEl.appendChild(card);
+    });
+    var bk=ce("button","elbtn2","← Back");bk.onclick=skillsView;bodyEl.appendChild(bk);
+  }
+}
+/* ---------- timers ---------- */
+var timerInt=null;
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null}}
+function startCountdown(el,secs,onEnd){
+  stopTimer();var left=secs;
+  function paint(){el.textContent=Math.floor(left/60)+":"+("0"+(left%60)).slice(-2)}
+  paint();
+  timerInt=setInterval(function(){left--;if(left<=0){stopTimer();paint();if(onEnd)onEnd()}else paint()},1000);
+}
+/* ---------- IELTS full mock ---------- */
+var mock=null;
+function mockIntro(){
+  stopTimer();setT("🏆 IELTS Full Mock Test — Real Exam A to Z");
+  bodyEl.innerHTML="";
+  var c=ce("div","elcard");
+  c.innerHTML="<div class='elq'>Sit like the real exam. The test runs in the real order:</div>"
+   +"<div class='eldef'>🎧 <b>Listening</b> — 4 parts, 11 questions (audio plays once per part)</div>"
+   +"<div class='eldef'>📖 <b>Reading</b> — 3 passages, 12 questions · 60 minutes</div>"
+   +"<div class='eldef'>✍️ <b>Writing</b> — Task 1 + Task 2 · 60 minutes</div>"
+   +"<div class='eldef'>🎤 <b>Speaking</b> — Part 1, Cue Card (2 min) and Part 3</div>"
+   +"<div class='elnote'>Listening & Reading are auto-marked with an IELTS band estimate. Writing & Speaking include model answers for self-checking — just like real practice books.</div>";
+  var st=ce("button","elbtn","▶ Start the Full Mock Test");
+  st.onclick=function(){mock={L:{},R:{},sec:0};mockListening()};
+  c.appendChild(st);bodyEl.appendChild(c);
+  var bk=ce("button","elbtn2","← Back");bk.onclick=home;bodyEl.appendChild(bk);
+}
+function mockHead(name,timeSecs,onTimeout){
+  var hd=ce("div","elqhd");
+  var tm=ce("span","eltimer2","");hd.appendChild(ce("span","",name+" · "));hd.appendChild(tm);
+  bodyEl.innerHTML="";bodyEl.appendChild(hd);
+  if(timeSecs)startCountdown(tm,timeSecs,function(){if(onTimeout)onTimeout()});
+  return hd;
+}
+function mockListening(){
+  mock.sec=1;var part=0;
+  function renderPart(){
+    if(part>=MOCK_L.length){mockReading();return}
+    var P=MOCK_L[part];
+    mockHead("🎧 Listening — "+P.p,0,null);
+    var box=ce("div");bodyEl.appendChild(box);
+    box.appendChild(ce("div","elnote","Press Play and listen. In the real exam the audio plays only ONCE — answer while you listen."));
+    var played=false;
+    var pl=ce("button","elbtn","▶ Play Part "+(part+1));
+    pl.onclick=function(){if(played)return;played=true;pl.disabled=true;pl.textContent="🔊 Playing… (only once)";if(!speak(P.s,0.97))alert("Audio is not supported on this browser.")};
+    box.appendChild(pl);
+    P.qs.forEach(function(q,qi){
+      box.appendChild(ce("div","elq",esc(q[0])));
+      q[1].forEach(function(op,i){
+        var b=ce("button","elopt",esc(op));
+        b.onclick=function(){mock.L[part+"_"+qi]=i;var sib=b.parentNode.querySelectorAll(".elopt");sib.forEach(function(x){x.classList.remove("sel")});b.classList.add("sel")};
+        box.appendChild(b);
+      });
+    });
+    var nx=ce("button","elbtn",part<MOCK_L.length-1?"Next Part →":"Finish Listening →");
+    nx.onclick=function(){try{speechSynthesis.cancel()}catch(e){}part++;renderPart()};
+    box.appendChild(nx);
+  }
+  renderPart();
+}
+function mockReading(){
+  mock.sec=2;
+  mockHead("📖 Reading — 60 minutes",3600,function(){mockWriting()});
+  var box=ce("div");bodyEl.appendChild(box);
+  PASSAGES.forEach(function(p,pi){
+    box.appendChild(ce("div","elsh","Passage "+(pi+1)+": "+esc(p.t)));
+    box.appendChild(ce("div","elpass",esc(p.x)));
+    p.qs.forEach(function(q,qi){
+      box.appendChild(ce("div","elq",esc(q[0])));
+      q[1].forEach(function(op,i){
+        var b=ce("button","elopt",esc(op));
+        b.onclick=function(){mock.R[pi+"_"+qi]=i;var sib=b.parentNode.querySelectorAll(".elopt");sib.forEach(function(x){x.classList.remove("sel")});b.classList.add("sel")};
+        box.appendChild(b);
+      });
+    });
+  });
+  var nx=ce("button","elbtn","Finish Reading → Writing");nx.onclick=function(){stopTimer();mockWriting()};box.appendChild(nx);
+}
+function mockWriting(){
+  mock.sec=3;
+  mockHead("✍️ Writing — 60 minutes",3600,function(){mockSpeaking()});
+  var box=ce("div");bodyEl.appendChild(box);
+  box.appendChild(ce("div","elsh","Task 1"));box.appendChild(ce("div","elq",esc(MOCK_W1)));
+  var t1=ce("textarea","elta");t1.rows=7;var c1=ce("div","elnote","Words: 0");
+  t1.addEventListener("input",function(){c1.textContent="Words: "+wc(t1.value)});box.appendChild(t1);box.appendChild(c1);
+  box.appendChild(ce("div","elsh","Task 2"));box.appendChild(ce("div","elq",esc(MOCK_W2)));
+  var t2=ce("textarea","elta");t2.rows=9;var c2=ce("div","elnote","Words: 0");
+  t2.addEventListener("input",function(){c2.textContent="Words: "+wc(t2.value)});box.appendChild(t2);box.appendChild(c2);
+  mock.w1=function(){return t1.value};mock.w2=function(){return t2.value};
+  var nx=ce("button","elbtn","Finish Writing → Speaking");nx.onclick=function(){stopTimer();mockSpeaking()};box.appendChild(nx);
+}
+function mockSpeaking(){
+  mock.sec=4;stopTimer();
+  mockHead("🎤 Speaking",0,null);
+  var box=ce("div");bodyEl.appendChild(box);
+  box.appendChild(ce("div","elsh","Part 1 — answer each question aloud (mic) or in your head:"));
+  MOCK_S1.forEach(function(q){
+    var card=ce("div","elcard");card.appendChild(ce("div","elq",esc(q)));
+    var out=ce("div","elnote","");
+    var mic=ce("button","elbtn","🎤 Answer");
+    mic.onclick=function(){out.textContent="Listening…";listenOnce(function(tr,err){out.textContent=tr?("You said: “"+tr+"”"):"Mic not available ("+err+"). Speak aloud without the mic — the practice still counts."})};
+    card.appendChild(mic);card.appendChild(out);box.appendChild(card);
+  });
+  box.appendChild(ce("div","elsh","Part 2 — Cue Card:"));
+  var cc=ce("div","elcard");
+  cc.appendChild(ce("div","elq",esc(MOCK_S2.t)));
+  cc.appendChild(ce("div","elnote","You should say: "+MOCK_S2.pts.join(" · ")));
+  var tm=ce("div","eltimer","1:00 preparation");
+  var prep=ce("button","elbtn2","▶ Start 1-minute preparation");
+  prep.onclick=function(){startCountdown(tm,60,function(){tm.textContent="Now speak for 2 minutes!";startCountdown(tm,120,function(){tm.textContent="⏰ Speaking time finished"})})};
+  cc.appendChild(tm);cc.appendChild(prep);box.appendChild(cc);
+  box.appendChild(ce("div","elsh","Part 3 — discuss these aloud:"));
+  MOCK_S3.forEach(function(q){box.appendChild(ce("div","elq","• "+esc(q)))});
+  var fin=ce("button","elbtn","🏁 Finish — See My Result");fin.onclick=mockResult;box.appendChild(fin);
+}
+function mockResult(){
+  stopTimer();setT("🏆 IELTS Mock — Result");
+  var lc=0,lt=0,rc=0,rt=0;
+  MOCK_L.forEach(function(P,pi){P.qs.forEach(function(q,qi){lt++;if(mock.L[pi+"_"+qi]===q[2])lc++})});
+  PASSAGES.forEach(function(p,pi){p.qs.forEach(function(q,qi){rt++;if(mock.R[pi+"_"+qi]===q[2])rc++})});
+  var lb=bandOf(lc/lt*100),rb=bandOf(rc/rt*100),ob=((lb+rb)/2).toFixed(1);
+  bodyEl.innerHTML="";
+  var c=ce("div","elcard");
+  c.innerHTML="<div class='elresult'>🎧 Listening: <b>"+lc+" / "+lt+"</b> → Band <b>"+lb+"</b><br>📖 Reading: <b>"+rc+" / "+rt+"</b> → Band <b>"+rb+"</b><br><br>Estimated overall (Listening + Reading): <b>Band "+ob+"</b></div>"
+   +"<div class='elnote'>✍️ Writing: Task 1 — "+wc(mock.w1?mock.w1():"")+" words · Task 2 — "+wc(mock.w2?mock.w2():"")+" words. Compare your essays with the model plans in Writing Practice and check: clear position, 4 paragraphs, linking words, range of sentences.<br>🎤 Speaking is self-assessed in this free mock — practise daily with the Speaking section of English Lab.</div>";
+  var d=ce("button","elbtn","Done");d.onclick=home;c.appendChild(d);bodyEl.appendChild(c);
+}
+/* ---------- dashboard card ---------- */
+function addCard(){
+  var hc=document.getElementById("homeCards");
+  if(!hc||document.getElementById("engLabCard"))return;
+  var card=ce("div","card");card.id="engLabCard";
+  card.style.cssText="background:linear-gradient(135deg,#0B1E3D,#123063);color:#fff;border:2px solid #C9A227;border-radius:16px;padding:16px;margin:10px 0";
+  card.innerHTML="<div style='font:800 18px system-ui;color:#FFD964'>🎓 English Lab — IELTS & English Tests</div>"
+   +"<div style='font:13px system-ui;opacity:.9;margin:4px 0 10px'>Full Dictionary (with Urdu meanings) · Duolingo-style Skills Practice · IELTS Full Mock Test — the real exam, A to Z</div>";
+  var row=ce("div","elsearch");
+  [["📖 Dictionary",function(){openLab();dictView()}],["🎧 Skills Practice",function(){openLab();skillsView()}],["🏆 Full Mock Test",function(){openLab();mockIntro()}]].forEach(function(b){
+    var btn=ce("button","elbtn",b[0]);btn.onclick=b[1];row.appendChild(btn);
+  });
+  card.appendChild(row);
+  hc.insertBefore(card,hc.firstChild);
+}
+window.__openEnglishLab=openLab;
+setInterval(addCard,2500);
+})();
+
+</script>
 </body></html>
