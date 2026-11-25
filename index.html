@@ -2163,11 +2163,22 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     });
     b.hidden=false;try{b.dir="auto";Array.prototype.forEach.call(b.children,function(c){c.dir="auto"})}catch(e){}
   }
+  /* Course name of a question: AI tests carry it on the temp subject (crs);
+     bank questions resolve through their folder card, with the app's own
+     yearOf() grouping as fallback. null = truly unknown. */
+  function qCrsName(id){
+    try{
+      var q=Q[id],sc=q&&S[q.sec],y=sc&&SUB[sc.sub];if(!y)return null;
+      if(y.crs)return String(y.crs).toLowerCase();
+      var card=YEARS.filter(function(c){return c.k===y.cat})[0];
+      if(!card){var yk=yearOf(sc.sub);card=YEARS.filter(function(c){return c.k===yk})[0]}
+      return courseOf(card).toLowerCase();
+    }catch(e){return null}
+  }
   function urduAllowed(id){
     try{
       var a=window.__URDU_ON;if(!Array.isArray(a))return true;
-      var q=Q[id],sc=q&&S[q.sec],y=sc&&SUB[sc.sub];if(!y)return true;
-      var card=YEARS.filter(function(c){return c.k===y.cat})[0],cn=courseOf(card).toLowerCase();
+      var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
     }catch(e){return true}
   }
@@ -2175,8 +2186,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function hintAllowed(id){
     try{
       var a=window.__HINT_ON;if(!Array.isArray(a))return true;
-      var q=Q[id],sc=q&&S[q.sec],y=sc&&SUB[sc.sub];if(!y)return true;
-      var card=YEARS.filter(function(c){return c.k===y.cat})[0],cn=courseOf(card).toLowerCase();
+      var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
     }catch(e){return true}
   }
@@ -3462,13 +3472,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       });
       return n;
     }
-    window.__playAi=function(title,list){
+    window.__playAi=function(title,list,course){
       try{
         tmpClean();
         var nm=String(title||"Practice MCQs").slice(0,60);
         TMP={q:Q.length,s:S.length,sub:SUB.length,ai:1};
         var si=SUB.length;
-        SUB.push({name:nm,short:nm,code:"MCQ",spq:60,time:60,cat:"__tmp",tmp:true});
+        SUB.push({name:nm,short:nm,code:"MCQ",spq:60,time:60,cat:"__tmp",tmp:true,crs:String(course||"").trim()});
         AIC=S.length;
         S.push({sub:si,name:nm,code:nm.slice(0,24)});
         if(!aiAdd(list)){tmpClean();return false}
@@ -4680,6 +4690,7 @@ function webFill(){
   const ab2=document.getElementById("wsAbout");if(ab2)ab2.value=String(s.about||"");
   const pv2=document.getElementById("wsPrivacy");if(pv2)pv2.value=String(s.privacy||"");
   const ct2=document.getElementById("wsContact");if(ct2)ct2.value=String(s.contact||"");
+  const pa2=document.getElementById("wsPagesAuto");if(pa2)pa2.checked=s.pagesAuto!==false;
   const w1=document.getElementById("wsWa1");if(w1)w1.value=String(s.wa1||"");
   const w2=document.getElementById("wsWa2");if(w2)w2.value=String(s.wa2||"");
   const wn1=document.getElementById("wsWaName1");if(wn1)wn1.value=String(s.waName1||"");
@@ -4727,6 +4738,16 @@ function buildWebset(){
   const wpriv=el("textarea");wpriv.id="wsPrivacy";wpriv.rows=5;wpriv.placeholder="Write the Privacy Policy text here...";wpriv.style.cssText="width:100%";box.appendChild(wpriv);
   box.appendChild(el("div","label","Contact page text - the writing at the top of the Contact page (the WhatsApp and Email buttons stay below it). Empty = the page's own text:"));
   const wcontact=el("textarea");wcontact.id="wsContact";wcontact.rows=4;wcontact.placeholder="Write the Contact page text here...";wcontact.style.cssText="width:100%";box.appendChild(wcontact);
+  const pagesRefresh=async()=>{try{localStorage.removeItem("eg23site")}catch(_){}try{if(window.caches&&caches.keys){const ks=await caches.keys();for(const k of ks){try{const c=await caches.open(k);const rs=await c.keys();for(const r of rs){if(/about\.html|privacy-policy\.html|contact\.html/.test(r.url))await c.delete(r)}}catch(_){}}}}catch(_){}};
+  const pauRow=el("label","",null);pauRow.style.cssText="display:flex;gap:8px;align-items:flex-start;margin-top:12px";
+  const pau=el("input");pau.type="checkbox";pau.id="wsPagesAuto";pau.checked=true;
+  pauRow.append(pau,el("span","","\u{1F504} Auto update \u2014 when I press Save, the About / Privacy / Contact pages update by themselves (the old saved copies on phones are cleared, so the new text shows at once)."));
+  box.appendChild(pauRow);
+  const pupdRow=el("div");pupdRow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:8px";
+  const pupd=el("button","btn","\u{1F504} Update pages now");pupd.type="button";
+  const pupdSt=el("span","label st");pupdSt.id="wsPagesSt";
+  pupd.onclick=async()=>{pupd.disabled=true;pupdSt.textContent="Updating\u2026";try{await saveSite();await pagesRefresh();pupdSt.textContent="\u2705 Pages updated \u2014 About, Privacy and Contact will now open with the new text."}catch(e){pupdSt.textContent="Error: "+((e&&(e.message||e.code))||e)}pupd.disabled=false};
+  pupdRow.append(pupd,pupdSt);box.appendChild(pupdRow);
   sec("💬 WhatsApp");
   box.appendChild(el("div","label","WhatsApp numbers - the file credits show a WhatsApp icon instead of the number (tap the icon to open a chat):"));
   box.appendChild(el("div","label","WhatsApp - Usman Amjad:"));
@@ -4845,9 +4866,10 @@ function buildWebset(){
       const prv=document.getElementById("wsPrivacy");
       const ctv=document.getElementById("wsContact");
       const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",credit:crv?crv.value.trim():"",wa1:wav1?wav1.value.trim():"",wa2:wav2?wav2.value.trim():"",waName1:wnv1?wnv1.value.trim():"",waName2:wnv2?wnv2.value.trim():"",waU1:wavU1?wavU1.value.trim():"",waU2:wavU2?wavU2.value.trim():"",lgsubs:lgv?lgv.value.trim():"",logo:String(window.__wsLogo||""),about:abv?abv.value.trim():"",privacy:prv?prv.value.trim():"",contact:ctv?ctv.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
-        guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),updatedAt:serverTimestamp()};
+        guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),pagesAuto:(function(){const p=document.getElementById("wsPagesAuto");return p?p.checked:true})(),updatedAt:serverTimestamp()};
       await setDoc(doc(db,"sitedata","style"),data);
       applySite(data);
+      if(data.pagesAuto){try{await pagesRefresh()}catch(_){}}
       mtStatus("Saved — all visitors will see it",100,true);
       wst.textContent="Saved ✓";
     }catch(e){wst.textContent="Error: "+((e&&(e.code||e.message))||e);alert("Not saved: "+((e&&(e.message||e.code))||e))}
@@ -6823,7 +6845,7 @@ function aiqStart(){
   window.__aiqDone=t=>{aiqDone(t);const add=aiqTake(3);if(add.length&&window.__aiAppend)window.__aiAppend(add)};
   if(AIQ.lent.length){AIQ.buf.unshift(...AIQ.lent);AIQ.lent=[]}
   window.__aiqNext=()=>{};
-  window.__playAi("Civil Engineering",aiqTake(10));
+  window.__playAi("Civil Engineering",aiqTake(10),"Civil");
 }
 /* subject names shown on the home card (Civil first, then the site's courses, then a few common ones) */
 function aiqSubjects(bank){
@@ -7624,7 +7646,7 @@ async function aiqSubjectQuick(subject){
   for(let i=all.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[all[i],all[r]]=[all[r],all[i]]}
   return {fresh:all.filter(m=>!seen.has(aiqKey(m))),old:all.filter(m=>seen.has(aiqKey(m)))};
 }
-window.__aiPlaySubject=async function(subject){
+window.__aiPlaySubject=async function(subject,course){
   if(!window.__playAi)return;
   if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
   const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
@@ -7655,7 +7677,8 @@ window.__aiPlaySubject=async function(subject){
     if(buf.length<10)more();
   };
   if(buf.length<10)setTimeout(more,3000);
-  window.__playAi(subject,first.map(toQ));
+  const pair=(window.__aiqChips||[]).filter(p=>p[1]===subject)[0];
+  window.__playAi(subject,first.map(toQ),course||(pair?pair[0]:""));
 };
 
 /* subject practice for AI-type subjects (New Civil, CA, ACCA ...): opens with 10 MCQs of this subject (own bank MCQs first, AI fills the rest); every answered MCQ brings 3 new */
@@ -7705,7 +7728,7 @@ window.__aiPlayBankSub=async function(label,course,own){
       if(add.length&&window.__aiAppend)window.__aiAppend(add.map(toQ));
       if(buf.length<10)more();
     };
-    window.__playAi(lb0||subject,first.map(toQ));
+    window.__playAi(lb0||subject,first.map(toQ),field);
     if(siri)siri.hide();
     /* top up to 10 in the background, then keep a few in reserve */
     if(restNeed>0)setTimeout(async()=>{
