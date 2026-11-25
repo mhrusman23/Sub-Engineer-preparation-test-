@@ -13432,23 +13432,35 @@ function mockResult(){
    +"<div class='elnote'>✍️ Writing: Task 1 — "+wc(mock.w1?mock.w1():"")+" words · Task 2 — "+wc(mock.w2?mock.w2():"")+" words. Compare your essays with the model plans in Writing Practice and check: clear position, 4 paragraphs, linking words, range of sentences.<br>🎤 Speaking is self-assessed in this free mock — practise daily with the Speaking section of English Lab.</div>";
   var d=ce("button","elbtn","Done");d.onclick=home;c.appendChild(d);bodyEl.appendChild(c);
 }
-/* ---------- dashboard card ---------- */
-function addCard(){
-  var hc=document.getElementById("homeCards");
-  if(!hc||document.getElementById("engLabCard"))return;
+/* ---------- IELTS course folder ke ANDAR card (dashboard par nahi) ---------- */
+function buildCard(){
   var card=ce("div","card");card.id="engLabCard";
-  card.style.cssText="background:linear-gradient(135deg,#0B1E3D,#123063);color:#fff;border:2px solid #C9A227;border-radius:16px;padding:16px;margin:10px 0";
-  card.innerHTML="<div style='font:800 18px system-ui;color:#FFD964'>🎓 English Lab — IELTS & English Tests</div>"
-   +"<div style='font:13px system-ui;opacity:.9;margin:4px 0 10px'>Full Dictionary (with Urdu meanings) · Duolingo-style Skills Practice · IELTS Full Mock Test — the real exam, A to Z</div>";
+  card.style.cssText="background:linear-gradient(135deg,#0B1E3D,#123063);color:#fff;border:2px solid #C9A227;border-radius:16px;padding:16px;margin:14px 0";
+  card.innerHTML="<div style='font:800 18px system-ui;color:#FFD964'>\u{1F393} English Lab \u2014 IELTS & English Tests</div>"
+   +"<div style='font:13px system-ui;opacity:.9;margin:4px 0 10px'>Full Dictionary (with Urdu meanings) \u00B7 Duolingo-style Skills Practice \u00B7 IELTS Full Mock Test \u2014 the real exam, A to Z</div>";
   var row=ce("div","elsearch");
-  [["📖 Dictionary",function(){openLab();dictView()}],["🎧 Skills Practice",function(){openLab();skillsView()}],["🏆 Full Mock Test",function(){openLab();mockIntro()}]].forEach(function(b){
+  [["\u{1F4D6} Dictionary",function(){openLab();dictView()}],["\u{1F3A7} Skills Practice",function(){openLab();skillsView()}],["\u{1F3C6} Full Mock Test",function(){openLab();mockIntro()}]].forEach(function(b){
     var btn=ce("button","elbtn",b[0]);btn.onclick=b[1];row.appendChild(btn);
   });
   card.appendChild(row);
-  hc.insertBefore(card,hc.firstChild);
+  return card;
+}
+function placeCard(){
+  var sec=document.getElementById("courseCentre");
+  var card=document.getElementById("engLabCard");
+  var on=false;
+  if(sec&&!sec.hidden){var h=sec.querySelector("h2");if(h&&(h.textContent||"").indexOf("IELTS & English Tests")===0)on=true}
+  if(!on){if(card)card.remove();return}
+  if(!card)card=buildCard();
+  if(card.parentNode!==sec){
+    var bar=sec.querySelector(".acViewBar");
+    if(bar&&bar.nextSibling)sec.insertBefore(card,bar.nextSibling);
+    else if(bar)sec.appendChild(card);
+    else sec.insertBefore(card,sec.firstChild);
+  }
 }
 window.__openEnglishLab=openLab;
-setInterval(addCard,2500);
+setInterval(placeCard,1200);
 })();
 
 </script>
