@@ -6687,7 +6687,7 @@ function buildAiMcq(host){
         const bt=writeBatch(db);
         ids.slice(i,i+200).forEach(id=>{
           const r=P.find(x=>x.id===id);if(!r)return;const d=r.d;
-          if(approve)bt.set(doc(collection(db,"mcqs")),{question:d.question,question_urdu:d.question_urdu||"",options:d.options,correct:d.correct,explanation:d.explanation||"",subject:d.subject||"",source:d.source||"AI",status:"approved",approvedBy:ME,approvedAt:serverTimestamp()});
+          if(approve)bt.set(doc(collection(db,"mcqs")),{question:String(d.question||""),question_urdu:d.question_urdu||"",options:Array.isArray(d.options)?d.options:[],correct:Number.isInteger(d.correct)?d.correct:0,explanation:d.explanation||"",subject:d.subject||"",source:d.source||"AI",status:"approved",approvedBy:ME,approvedAt:serverTimestamp()});
           bt.delete(doc(db,"pending_mcqs",id));n++;
         });
         await bt.commit();
@@ -6757,7 +6757,7 @@ function buildAiMcq(host){
         ok.disabled=true;
         try{
           const bt=writeBatch(db);
-          bt.set(doc(collection(db,"mcqs")),{question:d.question,question_urdu:d.question_urdu||"",options:d.options,correct:d.correct,explanation:d.explanation||"",subject:d.subject||"",source:d.source||"AI",status:"approved",approvedBy:ME,approvedAt:serverTimestamp()});
+          bt.set(doc(collection(db,"mcqs")),{question:String(d.question||""),question_urdu:d.question_urdu||"",options:Array.isArray(d.options)?d.options:[],correct:Number.isInteger(d.correct)?d.correct:0,explanation:d.explanation||"",subject:d.subject||"",source:d.source||"AI",status:"approved",approvedBy:ME,approvedAt:serverTimestamp()});
           bt.delete(doc(db,"pending_mcqs",r.id));
           await bt.commit();say("Approved and saved.");await load();
         }catch(e){say(admDeny(e));ok.disabled=false}
@@ -11768,13 +11768,13 @@ html[data-look="premium"] body{
   background-image:radial-gradient(900px 420px at 85% -80px,rgba(255,176,58,.16),transparent 60%),radial-gradient(800px 420px at -10% 0%,rgba(255,90,60,.10),transparent 55%)!important;
   color:#23262E;
 }
-html[data-look="premium"] .hero{background:linear-gradient(150deg,#FFFFFF 0%,#FBF2DF 72%)!important;border-color:rgba(201,154,30,.45)!important;color:#23262E;box-shadow:0 22px 40px -18px rgba(80,64,25,.35)!important}
-html[data-look="premium"] .hbrand{color:#23262E}
-html[data-look="premium"] .hbrand b{background:linear-gradient(120deg,#B97E10,#D9A41B);-webkit-background-clip:text;background-clip:text}
-html[data-look="premium"] .hkick{color:#B97E10}
-html[data-look="premium"] .htag{color:#5C6572}
+html[data-look="premium"] .hero{background:linear-gradient(180deg,#14161A 0%,#1E232D 100%) top/100% 252px no-repeat,linear-gradient(150deg,#FFFFFF 0%,#FBF2DF 72%)!important;border-color:rgba(201,154,30,.45)!important;color:#23262E;box-shadow:0 22px 40px -18px rgba(80,64,25,.35)!important}
+html[data-look="premium"] .hbrand{color:#FFFFFF}
+html[data-look="premium"] .hbrand b{background:linear-gradient(120deg,#E9C46A,#C9A227);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-look="premium"] .hkick{color:#E9C46A}
+html[data-look="premium"] .htag{color:rgba(255,255,255,.78)}
 html[data-look="premium"] .hstat,html[data-look="premium"] .hstats>*{background:#FFFFFF!important;border-color:#E7DFCE!important;color:#23262E}
-html[data-look="premium"] .hstat b{color:#B97E10}
+html[data-look="premium"] .hstat b{color:#8A6D1F}
 html[data-look="premium"] #gate{background:linear-gradient(160deg,#FFFDF7 0%,#FAF3E3 58%,#F4E9CF 100%)!important}
 html[data-look="premium"] .btn.primary{
   background:linear-gradient(135deg,#FF7A59 0%,#FF5A3C 60%,#F0441F 100%)!important;
@@ -11787,6 +11787,7 @@ html[data-look="premium"] ::selection{background:#FFB03A;color:#1B1206}
 html[data-look="premium"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#FF7A59,#F0441F)}
 html[data-look="premium"] #seoInfo{color:#5C6572!important}
 html[data-look="premium"] #seoInfo a{color:#C7431F!important}
+html[data-look="premium"] #test .label{color:#6B7280!important}
 </style>
 
 <style id="premiumIvoryTestCss">
