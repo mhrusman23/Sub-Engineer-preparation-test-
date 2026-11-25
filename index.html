@@ -4127,6 +4127,7 @@ function applySite(x){
   const r=document.documentElement.style;
   const nm=String(x.name||"").trim();
   try{localStorage.setItem("eg23site",JSON.stringify({n:nm,d:String(x.desc||"").trim(),e:String(x.email||"").trim()}))}catch(_){}
+  try{localStorage.setItem("eg23hubAuto",x.hubAuto===false?"0":"1")}catch(_){}
   if(nm){
     document.title=nm+" · Past papers & solved MCQs for all subjects";
 
@@ -4691,6 +4692,7 @@ function webFill(){
   const pv2=document.getElementById("wsPrivacy");if(pv2)pv2.value=String(s.privacy||"");
   const ct2=document.getElementById("wsContact");if(ct2)ct2.value=String(s.contact||"");
   const pa2=document.getElementById("wsPagesAuto");if(pa2)pa2.checked=s.pagesAuto!==false;
+  const hb2=document.getElementById("wsHubAuto");if(hb2)hb2.checked=s.hubAuto!==false;
   const w1=document.getElementById("wsWa1");if(w1)w1.value=String(s.wa1||"");
   const w2=document.getElementById("wsWa2");if(w2)w2.value=String(s.wa2||"");
   const wn1=document.getElementById("wsWaName1");if(wn1)wn1.value=String(s.waName1||"");
@@ -4748,6 +4750,10 @@ function buildWebset(){
   const pupdSt=el("span","label st");pupdSt.id="wsPagesSt";
   pupd.onclick=async()=>{pupd.disabled=true;pupdSt.textContent="Updating\u2026";try{await saveSite();await pagesRefresh();pupdSt.textContent="\u2705 Pages updated \u2014 About, Privacy and Contact will now open with the new text."}catch(e){pupdSt.textContent="Error: "+((e&&(e.message||e.code))||e)}pupd.disabled=false};
   pupdRow.append(pupd,pupdSt);box.appendChild(pupdRow);
+  const hubRow=el("label","",null);hubRow.style.cssText="display:flex;gap:8px;align-items:flex-start;margin-top:12px";
+  const hubCb=el("input");hubCb.type="checkbox";hubCb.id="wsHubAuto";hubCb.checked=true;
+  hubRow.append(hubCb,el("span","","\u{1F5C2}\uFE0F Auto Papers Hub \u2014 ON: whenever you log in or Publish the bank, the website saves the fresh subjects list by itself and the Papers Hub page updates on its own (new subjects appear with a NEW badge). OFF: the hub keeps its saved list."));
+  box.appendChild(hubRow);
   sec("💬 WhatsApp");
   box.appendChild(el("div","label","WhatsApp numbers - the file credits show a WhatsApp icon instead of the number (tap the icon to open a chat):"));
   box.appendChild(el("div","label","WhatsApp - Usman Amjad:"));
@@ -4866,7 +4872,7 @@ function buildWebset(){
       const prv=document.getElementById("wsPrivacy");
       const ctv=document.getElementById("wsContact");
       const data={name:wname.value.trim(),desc:wdesc.value.trim(),email:emv?emv.value.trim():"",announce:anv?anv.value.trim():"",credit:crv?crv.value.trim():"",wa1:wav1?wav1.value.trim():"",wa2:wav2?wav2.value.trim():"",waName1:wnv1?wnv1.value.trim():"",waName2:wnv2?wnv2.value.trim():"",waU1:wavU1?wavU1.value.trim():"",waU2:wavU2?wavU2.value.trim():"",lgsubs:lgv?lgv.value.trim():"",logo:String(window.__wsLogo||""),about:abv?abv.value.trim():"",privacy:prv?prv.value.trim():"",contact:ctv?ctv.value.trim():"",mode:wsMode,accent:wsAccent,pic:wsPic,
-        guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),pagesAuto:(function(){const p=document.getElementById("wsPagesAuto");return p?p.checked:true})(),updatedAt:serverTimestamp()};
+        guestHours:gh,endMsg:endv?endv.value.trim():String(ACC_END||""),pagesAuto:(function(){const p=document.getElementById("wsPagesAuto");return p?p.checked:true})(),hubAuto:(function(){const p=document.getElementById("wsHubAuto");return p?p.checked:true})(),updatedAt:serverTimestamp()};
       await setDoc(doc(db,"sitedata","style"),data);
       applySite(data);
       if(data.pagesAuto){try{await pagesRefresh()}catch(_){}}
@@ -5668,7 +5674,6 @@ function openMenu(){
   if(IS_OWNER&&!PV)mi("\u{1F4E2} Ads (add / edit) \u00b7 admin only",()=>openAds());
   mi("\u{1F4BC} Jobs",()=>openJobs());
   mi("\u{1F4AC} Friendly Chat",()=>openChat());
-  if(!PV)mi("\u{1F464}\uFE0F Change username",()=>openAcct("uname"));
   mi("\u{1F4E4} Share site on WhatsApp",()=>shareSite());
   const hr=el("div","mnhr");hr.style.cssText="height:1px";bx.appendChild(hr);
 
@@ -6296,6 +6301,7 @@ function startApp(bank){
   try{bankWatch()}catch(_){}
   try{buildMockTests()}catch(e){console.error("Mock tests init failed",e)}
   try{aiqInit(bank)}catch(e){console.error("AI MCQs init failed",e)}
+  setTimeout(()=>{try{hubSync(bank)}catch(_){}},6000);
   try{aimcqAutoStart()}catch(e){}
   try{updInstallUI()}catch(_){}
   recordVisit();
@@ -6338,6 +6344,43 @@ function validBank(b){
   }
   return "";
 }
+/* ---- AUTO PAPERS HUB: owner/admin ke login aur har bank publish par subjects ki
+   taza list sitedata/hub me save hoti hai; papers hub page wahan se khud update
+   ho jata hai (naya subject hub me khud aa jata hai, file dobara upload nahi). ---- */
+function hubSlug(t){return String(t||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")}
+async function hubSync(bank){
+  try{
+    if(!IS_OWNER&&!IS_ADMIN)return;
+    if(localStorage.getItem("eg23hubAuto")==="0")return;
+    const bk=bank||JSON.parse(BANK_JSON||"null");
+    if(!bk||!Array.isArray(bk.SUB)||!Array.isArray(bk.S)||!Array.isArray(bk.Q0)||bk.Q0.length<500)return;
+    const cnt={};bk.Q0.forEach(q=>{const s=bk.S[q.sec];if(s)cnt[s.sub]=(cnt[s.sub]||0)+1});
+    const cardOf2={};(bk.CARDS||[]).forEach(c=>{if(c&&c.k)cardOf2[c.k]=c});
+    const order=["ACCA","CA","Electrical","Mechanical","IT","General Knowledge","PPSC","Civil","IELTS & English Tests","NEBOSH & HSE","Medical International","PMP & IT Certifications","CPA & CMA","GRE & SAT","CSS & PMS"];
+    const groups={},seen={};
+    bk.SUB.forEach((s,i)=>{
+      if(!s||s.tmp||!(cnt[i]>0))return;
+      const cat=String(s.cat||"");let course,title;
+      if(cat==="pp"){course="PPSC";title="PPSC past papers"}
+      else{const card=cardOf2[cat];course=String((card&&card.course)||"").trim()||"Civil";
+        title=course==="Civil"?"Civil Diploma subject MCQs":course==="General Knowledge"?"General Knowledge MCQs":course+" subject MCQs"}
+      const sl=hubSlug(s.name);if(!sl)return;
+      const bare="/papers/"+sl+".html",mcq="/papers/"+sl+"-mcqs.html";
+      const p=cat==="pp"?bare:mcq,p2=cat==="pp"?mcq:bare;
+      if(seen[p])return;seen[p]=1;
+      (groups[title]=groups[title]||{title:title,course:course,links:[]}).links.push({t:String(s.name)+" MCQs ("+course+")",p:p,p2:p2,a:"/#t="+sl});
+    });
+    const list=Object.values(groups).sort((x,y)=>{const ix=order.indexOf(x.course),iy=order.indexOf(y.course);return (ix<0?99:ix)-(iy<0?99:iy)});
+    const total=list.reduce((n,g)=>n+g.links.length,0);
+    if(total<20)return;
+    let h=0;list.forEach(g=>g.links.forEach(l=>{for(let k=0;k<l.t.length;k++)h=(h*31+l.t.charCodeAt(k))>>>0}));
+    const v=total+"|"+h;
+    if(localStorage.getItem("eg23hubV")===v)return;
+    await setDoc(doc(db,"sitedata","hub"),{groups:list,total:total,updatedAt:serverTimestamp()});
+    localStorage.setItem("eg23hubV",v);
+  }catch(_){}
+}
+
 async function publishBank(bank){
   const bad=validBank(bank);if(bad)throw new Error(bad);
   const json=JSON.stringify(bank),CH=200000,version=Date.now(),pieces=[];
@@ -6355,6 +6398,7 @@ async function publishBank(bank){
   window.__BANKV=version;
   await b.commit();
   BANK_JSON=json;BANK_META={version,parts:pieces.length,count:bank.Q0.length,updatedAt:Timestamp.fromMillis(version)};
+  hubSync(bank);
 }
 
 /* ---------------- live bank update: naye MCQs bina reload, peeche se live shamil ----------------
