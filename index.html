@@ -14112,4 +14112,76 @@ body.egBarOn #webAssist{bottom:102px}
   setInterval(function(){var on=!blocked();bar.classList.toggle("on",on);document.body.classList.toggle("egBarOn",on)},300);
 })();
 </script>
+<style id="egUpdCss">
+#egUpd{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:100200;background:linear-gradient(135deg,#0B1530,#16295C);border:1px solid rgba(233,196,106,.55);border-radius:18px;padding:13px 14px;box-shadow:0 16px 34px rgba(11,21,48,.45);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;animation:egUpdIn .35s ease}
+@keyframes egUpdIn{from{transform:translateY(-16px);opacity:0}to{transform:none;opacity:1}}
+#egUpd .t{font-weight:800;font-size:15px;color:#E9C46A}
+#egUpd .n{font-size:12.5px;color:rgba(255,255,255,.85);margin-top:3px}
+#egUpd .row{display:flex;gap:8px;margin-top:10px}
+#egUpd .up{flex:1;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#231a02;border:0;border-radius:12px;padding:10px;font:800 13.5px system-ui,sans-serif;cursor:pointer}
+#egUpd .x{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:12px;padding:10px 14px;font:700 13px system-ui,sans-serif;cursor:pointer}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== APP UPDATE CHECK (2026-11-26) =====
+   /version.json (no-store) se latest version parhta hai. Naya web build ya
+   naya APK ho to app ke andar banner: "New update available" + Update button.
+   NOTE: har nayi release par is file ka BUILD aur version.json ka web
+   DONO aik sath barhane hain. */
+(function(){
+  "use strict";
+  var BUILD=2;
+  var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
+  function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
+  function blocked(){
+    if(document.getElementById("appmenu"))return true;
+    var ids=["test","result","editor","engLab","rexOverlay","quizBox","aip","vipw"];
+    for(var i=0;i<ids.length;i++){if(vis(document.getElementById(ids[i])))return true}
+    if(document.querySelector(".toolPage.open"))return true;
+    return false;
+  }
+  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+  function doUpdate(){
+    var done=false;
+    function go(){if(done)return;done=true;try{var u=new URL(location.href);u.searchParams.set("upd",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}}
+    var jobs=[];
+    if(window.caches&&caches.keys)jobs.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}).catch(function(){}));
+    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}).catch(function(){}));
+    if(jobs.length)Promise.all(jobs).then(function(){setTimeout(go,60)});else go();
+    setTimeout(go,2600);
+  }
+  function show(kind){
+    if(document.getElementById("egUpd"))return;
+    var b=document.createElement("div");b.id="egUpd";
+    var t=document.createElement("div");t.className="t";t.textContent="\u{1F389} "+(kind==="apk"?"New app version available":"New update available");
+    var n=document.createElement("div");n.className="n";n.textContent=latest.note||"Latest features and fixes are ready.";
+    var row=document.createElement("div");row.className="row";
+    var up=document.createElement("button");up.type="button";up.className="up";up.textContent="\u2B06 Update now";
+    var x=document.createElement("button");x.type="button";x.className="x";x.textContent="Later";
+    up.addEventListener("click",function(){
+      if(kind==="apk"){ls("eg23apkSeen",String(latest.apk));b.remove();location.href=latest.apkUrl;return}
+      b.remove();doUpdate();
+    });
+    x.addEventListener("click",function(){ls("eg23updDismiss",(kind==="apk"?"apk":"web")+(kind==="apk"?latest.apk:latest.web));b.remove()});
+    row.appendChild(up);row.appendChild(x);
+    b.appendChild(t);b.appendChild(n);b.appendChild(row);
+    document.body.appendChild(b);
+  }
+  var tries=0;
+  function check(){
+    fetch("/version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(v){
+      latest.web=v.web||0;latest.apk=v.apk||0;latest.apkUrl=v.apkUrl||"/engrgroup23.apk";latest.note=v.note||"";
+      var dis=ls("eg23updDismiss")||"";
+      var standalone=false;try{standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){}
+      var seenApk=parseInt(ls("eg23apkSeen")||"1",10)||1;
+      var kind=null;
+      if(standalone&&/android/i.test(navigator.userAgent||"")&&latest.apk>seenApk&&dis!=="apk"+latest.apk)kind="apk";
+      else if(latest.web>BUILD&&dis!=="web"+latest.web)kind="web";
+      if(!kind)return;
+      if(blocked()){if(tries++<10)setTimeout(check,30000);return}
+      show(kind);
+    }).catch(function(){});
+  }
+  var n=0;var iv=setInterval(function(){n++;var st=document.getElementById("start");if(st&&!st.hidden){clearInterval(iv);setTimeout(check,2500);setInterval(check,300000)}else if(n>120)clearInterval(iv)},500);
+})();
+</script>
 </body></html>
