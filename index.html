@@ -13964,7 +13964,7 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
 #instSec .egIBar{background:linear-gradient(135deg,#E9C46A,#C9A227);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 24px rgba(185,126,16,.28)}
 #instSec .egIT{flex:1;min-width:0}
 #instSec .egIT b{display:block;font-size:15.5px;color:#241A00}
-#instSec .egIT span{font-size:12px;color:#5c4a12;line-height:1.45;display:block;margin-top:2px}
+#instSec .egISub{font-size:12px;color:#5c4a12;line-height:1.45;display:block;margin-top:2px}
 #instSec .egIBtn{border:0;border-radius:999px;padding:11px 20px;background:#0A1730;color:#E9C46A;font:800 13.5px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
 #instSec .egITabs{display:flex;gap:6px;margin:12px 0 8px}
 #instSec .egITab{flex:1;text-align:center;font-size:12px;font-weight:700;padding:7px 2px;border-radius:10px;background:#fff;border:1px solid #E7DFCE;color:#6B7280;cursor:pointer}
@@ -14003,7 +14003,7 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
   var bar=document.createElement("div");bar.className="egIBar";
   var tt=document.createElement("div");tt.className="egIT";
   var tb=document.createElement("b");tb.innerHTML="\u{1F4F2} <span data-sn>Engrgroup23</span> App";
-  var ts=document.createElement("span");ts.textContent="Install it like an app \u2014 one tap from your home screen, works offline too";
+  var ts=document.createElement("span");ts.className="egISub";ts.textContent="Install it like an app \u2014 one tap from your home screen, works offline too";
   tt.appendChild(tb);tt.appendChild(ts);
   var btn=document.createElement("button");btn.type="button";btn.className="egIBtn";btn.textContent="Install";btn.setAttribute("data-install","");
   bar.appendChild(tt);bar.appendChild(btn);sec.appendChild(bar);
