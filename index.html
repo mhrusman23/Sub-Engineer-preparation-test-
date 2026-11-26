@@ -14073,7 +14073,7 @@ body.egBarOn #webAssist{bottom:102px}
     var s=document.getElementById("instSec");if(s){s.scrollIntoView({behavior:"smooth",block:"center"});return}
     var d=document.querySelector("[data-install]");if(d)d.click();
   });
-  mk("\u2630","Menu","",function(){clickMenuBtn()});
+  mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}});
   var sheet=document.createElement("div");sheet.id="egTSheet";
   var TOOLS=[["mistakes","\u{1F4D5}","Mistake Book","mistake"],["daily","\u{1F525}","Daily Challenge","daily"],["grand","\u{1F4DD}","Grand Mock Test","grand"],["board","\u{1F3C6}","Leaderboard","board"],["progress","\u{1F4CA}","My Progress",null]];
   var rows="";
@@ -14093,6 +14093,7 @@ body.egBarOn #webAssist{bottom:102px}
     });
   });
   mk("\u2699\uFE0F","Settings","",function(){
+    if(window.__openSettingsPage){window.__openSettingsPage();return}
     if(!clickMenuBtn())return;
     afterMenu(function(m){
       var items=m.querySelectorAll(".mnit"),tgt=null;
@@ -14131,7 +14132,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=3;
+  var BUILD=4;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14243,6 +14244,162 @@ body.egBarOn #webAssist{bottom:102px}
   }
   window.__openAppPage=function(){build().classList.add("open")};
   window.__closeAppPage=function(){if(page)page.classList.remove("open")};
+})();
+</script>
+<style id="egMpCss">
+.egMpHead{background:#fff;border-bottom:1px solid #E7DFCE;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;display:flex;align-items:center;gap:12px;font:800 17px system-ui,sans-serif;color:#23262E}
+.egMpBack{width:38px;height:38px;border-radius:12px;background:#F1EAD8;border:0;font-size:18px;cursor:pointer;color:#6B7280;flex:0 0 38px}
+.egMpBody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:640px;margin:0 auto;box-sizing:border-box}
+.egMpProf{display:flex;align-items:center;gap:12px;padding:16px 16px 4px;cursor:pointer}
+.egMpProf .avw{width:50px;height:50px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#E9C46A,#C9A227);display:flex;align-items:center;justify-content:center;font-size:24px;flex:0 0 50px}
+.egMpProf .avw img{width:100%;height:100%;object-fit:cover}
+.egMpProf b{font-size:16px;color:#23262E;display:block}
+.egMpProf span{font-size:12px;color:#6B7280}
+.egMpGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.egTile{background:#fff;border:1px solid #E7DFCE;border-radius:16px;padding:15px 5px 11px;text-align:center;font:700 12px system-ui,sans-serif;color:#3c4450;cursor:pointer;box-shadow:0 3px 8px rgba(80,64,25,.05);-webkit-tap-highlight-color:transparent}
+.egTile i{display:block;font-style:normal;font-size:27px;margin-bottom:7px}
+.egTile:active{transform:scale(.96)}
+.egMpList{margin:2px 14px 18px;background:#fff;border:1px solid #E7DFCE;border-radius:16px;overflow:hidden}
+.egMpRow{display:flex;align-items:center;gap:13px;width:100%;padding:14px 16px;font:600 14.5px system-ui,sans-serif;color:#23262E;background:#fff;border:0;border-bottom:1px solid #F0E9D8;cursor:pointer;text-align:left;box-sizing:border-box}
+.egMpRow:last-child{border-bottom:0}
+.egMpRow i{font-style:normal;font-size:20px}
+.egMpRow b{margin-left:auto;color:#C9A227}
+.egMpRow.so{color:#D33;font-weight:700}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== MENU + SETTINGS PAGES (2026-11-26, Design 3: Icon Grid) =====
+   Bottom bar ke Menu/Settings se full pages. Items asal #appmenu se liye
+   jate hain (jo menu peeche hidden rehta hai) — tile click asal button ko
+   hi click karta hai, is liye owner/manager/student ke items khud sahi
+   aate hain aur har action bilkul purana wala chalta hai. */
+(function(){
+  "use strict";
+  var SET_KEYS=["Language","Website settings","Settings (important)","VIP Premium","Watermark","Verified students","Website Doctor","Feature settings","AI backup keys","Web.Assist settings","Managers","Mode:"];
+  var SHORT=[["Dashboard (Home)","Home"],["Mistake Book","Mistakes"],["Daily Challenge","Daily"],["Grand Mock Test","Grand Mock"],["Leaderboard","Top 10"],["My Progress","Progress"],["Share site","Share"],["Sign out","Sign out"],["Friendly Chat","Chat"],["AI MCQs","AI MCQs"],["Admin panel","Admin"],["Fix misplaced","Fix Subjects"],["Activity dashboard","Activity"],["AI backup keys","AI Keys"],["Web.Assist settings","Web.Assist"],["Verified students","Verified"],["Feature settings","Features"],["Website Doctor","Doctor"],["PDF Watermark","Watermark"],["VIP Premium","VIP"],["Website settings","Website"],["Settings (important)","Settings"],["Update & Fix","Update & Fix"],["Website look","Look"],["Managers","Managers"],["Mode:","Mode"],["Language","Language"],["Profile","Profile"],["Library","Library"],["Jobs","Jobs"],["Bin","Bin"],["Jokes","Jokes"],["Ads","Ads"]];
+  function shortLabel(t){for(var i=0;i<SHORT.length;i++){if(t.indexOf(SHORT[i][0])>=0)return SHORT[i][1]}var x=t.replace(/\([^)]*\)/g,"").replace(/\u00B7.*$/,"").trim();return x.length>16?x.slice(0,15)+"\u2026":x}
+  function iconOf(t){var m=t.match(/^\s*(\S+)\s+/);if(m&&/[^\x00-\x7F]/.test(m[1]))return m[1];return "\u{1F539}"}
+  function isSettings(t){for(var i=0;i<SET_KEYS.length;i++){if(t.indexOf(SET_KEYS[i])>=0)return true}return false}
+  function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
+
+  function harvest(cb){
+    if(!clickMenuBtn()){cb(null);return}
+    var tries=0;
+    (function wait(){
+      var m=document.getElementById("appmenu");
+      var box=m?m.querySelector(".mnbox"):null;
+      if(box&&(box.querySelector("#egUpdBtn")||tries>14)){
+        m.style.visibility="hidden";
+        cb({menu:m,box:box,
+          head:box.querySelector(".mnhead"),
+          look:box.querySelector(".lookbtn"),
+          upd:box.querySelector("#egUpdBtn"),
+          items:[].slice.call(box.querySelectorAll(".mnit"))});
+        return;
+      }
+      if(tries++>25){cb(null);return}
+      setTimeout(wait,70);
+    })();
+  }
+  function cleanup(h){if(h&&h.menu&&h.menu.parentNode)h.menu.remove()}
+
+  function makePage(id,title){
+    var pg=document.createElement("div");pg.className="toolPage";pg.id=id;
+    pg.innerHTML='<div class="egMpHead"><button type="button" class="egMpBack" aria-label="Back">\u2190</button>'+title+'</div><div class="egMpBody"></div>';
+    document.body.appendChild(pg);
+    return pg;
+  }
+  var menuPage=makePage("egMenuPage","\u2630 Menu");
+  var setPage=makePage("egSetPage","\u2699\uFE0F Settings");
+
+  function tile(entry){
+    var b=document.createElement("button");b.type="button";b.className="egTile";
+    var ic=document.createElement("i");ic.textContent=entry.icon;
+    var sp=document.createElement("span");sp.textContent=entry.label;
+    b.appendChild(ic);b.appendChild(sp);
+    b.addEventListener("click",function(){
+      if(entry.kind==="look"){
+        entry.el.click();
+        setTimeout(function(){entry.label=shortLabel(entry.el.textContent);sp.textContent=entry.label},200);
+        return;
+      }
+      closeAll(entry.h);
+      entry.el.click();
+    });
+    return b;
+  }
+  function row(entry,so){
+    var b=document.createElement("button");b.type="button";b.className="egMpRow"+(so?" so":"");
+    var ic=document.createElement("i");ic.textContent=entry.icon;
+    var tx=document.createElement("span");var lbl=entry.full;var mm=lbl.match(/^\s*(\S+)\s+/);if(mm&&/[^\x00-\x7F]/.test(mm[1]))lbl=lbl.slice(mm[0].length);tx.textContent=lbl;
+    var ar=document.createElement("b");ar.textContent="\u203A";
+    b.appendChild(ic);b.appendChild(tx);if(!so)b.appendChild(ar);
+    b.addEventListener("click",function(){closeAll(entry.h);entry.el.click()});
+    return b;
+  }
+  function closeAll(h){
+    menuPage.classList.remove("open");setPage.classList.remove("open");
+    if(h)cleanup(h);
+  }
+  menuPage.querySelector(".egMpBack").addEventListener("click",function(){closeAll(curH)});
+  setPage.querySelector(".egMpBack").addEventListener("click",function(){closeAll(curH)});
+  var curH=null;
+
+  function profStrip(h){
+    var wrap=document.createElement("div");wrap.className="egMpProf";
+    var avw=document.createElement("div");avw.className="avw";
+    if(h.head){
+      var av=h.head.querySelector("img,canvas,div,span");
+      if(av){var c=av.cloneNode(true);c.removeAttribute("id");avw.appendChild(c)}
+      else avw.textContent="\u{1F468}\u200D\u{1F393}";
+    }else avw.textContent="\u{1F468}\u200D\u{1F393}";
+    var tx=document.createElement("div");
+    var nm=(h.head&&h.head.querySelector("b"))?h.head.querySelector("b").textContent:"User";
+    var subs=h.head?[].slice.call(h.head.querySelectorAll("small")).map(function(x){return x.textContent}):[];
+    var idl=subs.filter(function(x){return x.indexOf("ID:")>=0})[0]||subs[0]||"";
+    tx.innerHTML="";var b=document.createElement("b");b.textContent=nm;var sp=document.createElement("span");sp.textContent=idl;
+    tx.appendChild(b);tx.appendChild(sp);
+    wrap.appendChild(avw);wrap.appendChild(tx);
+    wrap.addEventListener("click",function(){if(h.head){var hd=h.head;closeAll(h);hd.click()}});
+    return wrap;
+  }
+
+  function entries(h){
+    var list=[];
+    if(h.look)list.push({el:h.look,icon:iconOf(h.look.textContent),label:shortLabel(h.look.textContent),full:h.look.textContent,kind:"look",h:h,settings:true});
+    if(h.upd)list.push({el:h.upd,icon:iconOf(h.upd.textContent),label:shortLabel(h.upd.textContent),full:h.upd.textContent,kind:"btn",h:h,settings:true});
+    h.items.forEach(function(el){
+      var t=el.textContent;
+      list.push({el:el,icon:iconOf(t),label:shortLabel(t),full:t.trim(),kind:"btn",h:h,settings:isSettings(t)});
+    });
+    return list;
+  }
+
+  function open(which){
+    harvest(function(h){
+      if(!h){var m=document.getElementById("appmenu");if(m)m.style.visibility="";return}
+      curH=h;
+      var all=entries(h);
+      var pg=which==="set"?setPage:menuPage;
+      var body=pg.querySelector(".egMpBody");body.textContent="";
+      if(which==="menu")body.appendChild(profStrip(h));
+      var grid=document.createElement("div");grid.className="egMpGrid";
+      var rows=[];
+      all.forEach(function(e){
+        if(which==="set"?!e.settings:e.settings)return;
+        if(which==="menu"&&(e.full.indexOf("Share site")>=0||e.full.indexOf("Sign out")>=0)){rows.push(e);return}
+        grid.appendChild(tile(e));
+      });
+      body.appendChild(grid);
+      if(rows.length){
+        var lst=document.createElement("div");lst.className="egMpList";
+        rows.forEach(function(e){lst.appendChild(row(e,e.full.indexOf("Sign out")>=0))});
+        body.appendChild(lst);
+      }
+      pg.classList.add("open");
+    });
+  }
+  window.__openMenuPage=function(){open("menu")};
+  window.__openSettingsPage=function(){open("set")};
 })();
 </script>
 </body></html>
