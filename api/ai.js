@@ -20,7 +20,7 @@ const crypto = require("crypto");
 const PROJECT = process.env.FIREBASE_PROJECT_ID || "engrgroup23";
 const MODEL = (process.env.GEMINI_MODEL || "gemini-flash-latest").replace(/[^\w.\-]/g, "");
 // if the main model is busy (503), retired (404) or over quota (429) the next one is tried
-const MODELS = [MODEL, "gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-flash-latest"].filter((m, i, arr) => arr.indexOf(m) === i);
+const MODELS = [MODEL, "gemini-flash-lite-latest", "gemini-2.0-flash"].filter((m, i, arr) => arr.indexOf(m) === i);
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 const PER_MINUTE = 12;
@@ -284,11 +284,11 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-// waits at most 8 s for Google to start answering, then the next model is tried
+// waits at most 6 s for Google to start answering, then the next model is tried
 // key defaults to the main GEMINI_API_KEY; vertex = Google Cloud Vertex AI Express key
 async function gemini(model, body, key, vertex) {
   const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 8000);
+  const tm = setTimeout(() => ac.abort(), 6000);
   const k = key || process.env.GEMINI_API_KEY;
   const url = vertex
     ? "https://aiplatform.googleapis.com/v1/publishers/google/models/" + model + ":streamGenerateContent?alt=sse&key=" + encodeURIComponent(k)
@@ -343,7 +343,9 @@ async function withFeatureKey(fc, body, system, contents, maxOut) {
   if (p === "openai" || fc.baseUrl || /^sk-/.test(fc.key)) return openaiStyle(fc, body, system, contents, maxOut);
   const models = fc.model ? [fc.model.replace(/[^\w.\-]/g, "")] : MODELS;
   let up;
+  const t0 = Date.now();
   for (const m of models) {
+    if (up && Date.now() - t0 > 14000) break;
     const nb = JSON.parse(JSON.stringify(body));
     up = await gemini(m, nb, fc.key, p === "vertex");
     if (up.status === 400 && nb.generationConfig.thinkingConfig) {
@@ -418,7 +420,9 @@ module.exports = async function handler(req, res) {
     // 2) otherwise (or if that key failed: limit over, blocked, busy) the main key from Vercel
     if (!up || !up.ok) {
       if (process.env.GEMINI_API_KEY) {
+        const t0 = Date.now();
         for (const m of MODELS) {
+          if (up && Date.now() - t0 > 14000) break;
           up = await gemini(m, body);
           if (up.status === 400 && body.generationConfig.thinkingConfig) {
             // some models do not accept thinkingBudget: retry once without it
