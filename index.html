@@ -5725,6 +5725,7 @@ function openMenu(){
   }
   mi("\u{1F3E0} Dashboard (Home)",()=>{goHomeHard()});
   mi("\u{1F464} Profile",()=>openAcct());
+  mi("\u{1F3A8} Themes",()=>{if(window.__openThemes)window.__openThemes()});
   if(IS_OWNER&&!PV)mi("\u{1F310} Website settings",()=>openWebset());
   if(window.__LIB_ON!==false||(IS_ADMIN&&!PV))mi("\u{1F4DA} Library",()=>openLibrary());
   if(FEAT.mistake)mi("\u{1F4D5} Mistake Book",()=>{var m=document.getElementById("appmenu");if(m)m.remove();if(window.__openToolPage)window.__openToolPage("mistakes")});
@@ -9626,6 +9627,16 @@ hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</scr
   apply(get());
 })();
 </script>
+<script>
+/* Platform mode: installed app (standalone) = "app", browser website = "web". Premium look only. */
+try{var _pm=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;document.documentElement.setAttribute("data-plt",_pm?"app":"web");
+window.__EG_ACC={navy:["#2563EB","#1E40AF"],indigo:["#4F46E5","#3730A3"],purple:["#7C3AED","#5B21B6"],pink:["#DB2777","#9D174D"],red:["#DC2626","#991B1B"],crimson:["#BE123C","#881337"],orange:["#EA580C","#9A3412"],amber:["#D97706","#92400E"],gold:["#B97E10","#8A5E0B"],lime:["#65A30D","#3F6212"],green:["#059669","#065F46"],teal:["#0D9488","#115E59"],cyan:["#0284C7","#075985"],slate:["#475569","#1E293B"],brown:["#92400E","#5B2A0C"]};
+window.__egSetTheme=function(thm,acc){var d=document.documentElement;if(thm&&["light","dark","colourful"].indexOf(thm)>=0){d.setAttribute("data-thm",thm);try{localStorage.setItem("eg23thm",thm)}catch(e){}}if(acc&&window.__EG_ACC[acc]){var c=window.__EG_ACC[acc];d.style.setProperty("--accent",c[0]);d.style.setProperty("--accD",c[1]);try{localStorage.setItem("eg23acc",acc)}catch(e){}}};
+var _t=_pm?"dark":"light",_a=_pm?"gold":"indigo";try{_t=localStorage.getItem("eg23thm")||_t;_a=localStorage.getItem("eg23acc")||_a}catch(e){}
+if(["light","dark","colourful"].indexOf(_t)<0)_t=_pm?"dark":"light";if(!window.__EG_ACC[_a])_a=_pm?"gold":"indigo";
+document.documentElement.setAttribute("data-thm",_t);var _c=window.__EG_ACC[_a];document.documentElement.style.setProperty("--accent",_c[0]);document.documentElement.style.setProperty("--accD",_c[1]);
+}catch(e){document.documentElement.setAttribute("data-plt","web");document.documentElement.setAttribute("data-thm","light")}
+</script>
 <style id="ddTheme">
 #ddBtn{display:none;position:fixed;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:60;padding:8px 14px;border:2.5px solid #2a0e3d;border-radius:999px;background:#fff0d6;color:#2a0e3d;font:800 13px system-ui,sans-serif;box-shadow:3px 3px 0 #2a0e3d;cursor:pointer}
 body:has(#test:not([hidden])) #ddBtn{display:block}
@@ -11922,6 +11933,93 @@ html[data-look="premium"] #test .label{color:#6B7280!important}
 html[data-look="premium"] .bar,html[data-look="premium"] #result .sheet-head,html[data-look="premium"] #editor .sheet-head,html[data-look="premium"] #adm .top,html[data-look="premium"] .ov .top,html[data-look="premium"] #aip .aihead{background:linear-gradient(120deg,#14161A,#1E232D)!important;color:#FFFFFF}
 </style>
 
+<style id="platformCss">
+/* ===== THEME SYSTEM (user pick B, 2026-11-26): 3 themes Light/Dark/Colourful + 15 accent colours.
+   --accent/--accD are set inline on <html> by the head script (localStorage eg23thm/eg23acc).
+   Defaults: app = Dark + Gold, website = Light + Indigo. Premium look only. ===== */
+/* --- LIGHT --- */
+html[data-look="premium"][data-thm="light"]{--bg:#F6F7F9;--panel:#FFFFFF;--ink:#16181D;--muted:#6B7280;--line:#E8EAF0;--gold:#B97E10}
+html[data-look="premium"][data-thm="light"] body{background:#F6F7F9!important;color:#16181D}
+html[data-look="premium"][data-thm="light"] .hero{background:#FFFFFF!important;border-color:#E8EAF0!important;color:#16181D;box-shadow:0 10px 26px rgba(22,24,29,.07)}
+html[data-look="premium"][data-thm="light"] .hbrand{color:#16181D!important}
+html[data-look="premium"][data-thm="light"] .hbrand b{background:linear-gradient(92deg,var(--accent),var(--accD))!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+html[data-look="premium"][data-thm="light"] .hkick{color:var(--accent)!important}
+html[data-look="premium"][data-thm="light"] .htag{color:#6B7280!important}
+html[data-look="premium"][data-thm="light"] .hstat,html[data-look="premium"][data-thm="light"] .hstats>*{background:#F4F5FA!important;border-color:#E8EAF0!important;color:#16181D}
+html[data-look="premium"][data-thm="light"] .hstat b{color:var(--accD)!important}
+html[data-look="premium"][data-thm="light"] .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accD))!important;color:#fff!important;box-shadow:0 8px 18px rgba(22,24,29,.20)!important}
+html[data-look="premium"][data-thm="light"] #egTab{background:linear-gradient(135deg,#17181C,#26272E)}
+html[data-look="premium"][data-thm="light"] #egTab button.mid{background:linear-gradient(135deg,var(--accent),var(--accD));border-color:#F6F7F9;color:#fff}
+/* --- DARK --- */
+html[data-look="premium"][data-thm="dark"]{--bg:#070D1F;--panel:#131F3D;--ink:#EDF1FA;--muted:#93A3C4;--line:rgba(255,255,255,.10);--gold:#E9C46A}
+html[data-look="premium"][data-thm="dark"] body{background-color:#070D1F!important;background-image:radial-gradient(760px 360px at 85% -60px,var(--accD),transparent 62%),radial-gradient(680px 340px at -80px 14%,rgba(43,92,255,.12),transparent 60%)!important;color:#EDF1FA}
+html[data-look="premium"][data-thm="dark"] .hero{background:linear-gradient(140deg,var(--accD),#0B1530 72%)!important;border-color:rgba(255,255,255,.16)!important;color:#EDF1FA;box-shadow:0 14px 30px rgba(0,0,0,.35)}
+html[data-look="premium"][data-thm="dark"] .hbrand{color:#FFFFFF!important}
+html[data-look="premium"][data-thm="dark"] .hbrand b{background:linear-gradient(92deg,#F3D27A,#E9C46A)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+html[data-look="premium"][data-thm="dark"] .hkick{color:#E9C46A!important}
+html[data-look="premium"][data-thm="dark"] .htag{color:rgba(255,255,255,.75)!important}
+html[data-look="premium"][data-thm="dark"] .hstat,html[data-look="premium"][data-thm="dark"] .hstats>*{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.12)!important;color:#EDF1FA}
+html[data-look="premium"][data-thm="dark"] .hstat b{color:#E9C46A!important}
+html[data-look="premium"][data-thm="dark"] .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accD))!important;color:#fff!important;box-shadow:0 8px 18px rgba(0,0,0,.40)!important}
+html[data-look="premium"][data-thm="dark"] #gate{background:linear-gradient(160deg,#0B1530,#070D1F)!important;color:#EDF1FA}
+html[data-look="premium"][data-thm="dark"] .toolPage{background:#0A1330!important;color:#EDF1FA}
+html[data-look="premium"][data-thm="dark"] #egTab{background:linear-gradient(135deg,#0B1530,#16295C)}
+html[data-look="premium"][data-thm="dark"] #egTab button.mid{background:linear-gradient(135deg,var(--accent),var(--accD));border-color:#070D1F;color:#fff}
+html[data-look="premium"][data-thm="dark"] #start .ycard{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:0 10px 22px rgba(0,0,0,.35)!important}
+html[data-look="premium"][data-thm="dark"] #start .ycard .yt{color:var(--ink)!important}
+html[data-look="premium"][data-thm="dark"] #yearView .hcard{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:0 8px 18px rgba(0,0,0,.30)!important}
+/* --- COLOURFUL --- */
+html[data-look="premium"][data-thm="colourful"]{--bg:#FAF6EF;--panel:#FFFFFF;--ink:#23262E;--muted:#6B7280;--line:#E9E2D2;--gold:#B97E10}
+html[data-look="premium"][data-thm="colourful"] body{background-color:#FAF6EF!important;background-image:radial-gradient(900px 460px at 50% -100px,var(--accD),transparent 62%)!important;color:#23262E}
+html[data-look="premium"][data-thm="colourful"] .hero{background:linear-gradient(135deg,var(--accent),var(--accD))!important;border-color:transparent!important;color:#FFFFFF;box-shadow:0 14px 30px rgba(22,24,29,.25)}
+html[data-look="premium"][data-thm="colourful"] .hbrand{color:#FFFFFF!important}
+html[data-look="premium"][data-thm="colourful"] .hbrand b{background:none!important;color:#FFE9A8!important;-webkit-text-fill-color:#FFE9A8!important}
+html[data-look="premium"][data-thm="colourful"] .hkick{color:rgba(255,255,255,.85)!important}
+html[data-look="premium"][data-thm="colourful"] .htag{color:rgba(255,255,255,.82)!important}
+html[data-look="premium"][data-thm="colourful"] .hstat,html[data-look="premium"][data-thm="colourful"] .hstats>*{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.30)!important;color:#FFFFFF}
+html[data-look="premium"][data-thm="colourful"] .hstat b{color:#FFFFFF!important}
+html[data-look="premium"][data-thm="colourful"] .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accD))!important;color:#fff!important;box-shadow:0 8px 18px rgba(22,24,29,.22)!important}
+html[data-look="premium"][data-thm="colourful"] #egTab{background:linear-gradient(135deg,var(--accD),var(--accent))}
+html[data-look="premium"][data-thm="colourful"] #egTab button.mid{background:#FFFFFF;border-color:var(--accD);color:var(--accD)}
+/* --- SEO info text per theme --- */
+html[data-look="premium"][data-thm="light"] #seoInfo a{color:var(--accD)!important}
+html[data-look="premium"][data-thm="dark"] #seoInfo{color:#A9B8D8!important}
+html[data-look="premium"][data-thm="dark"] #seoInfo a{color:#E9C46A!important}
+html[data-look="premium"][data-thm="colourful"] #seoInfo a{color:var(--accD)!important}
+/* --- PC / LAPTOP: fixed sidebar + wide layout (browser, wide screens) --- */
+#egSide{display:none}
+@media (min-width:1024px){
+html[data-look="premium"][data-plt="web"] #egTab{display:none!important}
+html[data-look="premium"][data-plt="web"] .wrap{max-width:1240px}
+html[data-look="premium"][data-plt="web"] .ycards{grid-template-columns:repeat(3,1fr)}
+html[data-look="premium"][data-plt="web"] body.egBarOn{padding-bottom:20px!important}
+html[data-look="premium"][data-plt="web"] .hero{background:linear-gradient(130deg,var(--accD),#0B1530 72%)!important;border-color:rgba(255,255,255,.16)!important;color:#EDF1FA;box-shadow:0 14px 30px rgba(11,21,48,.28)}
+html[data-look="premium"][data-plt="web"] .hbrand{color:#FFFFFF!important}
+html[data-look="premium"][data-plt="web"] .hbrand b{background:linear-gradient(92deg,#F3D27A,#E9C46A)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+html[data-look="premium"][data-plt="web"] .hkick{color:#E9C46A!important}
+html[data-look="premium"][data-plt="web"] .htag{color:rgba(255,255,255,.75)!important}
+html[data-look="premium"][data-plt="web"] .hstat,html[data-look="premium"][data-plt="web"] .hstats>*{background:rgba(255,255,255,.07)!important;border-color:rgba(255,255,255,.14)!important;color:#EDF1FA}
+html[data-look="premium"][data-plt="web"] .hstat b{color:#E9C46A!important}
+html[data-look="premium"][data-plt="web"][data-thm="colourful"] .hero{background:linear-gradient(135deg,var(--accent),var(--accD))!important}
+html[data-look="premium"][data-plt="web"] #egSide.on{display:flex;position:fixed;left:0;top:0;bottom:0;width:236px;z-index:1050;flex-direction:column;background:linear-gradient(180deg,var(--accD),#0B1530);color:#DCE5F5;padding:20px 14px;box-shadow:8px 0 30px rgba(7,13,31,.25);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-sizing:border-box}
+html[data-look="premium"][data-plt="web"][data-thm="dark"] #egSide.on{background:linear-gradient(180deg,#0B1530,#05080F)}
+html[data-look="premium"][data-plt="web"][data-thm="colourful"] #egSide.on{background:linear-gradient(180deg,var(--accent),var(--accD))}
+html[data-look="premium"][data-plt="web"] body.egSideOn{padding-left:236px}
+html[data-look="premium"][data-plt="web"] body.egSideOn #egUpd{left:248px}
+#egSide .egSLogo{display:flex;align-items:center;gap:10px;padding:2px 8px 16px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:14px}
+#egSide .egSLogo .lg{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E9C46A,#B97E10);display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+#egSide .egSLogo b{font-size:17px;color:#fff}
+#egSide .egSLogo b i{font-style:normal;color:#E9C46A}
+#egSide button.egSIt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;color:#C9D5EE;font-size:14.5px;font-weight:600;padding:11px 12px;border-radius:12px;cursor:pointer;margin-bottom:4px;font-family:inherit}
+#egSide button.egSIt:hover{background:rgba(255,255,255,.07);color:#fff}
+#egSide button.egSIt .ic{font-size:17px;width:22px;text-align:center;flex:none}
+#egSide .egSFoot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid rgba(255,255,255,.10);font-size:11.5px;color:#8FA3C8;line-height:1.5}
+}
+@media (min-width:1400px){
+html[data-look="premium"][data-plt="web"] .ycards{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+
 <style id="premiumIvoryTestCss">
 /* ===== PREMIUM MCQ LOOK: SMOOTH 6 - IVORY MINIMAL (user pick, 2026-11-23) =====
    Sirf Premium look ke test screen par (html[data-look="premium"] #test).
@@ -14094,15 +14192,18 @@ body.egBarOn #webAssist{bottom:102px}
   function mk(icon,label,cls,fn){var b=document.createElement("button");b.type="button";if(cls)b.className=cls;b.innerHTML="<i>"+icon+"</i>"+(label||"");b.addEventListener("click",fn);bar.appendChild(b);return b}
   function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
   function afterMenu(fn){var n=0;var iv=setInterval(function(){n++;var m=document.getElementById("appmenu");if(m){clearInterval(iv);fn(m)}else if(n>25)clearInterval(iv)},60)}
-  mk("\u2B07\uFE0F","App","",function(){
+  var APPM=false;try{APPM=document.documentElement.getAttribute("data-plt")==="app"}catch(e){}
+  function goHome(){var br=document.querySelector('#userbar [title="Home / Dashboard"]');if(br){br.click();return}window.scrollTo({top:0,behavior:"smooth"})}
+  function goSearch(){var g=document.getElementById("gsrch");if(g&&g.hidden)goHome();setTimeout(function(){var g2=document.getElementById("gsrch"),inp=document.getElementById("gsIn");if(g2)g2.scrollIntoView({behavior:"smooth",block:"center"});if(inp)inp.focus({preventScroll:true})},380)}
+  if(APPM){mk("\u{1F3E0}","Home","",goHome)}else{mk("\u2B07\uFE0F","App","",function(){
     if(window.__openAppPage){window.__openAppPage();return}
     var ua=navigator.userAgent||"";
     if(/android/i.test(ua)){location.href="/engrgroup23.apk";return}
     if(/windows/i.test(ua)){location.href="/engrgroup23-setup.exe";return}
     var s=document.getElementById("instSec");if(s){s.scrollIntoView({behavior:"smooth",block:"center"});return}
     var d=document.querySelector("[data-install]");if(d)d.click();
-  });
-  mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}});
+  })}
+  if(APPM){mk("\u{1F50D}","Search","",goSearch)}else{mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}
   var sheet=document.createElement("div");sheet.id="egTSheet";
   var TOOLS=[["mistakes","\u{1F4D5}","Mistake Book","mistake"],["daily","\u{1F525}","Daily Challenge","daily"],["grand","\u{1F4DD}","Grand Mock Test","grand"],["board","\u{1F3C6}","Leaderboard","board"],["progress","\u{1F4CA}","My Progress",null]];
   var rows="";
@@ -14113,14 +14214,14 @@ body.egBarOn #webAssist{bottom:102px}
   sheet.querySelector("#egTx").addEventListener("click",function(){sheet.classList.remove("on")});
   sheet.querySelectorAll(".trow").forEach(function(r){r.addEventListener("click",function(){sheet.classList.remove("on");if(window.__openToolPage)window.__openToolPage(r.getAttribute("data-k"))})});
   mk("\u26A1","","mid",function(){sheet.classList.add("on")});
-  mk("\u{1F464}","Profile","",function(){
+  if(APPM){mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}else{mk("\u{1F464}","Profile","",function(){
     if(!clickMenuBtn())return;
     afterMenu(function(m){
       var items=m.querySelectorAll(".mnit");
       for(var i=0;i<items.length;i++){if(items[i].textContent.indexOf("Profile")>=0){items[i].click();return}}
       var h=m.querySelector(".mnhead");if(h)h.click();
     });
-  });
+  })}
   mk("\u2699\uFE0F","Settings","",function(){
     if(window.__openSettingsPage){window.__openSettingsPage();return}
     if(!clickMenuBtn())return;
@@ -14144,6 +14245,104 @@ body.egBarOn #webAssist{bottom:102px}
   setInterval(function(){var on=!blocked();bar.classList.toggle("on",on);document.body.classList.toggle("egBarOn",on)},300);
 })();
 </script>
+</script>
+<script type="text/plain" data-lz="1">
+/* ===== PC SIDEBAR (2026-11-26): laptop/desktop par left nav — bottom bar ke buttons ko hi chalata hai.
+   Visibility bhi bar jaisi: sirf dashboard state me (bar ki "on" class mirror hoti hai). ===== */
+(function(){
+  "use strict";
+  if(document.getElementById("egSide"))return;
+  var tries=0;
+  var iv=setInterval(function(){
+    tries++;
+    var tab=document.getElementById("egTab");
+    if(!tab){if(tries>40)clearInterval(iv);return}
+    clearInterval(iv);
+    var side=document.createElement("aside");side.id="egSide";
+    var credit="By Engr Usman Amjad & Engr Umar Sajjad";try{if(window.__creditBy)credit=window.__creditBy()}catch(e){}
+    side.innerHTML='<div class="egSLogo"><span class="lg">\u{1F468}\u200D\u{1F393}</span><b>Engrgroup<i>23</i></b></div>'
+      +'<button type="button" class="egSIt" data-i="-1"><span class="ic">\u{1F3E0}</span>Dashboard</button>'
+      +'<button type="button" class="egSIt" data-i="1"><span class="ic">\u2630</span>Menu</button>'
+      +'<button type="button" class="egSIt" data-i="2"><span class="ic">\u26A1</span>Quick Tools</button>'
+      +'<button type="button" class="egSIt" data-i="0"><span class="ic">\u2B07\uFE0F</span>Download App</button>'
+      +'<button type="button" class="egSIt" data-i="3"><span class="ic">\u{1F464}</span>Profile</button>'
+      +'<button type="button" class="egSIt" data-i="4"><span class="ic">\u2699\uFE0F</span>Settings</button>'
+      +'<div class="egSFoot">'+credit+'</div>';
+    document.body.appendChild(side);
+    side.addEventListener("click",function(e){
+      var b=e.target&&e.target.closest?e.target.closest(".egSIt"):null;if(!b)return;
+      var i=b.getAttribute("data-i");
+      if(i==="-1"){var br=document.querySelector('#userbar [title="Home / Dashboard"]');if(br){br.click();return}window.scrollTo({top:0,behavior:"smooth"});return}
+      var btns=tab.querySelectorAll("button");var t=btns[parseInt(i,10)];if(t)t.click();
+    });
+    setInterval(function(){
+      var on=tab.classList.contains("on");
+      side.classList.toggle("on",on);
+      document.body.classList.toggle("egSideOn",on);
+    },300);
+  },250);
+})();
+</script>
+<style id="egThemeCss">
+#egThemePage .egThBody{flex:1;overflow-y:auto;padding:16px 14px 30px;max-width:640px;margin:0 auto;width:100%;box-sizing:border-box}
+.egThSec{font-size:11px;letter-spacing:.12em;font-weight:800;color:#8A8172;margin:16px 2px 9px}
+.egThCards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.egThCard{border:2px solid #E7DFCE;border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;padding:0;text-align:center;font-family:inherit}
+.egThCard .pv{display:block;height:52px}
+.egThCard .lb{display:block;font-size:12px;font-weight:800;color:#23262E;padding:7px 2px}
+.egThCard.sel{border-color:#B97E10;box-shadow:0 6px 16px rgba(185,126,16,.25)}
+.egThDots{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.egThDot{height:46px;border-radius:13px;border:2px solid transparent;cursor:pointer;position:relative;padding:0}
+.egThDot span{position:absolute;left:0;right:0;bottom:3px;font-size:8.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55);text-align:center}
+.egThDot.sel{border-color:#23262E;box-shadow:0 0 0 2px #fff,0 0 0 4px #23262E}
+.egThPrev{margin-top:20px;border-radius:16px;overflow:hidden;border:1px solid #E7DFCE;background:#fff}
+.egThPrev .pvHero{padding:13px 14px 12px;color:#fff}
+.egThPrev .pvKick{font-size:8.5px;letter-spacing:.13em;font-weight:800;opacity:.85;display:block}
+.egThPrev .pvBrand{font-size:20px;font-weight:900}
+.egThPrev .pvBtn{margin:10px 12px 12px;border-radius:10px;text-align:center;color:#fff;font-weight:800;font-size:12.5px;padding:9px}
+.egThNote{font-size:12px;color:#8A8172;line-height:1.6;margin-top:14px;text-align:center}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== THEMES PAGE (2026-11-26): ALAG PAGE — 3 themes (Light / Dark / Colourful) + 15 colours.
+   Choice localStorage eg23thm / eg23acc me save hoti hai; head script ka __egSetTheme apply karta hai. ===== */
+(function(){
+  "use strict";
+  if(document.getElementById("egThemePage"))return;
+  var NAMES={navy:"Navy",indigo:"Indigo",purple:"Purple",pink:"Pink",red:"Red",crimson:"Crimson",orange:"Orange",amber:"Amber",gold:"Gold",lime:"Lime",green:"Green",teal:"Teal",cyan:"Cyan",slate:"Slate",brown:"Brown"};
+  var ORDER=["navy","indigo","purple","pink","red","crimson","orange","amber","gold","lime","green","teal","cyan","slate","brown"];
+  var THMS=[["light","\u2600 Light","linear-gradient(140deg,#FFFFFF,#EDF0F5)"],["dark","\u{1F319} Dark","linear-gradient(140deg,#1A2438,#0B1530)"],["colourful","\u{1F3A8} Colourful","linear-gradient(140deg,#7C3AED,#EA580C)"]];
+  var page=document.createElement("div");page.id="egThemePage";page.className="toolPage";
+  function curAcc(){try{return localStorage.getItem("eg23acc")||"indigo"}catch(e){return "indigo"}}
+  function paint(){
+    var thm=document.documentElement.getAttribute("data-thm")||"light",acc=curAcc();
+    var pair=(window.__EG_ACC||{})[acc]||["#4F46E5","#3730A3"];
+    page.querySelectorAll(".egThCard").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-t")===thm)});
+    page.querySelectorAll(".egThDot").forEach(function(x){x.classList.toggle("sel",x.getAttribute("data-a")===acc)});
+    var h=page.querySelector(".pvHero"),b=page.querySelector(".pvBtn");
+    if(h){if(thm==="light"){h.style.background="#F1F3F7";h.style.color="#16181D"}else if(thm==="dark"){h.style.background="linear-gradient(140deg,"+pair[1]+",#0B1530)";h.style.color="#EDF1FA"}else{h.style.background="linear-gradient(135deg,"+pair[0]+","+pair[1]+")";h.style.color="#FFFFFF"}}
+    if(b)b.style.background="linear-gradient(135deg,"+pair[0]+","+pair[1]+")";
+  }
+  var cards=THMS.map(function(t){return '<button type="button" class="egThCard" data-t="'+t[0]+'"><span class="pv" style="background:'+t[2]+'"></span><span class="lb">'+t[1]+'</span></button>'}).join("");
+  var dots=ORDER.map(function(k){var c=(window.__EG_ACC||{})[k]||["#888888","#555555"];return '<button type="button" class="egThDot" data-a="'+k+'" style="background:linear-gradient(135deg,'+c[0]+','+c[1]+')"><span>'+NAMES[k]+'</span></button>'}).join("");
+  page.innerHTML='<div class="egMpHead"><button type="button" class="egMpBack" id="egThBack">\u2190</button><b>\u{1F3A8} Themes</b></div>'
+    +'<div class="egThBody">'
+    +'<div class="egThSec">THEME — 3 OPTIONS</div><div class="egThCards">'+cards+'</div>'
+    +'<div class="egThSec">COLOUR — 15 OPTIONS</div><div class="egThDots">'+dots+'</div>'
+    +'<div class="egThPrev"><div class="pvHero"><span class="pvKick">PAST PAPERS & SOLVED MCQS</span><div class="pvBrand">Engrgroup23</div></div><div class="pvBtn">Start Practice</div></div>'
+    +'<div class="egThNote">Theme aur colour is device par save ho jate hain.<br>App, website aur PC — teeno par yahi options milte hain.</div>'
+    +'</div>';
+  document.body.appendChild(page);
+  page.addEventListener("click",function(e){
+    var cd=e.target&&e.target.closest?e.target.closest(".egThCard"):null;
+    var dt=e.target&&e.target.closest?e.target.closest(".egThDot"):null;
+    if(cd){if(window.__egSetTheme)window.__egSetTheme(cd.getAttribute("data-t"),null);paint();return}
+    if(dt){if(window.__egSetTheme)window.__egSetTheme(null,dt.getAttribute("data-a"));paint();return}
+  });
+  page.querySelector("#egThBack").addEventListener("click",function(){page.classList.remove("open")});
+  window.__openThemes=function(){paint();page.classList.add("open")};
+  window.__closeThemes=function(){page.classList.remove("open")};
+})();
+</script>
 <style id="egUpdCss">
 #egUpd{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:100200;background:linear-gradient(135deg,#0B1530,#16295C);border:1px solid rgba(233,196,106,.55);border-radius:18px;padding:13px 14px;box-shadow:0 16px 34px rgba(11,21,48,.45);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;animation:egUpdIn .35s ease}
 @keyframes egUpdIn{from{transform:translateY(-16px);opacity:0}to{transform:none;opacity:1}}
@@ -14161,7 +14360,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=10;
+  var BUILD=11;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14303,7 +14502,7 @@ body.egBarOn #webAssist{bottom:102px}
    aate hain aur har action bilkul purana wala chalta hai. */
 (function(){
   "use strict";
-  var SET_KEYS=["Language","Website settings","Settings (important)","VIP Premium","Watermark","Verified students","Website Doctor","Feature settings","AI backup keys","Web.Assist settings","Managers","Mode:"];
+  var SET_KEYS=["Language","Themes","Website settings","Settings (important)","VIP Premium","Watermark","Verified students","Website Doctor","Feature settings","AI backup keys","Web.Assist settings","Managers","Mode:"];
   var SHORT=[["Dashboard (Home)","Home"],["Mistake Book","Mistakes"],["Daily Challenge","Daily"],["Grand Mock Test","Grand Mock"],["Leaderboard","Top 10"],["My Progress","Progress"],["Share site","Share"],["Sign out","Sign out"],["Friendly Chat","Chat"],["AI MCQs","AI MCQs"],["Admin panel","Admin"],["Fix misplaced","Fix Subjects"],["Activity dashboard","Activity"],["AI backup keys","AI Keys"],["Web.Assist settings","Web.Assist"],["Verified students","Verified"],["Feature settings","Features"],["Website Doctor","Doctor"],["PDF Watermark","Watermark"],["VIP Premium","VIP"],["Website settings","Website"],["Settings (important)","Settings"],["Update & Fix","Update & Fix"],["Website look","Look"],["Managers","Managers"],["Mode:","Mode"],["Language","Language"],["Profile","Profile"],["Library","Library"],["Jobs","Jobs"],["Bin","Bin"],["Jokes","Jokes"],["Ads","Ads"]];
   function shortLabel(t){for(var i=0;i<SHORT.length;i++){if(t.indexOf(SHORT[i][0])>=0)return SHORT[i][1]}var x=t.replace(/\([^)]*\)/g,"").replace(/\u00B7.*$/,"").trim();return x.length>16?x.slice(0,15)+"\u2026":x}
   function iconOf(t){var m=t.match(/^\s*(\S+)\s+/);if(m&&/[^\x00-\x7F]/.test(m[1]))return m[1];return "\u{1F539}"}
