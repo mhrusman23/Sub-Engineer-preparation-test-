@@ -14132,7 +14132,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=8;
+  var BUILD=9;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14234,7 +14234,7 @@ body.egBarOn #webAssist{bottom:102px}
     page.innerHTML='<div class="egAppHead"><button type="button" class="egAppBack" aria-label="Back">\u2190</button><div><b>\u{1F4F2} Download the App</b><span>Engrgroup23 \u2014 free, fast, works offline</span></div></div>'
       +'<div class="egAppBody">'
       +card("android","\u{1F916}","Android Phone","The real app file for Android. Install once, then it opens full-screen from your home screen.",'<a class="egAppBtn" href="/engrgroup23.apk">\u2B07 Download APK</a>',["Tap <b>Download APK</b>","Open the file \u2014 tap <b>Install</b>","Allow install if asked \u2014 done"])
-      +card("windows","\u{1F4BB}","Windows Laptop / PC","The setup file for Windows, just like other software.",'<a class="egAppBtn" href="/engrgroup23-setup.exe">\u2B07 Download Setup</a>',["Tap <b>Download Setup</b>","Open the file \u2014 if Windows asks, tap <b>More info \u2192 Run anyway</b>","The app installs and <b>opens by itself</b>"])
+      +card("windows","\u{1F4BB}","Windows Laptop / PC","The setup file for Windows, just like other software.",'<a class="egAppBtn" href="/engrgroup23-setup.exe">\u2B07 Download Setup</a>',["Tap <b>Download Setup</b>","Open the file \u2014 if Windows asks, tap <b>More info \u2192 Run anyway</b>","Tick your options in the wizard and press <b>Install</b>"])
       +card("iphone","\u{1F34E}","iPhone / iOS","iPhone does not allow setup files \u2014 Safari adds the app in 10 seconds, no file needed.",'<div class="egAppNote">No file needed \u2014 follow the steps below in Safari</div>',["Open this site in <b>Safari</b>","Tap <b>Share</b> \u2192 <b>Add to Home Screen</b>","Tap <b>Add</b> \u2014 done"])
       +card("tablet","\u{1F4F1}","Tablet","Android tablets use the same APK file. iPad uses the Safari steps.",tabBtn,["Pick your tablet type above","<b>Android tablet:</b> APK steps","<b>iPad:</b> Safari steps"])
       +"</div>";
