@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.ppscengr.twa",
+        "sha256_cert_fingerprints": ["AF:5B:7E:24:D9:59:EC:F9:9D:BB:02:29:59:06:3E:DF:FD:2F:A8:88:84:A2:E7:81:95:AF:D3:7A:56:71:BF:23"]
+      }
+    }]
