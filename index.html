@@ -14034,4 +14034,82 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
   else document.body.appendChild(sec);
 })();
 </script>
+<style id="egTabCss">
+#egTab{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1100;background:linear-gradient(135deg,#0B1530,#16295C);border-radius:26px;display:none;align-items:center;padding:9px 6px;box-shadow:0 14px 30px rgba(11,21,48,.4);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#egTab.on{display:flex}
+#egTab button{flex:1;background:none;border:0;cursor:pointer;text-align:center;font:600 10px system-ui,sans-serif;color:#C9D4F2;padding:2px 0;-webkit-tap-highlight-color:transparent}
+#egTab button i{display:block;font-style:normal;font-size:20px;margin-bottom:2px}
+#egTab button.mid{flex:0 0 52px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#E9C46A,#C9A227);margin:-24px 2px 0;border:3px solid #FAF6EF;box-shadow:0 8px 18px rgba(185,126,16,.45);display:flex;align-items:center;justify-content:center;padding:0}
+#egTab button.mid i{font-size:24px;margin:0}
+#egTab button:active{transform:scale(.94)}
+body.egBarOn{padding-bottom:96px}
+body.egBarOn #webAssist{bottom:102px}
+#egTSheet{position:fixed;inset:0;z-index:1160;background:rgba(8,12,26,.5);display:none;align-items:flex-end;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#egTSheet.on{display:flex}
+#egTSheet .card{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:14px 14px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 30px rgba(11,21,48,.3)}
+#egTSheet h3{font-size:15px;color:#23262E;margin:2px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+#egTSheet h3 button{background:#F1EAD8;border:0;border-radius:99px;width:30px;height:30px;font-size:14px;cursor:pointer;color:#6B7280}
+#egTSheet .trow{display:flex;align-items:center;gap:12px;width:100%;background:#FBF7EC;border:1px solid #E7DFCE;border-radius:14px;padding:12px 14px;margin-bottom:8px;font:700 14px system-ui,sans-serif;color:#23262E;cursor:pointer;text-align:left;box-sizing:border-box}
+#egTSheet .trow span{font-size:20px}
+#egTSheet .trow b{margin-left:auto;color:#B97E10}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== BOTTOM TAB BAR (2026-11-26, Design 2: Floating Navy Pill) =====
+   5 buttons: App (download) - Menu - Tools (gold centre) - Profile - Settings.
+   Sirf app screens par; test/result/menu/tool pages ke doran hide rehta hai. */
+(function(){
+  "use strict";
+  if(document.getElementById("egTab"))return;
+  var bar=document.createElement("nav");bar.id="egTab";
+  function mk(icon,label,cls,fn){var b=document.createElement("button");b.type="button";if(cls)b.className=cls;b.innerHTML="<i>"+icon+"</i>"+(label||"");b.addEventListener("click",fn);bar.appendChild(b);return b}
+  function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
+  function afterMenu(fn){var n=0;var iv=setInterval(function(){n++;var m=document.getElementById("appmenu");if(m){clearInterval(iv);fn(m)}else if(n>25)clearInterval(iv)},60)}
+  mk("\u2B07\uFE0F","App","",function(){
+    var ua=navigator.userAgent||"";
+    if(/android/i.test(ua)){location.href="/engrgroup23.apk";return}
+    if(/windows/i.test(ua)){location.href="/engrgroup23-windows.zip";return}
+    var s=document.getElementById("instSec");if(s){s.scrollIntoView({behavior:"smooth",block:"center"});return}
+    var d=document.querySelector("[data-install]");if(d)d.click();
+  });
+  mk("\u2630","Menu","",function(){clickMenuBtn()});
+  var sheet=document.createElement("div");sheet.id="egTSheet";
+  var TOOLS=[["mistakes","\u{1F4D5}","Mistake Book","mistake"],["daily","\u{1F525}","Daily Challenge","daily"],["grand","\u{1F4DD}","Grand Mock Test","grand"],["board","\u{1F3C6}","Leaderboard","board"],["progress","\u{1F4CA}","My Progress",null]];
+  var rows="";
+  TOOLS.forEach(function(t){if(t[3]&&window.__feat&&!window.__feat(t[3]))return;rows+="<button type=\"button\" class=\"trow\" data-k=\""+t[0]+"\"><span>"+t[1]+"</span>"+t[2]+"<b>\u203A</b></button>"});
+  sheet.innerHTML="<div class=\"card\"><h3>\u26A1 Quick Tools <button type=\"button\" id=\"egTx\">\u2715</button></h3>"+rows+"</div>";
+  document.body.appendChild(sheet);
+  sheet.addEventListener("click",function(e){if(e.target===sheet)sheet.classList.remove("on")});
+  sheet.querySelector("#egTx").addEventListener("click",function(){sheet.classList.remove("on")});
+  sheet.querySelectorAll(".trow").forEach(function(r){r.addEventListener("click",function(){sheet.classList.remove("on");if(window.__openToolPage)window.__openToolPage(r.getAttribute("data-k"))})});
+  mk("\u26A1","","mid",function(){sheet.classList.add("on")});
+  mk("\u{1F464}","Profile","",function(){
+    if(!clickMenuBtn())return;
+    afterMenu(function(m){
+      var items=m.querySelectorAll(".mnit");
+      for(var i=0;i<items.length;i++){if(items[i].textContent.indexOf("Profile")>=0){items[i].click();return}}
+      var h=m.querySelector(".mnhead");if(h)h.click();
+    });
+  });
+  mk("\u2699\uFE0F","Settings","",function(){
+    if(!clickMenuBtn())return;
+    afterMenu(function(m){
+      var items=m.querySelectorAll(".mnit"),tgt=null;
+      for(var i=0;i<items.length;i++){var tx=items[i].textContent;if(tx.indexOf("Website settings")>=0||tx.indexOf("Settings (important)")>=0){tgt=items[i];break}}
+      if(tgt)setTimeout(function(){tgt.scrollIntoView({block:"center"});tgt.style.outline="2px solid #E9C46A";setTimeout(function(){tgt.style.outline=""},1600)},80);
+    });
+  });
+  document.body.appendChild(bar);
+  function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
+  function blocked(){
+    if(!vis(document.getElementById("start")))return true;
+    if(document.getElementById("appmenu"))return true;
+    if(sheet.classList.contains("on"))return true;
+    var ids=["test","result","editor","engLab","rexOverlay","quizBox","aip","vipw"];
+    for(var i=0;i<ids.length;i++){if(vis(document.getElementById(ids[i])))return true}
+    if(document.querySelector(".toolPage.open"))return true;
+    return false;
+  }
+  setInterval(function(){var on=!blocked();bar.classList.toggle("on",on);document.body.classList.toggle("egBarOn",on)},300);
+})();
+</script>
 </body></html>
