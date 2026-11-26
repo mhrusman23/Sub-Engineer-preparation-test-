@@ -1599,7 +1599,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function buildYear(k,keep){
     var y=cardOf(k);if(!y){closeYear();return}
     var ids=idsOf(k,ADM),pp=(k==="pp");
-    var yt=(courseOf(y)==="General Knowledge"&&YEARS.filter(function(z){return courseOf(z)==="General Knowledge"}).length===1)?"General Knowledge":y.t;
+    var yt=(directCourse(courseOf(y))&&YEARS.filter(function(z){return courseOf(z)===courseOf(y)}).length===1)?courseOf(y):y.t;
     $("#yTitle").textContent=yt;
     buildYearAdmin(k);
     $("#yNote").textContent=(y.d?y.d+". ":"")+(pp?"Start any past paper on its own, or tick several papers and start them together.":"Start any subject on its own (or chapter by chapter), or tick several subjects and start them together.");
@@ -1732,6 +1732,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   /* ===== courses: Civil first, then the rest; inside a course: folders -> subjects -> chapters ===== */
   var curCourse=null,aiBusy=false;
   function courseOf(y){return String((y&&y.course)||"").trim()||"Civil"}
+  function directCourse(c){return["General Knowledge","Electrical","IT","Mechanical"].indexOf(c)>=0}
   function courseNames(){
     var n=[];YEARS.forEach(function(y){var c=courseOf(y);if(n.indexOf(c)<0)n.push(c)});
     n.sort(function(a,b){return (a==="Civil"?0:1)-(b==="Civil"?0:1)});
@@ -1742,9 +1743,9 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     courseNames().forEach(function(c,ci){
       var st=courseStats(c),b=el("button","ycard v"+(ci%6));b.type="button";
       b.appendChild(el("span","yic",c.charAt(0).toUpperCase()));b.appendChild(el("span","ygo","\u2192"));
-      b.appendChild(el("span","yt",c));b.appendChild(el("span","yd",(c==="General Knowledge"&&st.o===1)?"Subjects":st.o+(st.o===1?" folder":" folders")));
+      b.appendChild(el("span","yt",c));b.appendChild(el("span","yd",(directCourse(c)&&st.o===1)?"Subjects":st.o+(st.o===1?" folder":" folders")));
       b.appendChild(el("span","ym",st.s+" subjects \u00b7 "+st.q+" Q"));
-      b.addEventListener("click",function(){if(c==="General Knowledge"){var _gf=YEARS.filter(function(y){return courseOf(y)===c});if(_gf.length===1){openYear(_gf[0].k);return}}curCourse=c;buildPick();window.scrollTo(0,0)});
+      b.addEventListener("click",function(){if(directCourse(c)){var _gf=YEARS.filter(function(y){return courseOf(y)===c});if(_gf.length===1){openYear(_gf[0].k);return}}curCourse=c;buildPick();window.scrollTo(0,0)});
       hc.appendChild(b);
     });
     /* other AI courses (Electrical, Mechanical, GK, IT ...) as cards like Civil */
