@@ -7138,7 +7138,52 @@ function courseCleanup(cur){
   });
   return changes;
 }
-function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)+courseCleanup(cur)}
+/* ---- year-folder purity: the DAE year folders (y1/y2/y3) hold ONLY handbook subjects (proper Civil-xxx / PHT codes).
+   Anything else found there is transferred to its own field: mapped subjects to their course, past papers to the
+   Past Papers card, unclassified content to the New Civil card, and empty gibberish subjects are retired. ---- */
+function yearPurity(cur){
+  if(!cur||!Array.isArray(cur.CARDS)||!Array.isArray(cur.SUB)||!Array.isArray(cur.S)||!Array.isArray(cur.Q0))return 0;
+  const lc=x=>String(x==null?"":x).toLowerCase(),cname=c=>String((c&&c.course)||"").trim()||"Civil";
+  const strip=n=>lc(n).replace(/\s*\(.*\)\s*$/,"").replace(/^(caf|cfap)\s*\d+\s*[\u2013-]\s*/,"");
+  const map=subjCourseMap();
+  const isHand=y=>/^civil-\d+$/i.test(String(y.code||""))||String(y.code||"").toUpperCase()==="PHT";
+  const variants=n=>{const out=[lc(n),strip(n)];const ci=String(n).indexOf(": ");if(ci>0){const a=String(n).slice(0,ci),b=String(n).slice(ci+2);out.push(lc(b),strip(b),lc(a),strip(a))}return Array.from(new Set(out))};
+  const qCount=yi=>{const secs=new Set();cur.S.forEach((c,ci)=>{if(c&&c.sub===yi)secs.add(ci)});let n=0;cur.Q0.forEach(q=>{if(secs.has(q.sec))n++});return n};
+  const cardKeyFor=course=>{
+    if(course==="Civil"){const nc=cur.CARDS.find(c=>c&&c.k==="newcivil");return nc?nc.k:ncCard(cur).k}
+    const ex=cur.CARDS.find(c=>c&&cname(c)===course&&c.k!=="pp"&&c.t!=="Past Papers"&&!/-pp$/.test(String(c.k)));
+    if(ex)return ex.k;
+    const k="fld-"+lc(course).replace(/[^a-z0-9]+/g,"-");cur.CARDS.push({k,t:"Subjects",d:course+" subjects",course});return k;
+  };
+  const holdKey=()=>{const nc=cur.CARDS.find(c=>c&&c.k==="newcivil");return nc?nc.k:ncCard(cur).k};
+  let changes=0;
+  ["y1","y2","y3"].forEach(yk=>{
+    cur.SUB.forEach((y,yi)=>{
+      if(!y||y.cat!==yk||y.code==="merged"||isHand(y))return;
+      const vars=variants(y.name);
+      let target=null;
+      for(const v of vars){if(map[v]){target={kind:"course",course:map[v]};break}}
+      if(!target){const cn=Array.from(new Set(cur.CARDS.map(cname))).find(n=>vars.indexOf(lc(n))>=0);if(cn)target={kind:"course",course:cn,intoFund:true}}
+      if(!target&&lc(y.name)==="mcqs valid array")target={kind:"hold"};
+      if(!target&&(/ppsc|past paper|past exam/.test(lc(y.name))||/^(mock|ppsc)$/i.test(String(y.code||""))))target={kind:"pp"};
+      if(!target&&qCount(yi)===0&&lc(y.name).length<=2)target={kind:"drop"};
+      if(!target)target={kind:"hold"};
+      if(target.kind==="drop"){y.code="merged";changes++;return}
+      const destKey=target.kind==="pp"?"pp":target.kind==="hold"?holdKey():cardKeyFor(target.course);
+      let tIdx=-1;
+      const inDest=z=>{const zc=cur.CARDS.find(c=>c&&c.k===z.cat);if(!zc)return false;return target.kind==="course"?cname(zc)===target.course:z.cat===destKey};
+      cur.SUB.forEach((z,zi)=>{if(tIdx<0&&zi!==yi&&z&&z.code!=="merged"&&z.cat!=="__tmp"&&inDest(z)&&variants(z.name).some(v=>vars.indexOf(v)>=0))tIdx=zi});
+      if(tIdx<0&&target.intoFund)cur.SUB.forEach((z,zi)=>{if(tIdx<0&&zi!==yi&&z&&z.code!=="merged"&&z.cat!=="__tmp"&&inDest(z)&&lc(z.name)===lc(y.name)+" fundamentals")tIdx=zi});
+      if(tIdx>=0){
+        const have=new Set(cur.S.filter(c=>c&&c.sub===tIdx).map(c=>c.name));
+        cur.S.forEach(c=>{if(c&&c.sub===yi){let nm=c.name,n=2;while(have.has(nm))nm=c.name+" "+(n++);if(nm!==c.name){cur.Q0.forEach(q=>{if(cur.S[q.sec]===c)q.test=nm});c.name=nm}have.add(nm);c.sub=tIdx}});
+        y.code="merged";changes++;
+      }else{y.cat=destKey;changes++}
+    });
+  });
+  return changes;
+}
+function fieldSetup(cur){return ncMigrate(cur)+fieldEnsure(cur)+courseCleanup(cur)+yearPurity(cur)}
 
 /* import the built-in verified MCQs into the bank: each MCQ goes to its own course > subject; answer positions are shuffled; duplicates are skipped */
 async function verifiedImport(){
