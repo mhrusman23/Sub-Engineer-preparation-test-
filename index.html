@@ -13983,9 +13983,9 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
   "use strict";
   if(document.getElementById("instSec"))return;
   var STEPS={
-    android:[["\u2B07\uFE0F","Tap <b>Install</b> above"],["\u2705","Confirm <b>Install</b>"],["\u{1F4F2}","Open from <b>home screen</b>"]],
+    android:[["\u2B07\uFE0F","Tap <b>Download APK</b> above"],["\u{1F4C2}","Open the file \u2014 tap <b>Install</b>"],["\u2705","Allow install if asked \u2014 done"]],
     iphone:[["\u2B06\uFE0F","Tap <b>Share</b> in Safari"],["\u2795","Tap <b>Add to Home Screen</b>"],["\u2705","Tap <b>Add</b> \u2014 done"]],
-    windows:[["\u2B07\uFE0F","Tap <b>Install</b> above"],["\u22EE","Or menu \u2192 <b>Install app</b>"],["\u{1F4BB}","Open it <b>like an app</b>"]],
+    windows:[["\u2B07\uFE0F","Tap <b>Download Setup</b> above"],["\u{1F4C2}","Open the ZIP \u2014 run <b>install.ps1</b>"],["\u{1F4BB}","Open from <b>Start menu</b>"]],
     tablet:[["\u2B06\uFE0F","Tap <b>Share</b> or <b>Install</b>"],["\u2795","Tap <b>Add to Home Screen</b>"],["\u2705","Open from <b>home screen</b>"]]
   };
   var TABS=[["android","\u{1F916} Android"],["iphone","\u{1F34E} iPhone"],["windows","\u{1F4BB} Windows"],["tablet","\u{1F4F1} Tablet"]];
@@ -14006,6 +14006,7 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
   var ts=document.createElement("span");ts.className="egISub";ts.textContent="Install it like an app \u2014 one tap from your home screen, works offline too";
   tt.appendChild(tb);tt.appendChild(ts);
   var btn=document.createElement("button");btn.type="button";btn.className="egIBtn";btn.textContent="Install";btn.setAttribute("data-install","");
+  (function(){var ua=navigator.userAgent||"";var dl=/android/i.test(ua)?["\u2B07 Download APK","/engrgroup23.apk"]:(/windows/i.test(ua)?["\u2B07 Download Setup","/engrgroup23-windows.zip"]:null);if(dl){btn.textContent=dl[0];btn.removeAttribute("data-install");btn.addEventListener("click",function(){location.href=dl[1]})}})();
   bar.appendChild(tt);bar.appendChild(btn);sec.appendChild(bar);
   var tabs=document.createElement("div");tabs.className="egITabs";sec.appendChild(tabs);
   var box=document.createElement("div");box.className="egISteps";sec.appendChild(box);
