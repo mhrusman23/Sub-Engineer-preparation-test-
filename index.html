@@ -7099,9 +7099,23 @@ function courseCleanup(cur){
   const resolve=t=>{const names=Array.from(new Set(cur.CARDS.map(cname)));const alt={"it":"information technology","general knowledge":"gk"};
     return names.find(n=>lc(n)===lc(t))||names.find(n=>lc(n).replace(/\s+engineering$/,"")===lc(t))||names.find(n=>lc(n)===(alt[lc(t)]||"\u0000"))||t};
   let changes=0;
-  const strays=Array.from(new Set(cur.CARDS.map(cname))).filter(n=>!isBase(n)&&(map[lc(n)]||map[strip(n)]));
+  const TOPIC_COURSE={bricks:"Civil",brick:"Civil",stones:"Civil",stone:"Civil",timber:"Civil",paints:"Civil","building materials":"Civil"};
+  const targetOf=cn=>{
+    const d=map[lc(cn)]||map[strip(cn)];if(d)return d;
+    if(TOPIC_COURSE[lc(cn)])return TOPIC_COURSE[lc(cn)];
+    const pm=lc(cn).match(/^([a-z][a-z& ]*?)\s*:\s*(.+)$/);
+    if(pm){const pre=pm[1].trim(),rest=pm[2].trim();
+      const hit=Array.from(new Set(cur.CARDS.map(cname))).find(n=>lc(n)===pre);
+      if(hit)return hit;
+      if(map[rest])return map[rest];
+      if(TOPIC_COURSE[rest])return TOPIC_COURSE[rest];}
+    const subs=cur.SUB.filter(y=>y&&y.code!=="merged"&&cur.CARDS.some(c=>c&&c.k===y.cat&&cname(c)===cn));
+    if(subs.length===1&&TOPIC_COURSE[lc(subs[0].name)])return TOPIC_COURSE[lc(subs[0].name)];
+    return null;
+  };
+  const strays=Array.from(new Set(cur.CARDS.map(cname))).filter(n=>!isBase(n)&&targetOf(n));
   strays.forEach(cn=>{
-    const T=resolve(map[lc(cn)]||map[strip(cn)]);
+    const T=resolve(targetOf(cn));
     const keyOfTarget=()=>{
       if(T==="Civil")return ncCard(cur).k;
       const ex=cur.CARDS.find(c=>c&&cname(c)===T&&c.k!=="pp"&&c.t!=="Past Papers"&&!/-pp$/.test(String(c.k)));
