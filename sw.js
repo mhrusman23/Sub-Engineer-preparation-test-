@@ -1,12 +1,13 @@
-/* Engrgroup23 service worker v5: makes the site open from the PHONE, not the internet.
-   - The PAGE (navigations) is NETWORK-FIRST: online visitors always get the newest
-     version straight away (no glimpse of the old version); offline it opens from
-     the phone's saved copy.
+/* Engrgroup23 service worker v6: makes the site open from the PHONE, not the internet.
+   - The PAGE (navigations) RACES the network against the phone's saved copy:
+     if the newest page is on its way within ~1.2s it is used straight away;
+     on a slow connection the saved copy opens instantly and the fresh page
+     still lands in the background, ready for the next open.
    - Scripts, images, fonts and verified MCQs come from the phone first, then
      update quietly in the background (stale-while-revalidate).
    - Questions (bank) are saved by the app itself in IndexedDB and also work offline.
    - Login, database and /api are never touched by this worker (always live). */
-const V = 'eg23-v5';
+const V = 'eg23-v6';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/verified-mcqs.js', '/ai.js', '/writer-core.js'];
 
 self.addEventListener('install', function (e) {
@@ -37,18 +38,35 @@ function swr(req, key) {
   });
 }
 
-/* network-first for the page itself: newest version when online, phone copy when offline */
-function netFirst(req, key) {
-  return caches.open(V).then(function (c) {
-    return fetch(req).then(function (r) {
-      if (r && !r.redirected && r.ok) { try { c.put(key || req, r.clone()); } catch (_) {} }
-      return r;
-    }).catch(function () {
-      return c.match(key || req, { ignoreSearch: true }).then(function (hit) {
-        return hit || c.match('/index.html', { ignoreSearch: true });
-      });
+/* the page: phone copy races the network (1.2s). Fast network = newest page now;
+   slow network = saved copy now, fresh page saved in the background for next time.
+   `update` keeps the worker alive until the background refresh has landed. */
+function navFast(req, key) {
+  var done;
+  var update = new Promise(function (res) { done = res; });
+  var net = fetch(req);
+  net.then(function (r) {
+    if (r && !r.redirected && r.ok) {
+      return caches.open(V).then(function (c) { try { return c.put(key, r.clone()); } catch (_) {} });
+    }
+  }).catch(function () {}).then(function () { done(); });
+  var response = caches.open(V).then(function (c) {
+    return c.match(key, { ignoreSearch: true }).then(function (hit) {
+      if (!hit) {
+        return net.catch(function () {
+          return c.match('/index.html', { ignoreSearch: true }).then(function (fb) {
+            if (fb) return fb;
+            throw new Error('offline');
+          });
+        });
+      }
+      return Promise.race([
+        net,
+        new Promise(function (res) { setTimeout(function () { res(hit); }, 1200); })
+      ]).catch(function () { return hit; });
     });
   });
+  return { response: response, update: update };
 }
 
 self.addEventListener('fetch', function (e) {
@@ -57,7 +75,7 @@ self.addEventListener('fetch', function (e) {
   var u = new URL(r.url);
   if (u.origin === location.origin) {
     if (u.pathname.indexOf('/api/') === 0 || u.pathname === '/sw.js' || u.pathname.indexOf('/__/') === 0) return;
-    if (r.mode === 'navigate') { e.respondWith(netFirst(r, u.origin + u.pathname)); return; }
+    if (r.mode === 'navigate') { var nav = navFast(r, u.origin + u.pathname); e.respondWith(nav.response); e.waitUntil(nav.update); return; }
     if (/\.(js|css|png|jpe?g|webp|svg|ico|webmanifest|woff2?)$/i.test(u.pathname)) { e.respondWith(swr(r)); return; }
     return;
   }
