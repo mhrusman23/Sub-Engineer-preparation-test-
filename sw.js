@@ -1,4 +1,4 @@
-/* Engrgroup23 service worker v6: makes the site open from the PHONE, not the internet.
+/* Engrgroup23 service worker v7: makes the site open from the PHONE, not the internet.
    - The PAGE (navigations) RACES the network against the phone's saved copy:
      if the newest page is on its way within ~1.2s it is used straight away;
      on a slow connection the saved copy opens instantly and the fresh page
@@ -7,13 +7,16 @@
      update quietly in the background (stale-while-revalidate).
    - Questions (bank) are saved by the app itself in IndexedDB and also work offline.
    - Login, database and /api are never touched by this worker (always live). */
-const V = 'eg23-v6';
-const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/verified-mcqs.js', '/ai.js', '/writer-core.js'];
+const V = 'eg23-v7';
+const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/verified-mcqs.js'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(V).then(function (c) { return c.addAll(CORE).catch(function () {}); })
-      .then(function () { return self.skipWaiting(); })
+    /* save each file on its own: one missing file must never void the whole
+       offline copy (that is exactly what silently broke offline opening before) */
+    caches.open(V).then(function (c) {
+      return Promise.all(CORE.map(function (u) { return c.add(u).catch(function () {}); }));
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 

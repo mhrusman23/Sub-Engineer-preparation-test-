@@ -5371,7 +5371,15 @@ async function needVerify(user,email,fresh){
 gout.onclick=()=>{try{localStorage.removeItem("eg23g");localStorage.removeItem("eg23in")}catch(e){}signOut(auth).then(()=>location.reload())};
 function deny(email,text){
   try{localStorage.removeItem("eg23ok")}catch(_){}
-  if(started){location.reload();return}   /* instant-open entry was already given on this phone: a changed decision (off / expired / closed) locks the app again via one clean reload */
+  if(started){
+    /* The app already opened instantly from this phone's own copy. If the
+       background check simply could not finish (no internet, server busy),
+       the student stays inside - the questions are on the phone anyway.
+       Only a real decision (access off / expired / closed / not approved)
+       locks the app again, via one clean reload. */
+    if(/^(Error: )|\(permission-denied\)|rules are not published/i.test(String(text||"")))return;
+    location.reload();return;
+  }
   lgHide();
   busy=false;showMethods(false);gverbox.hidden=true;gout.hidden=false;gtrial.hidden=true;
   msg(text+(email?"  ("+email+")":""));renderContacts(gcon);
