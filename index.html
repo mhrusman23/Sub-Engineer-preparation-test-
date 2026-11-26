@@ -13983,6 +13983,7 @@ body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:ha
 (function(){
   "use strict";
   if(document.getElementById("instSec"))return;
+  return; /* Install section front se hata di (user, 2026-11-26) — download ab sirf bottom bar ke App page me hai */
   var STEPS={
     android:[["\u2B07\uFE0F","Tap <b>Download APK</b> above"],["\u{1F4C2}","Open the file \u2014 tap <b>Install</b>"],["\u2705","Allow install if asked \u2014 done"]],
     iphone:[["\u2B06\uFE0F","Tap <b>Share</b> in Safari"],["\u2795","Tap <b>Add to Home Screen</b>"],["\u2705","Tap <b>Add</b> \u2014 done"]],
@@ -14132,7 +14133,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=4;
+  var BUILD=5;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
