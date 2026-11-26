@@ -13914,6 +13914,7 @@ setInterval(placeCard,1200);
     return true;
   }
   function mkRow(){
+    return; /* Quick Tools strip dashboard se hata di (user, 2026-11-26) */
     if(document.getElementById("qTools"))return;
     var hc=document.getElementById("homeCards");if(!hc||!hc.parentNode)return;
     var row=document.createElement("div");row.id="qTools";
@@ -14065,6 +14066,7 @@ body.egBarOn #webAssist{bottom:102px}
   function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
   function afterMenu(fn){var n=0;var iv=setInterval(function(){n++;var m=document.getElementById("appmenu");if(m){clearInterval(iv);fn(m)}else if(n>25)clearInterval(iv)},60)}
   mk("\u2B07\uFE0F","App","",function(){
+    if(window.__openAppPage){window.__openAppPage();return}
     var ua=navigator.userAgent||"";
     if(/android/i.test(ua)){location.href="/engrgroup23.apk";return}
     if(/windows/i.test(ua)){location.href="/engrgroup23-windows.zip";return}
@@ -14129,7 +14131,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=2;
+  var BUILD=3;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14182,6 +14184,65 @@ body.egBarOn #webAssist{bottom:102px}
     }).catch(function(){});
   }
   var n=0;var iv=setInterval(function(){n++;var st=document.getElementById("start");if(st&&!st.hidden){clearInterval(iv);setTimeout(check,2500);setInterval(check,300000)}else if(n>120)clearInterval(iv)},500);
+})();
+</script>
+<style id="egAppCss">
+#egAppPage .egAppHead{background:linear-gradient(135deg,#0B1530,#16295C);color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 14px;display:flex;align-items:center;gap:12px}
+#egAppPage .egAppBack{background:rgba(255,255,255,.14);border:0;color:#fff;width:38px;height:38px;border-radius:12px;font-size:19px;cursor:pointer;flex:0 0 38px}
+#egAppPage .egAppHead b{font-size:17.5px;display:block}
+#egAppPage .egAppHead span{font-size:12px;color:rgba(255,255,255,.75)}
+#egAppPage .egAppBody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px;max-width:640px;width:100%;margin:0 auto;box-sizing:border-box}
+#egAppPage .egAppCard{background:#fff;border:1.5px solid #E7DFCE;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(80,64,25,.06)}
+#egAppPage .egAppCard.mine{border-color:#C9A227;box-shadow:0 8px 20px rgba(185,126,16,.18)}
+#egAppPage .egAppCard h3{font-size:16px;color:#23262E;display:flex;align-items:center;gap:9px;margin-bottom:4px}
+#egAppPage .egAppTag{margin-left:auto;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#231a02;font:800 10px system-ui,sans-serif;border-radius:99px;padding:4px 9px;white-space:nowrap}
+#egAppPage .egAppCard p{font-size:12.8px;color:#6B7280;line-height:1.5;margin-bottom:10px}
+#egAppPage .egAppBtn{display:block;width:100%;text-align:center;background:#0B1530;color:#E9C46A;border:0;border-radius:13px;padding:13px;font:800 14.5px system-ui,sans-serif;cursor:pointer;text-decoration:none;box-sizing:border-box}
+#egAppPage .egAppNote{background:#FBF3DC;border:1px dashed #C9A227;color:#6d5510;border-radius:13px;padding:11px 13px;font-size:12.8px;font-weight:700;text-align:center}
+#egAppPage .egAppSteps{margin-top:11px;border-top:1px solid #F0E9D8;padding-top:10px}
+#egAppPage .egAppSteps div{font-size:12.8px;color:#3c4450;padding:3px 0}
+#egAppPage .egAppSteps b{color:#B97E10}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== DOWNLOAD APP PAGE (2026-11-26) =====
+   Bottom bar ke App button se khulta hai: har device ke liye alag card,
+   apna device pehle se gold tag ke saath. */
+(function(){
+  "use strict";
+  var page=null;
+  function devKey(){
+    var ua=navigator.userAgent||"";
+    if(/ipad/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))return "tablet";
+    if(/iphone|ipod/i.test(ua))return "iphone";
+    if(/android/i.test(ua))return /mobile/i.test(ua)?"android":"tablet";
+    if(/windows/i.test(ua))return "windows";
+    if(/macintosh|mac os/i.test(ua))return "windows";
+    return "android";
+  }
+  function card(key,icon,name,desc,action,steps){
+    var mine=devKey()===key;
+    var h='<div class="egAppCard'+(mine?" mine":"")+'"><h3>'+icon+" "+name+(mine?'<span class="egAppTag">Your device</span>':"")+"</h3><p>"+desc+"</p>"+action+'<div class="egAppSteps">';
+    steps.forEach(function(st,i){h+="<div><b>Step "+(i+1)+":</b> "+st+"</div>"});
+    return h+"</div></div>";
+  }
+  function build(){
+    if(page)return page;
+    page=document.createElement("div");page.className="toolPage";page.id="egAppPage";
+    var ua=navigator.userAgent||"";
+    var tabBtn=/android/i.test(ua)?'<a class="egAppBtn" href="/engrgroup23.apk">\u2B07 Download APK</a>':'<div class="egAppNote">On iPad, use Safari \u2192 Share \u2192 Add to Home Screen</div>';
+    page.innerHTML='<div class="egAppHead"><button type="button" class="egAppBack" aria-label="Back">\u2190</button><div><b>\u{1F4F2} Download the App</b><span>Engrgroup23 \u2014 free, fast, works offline</span></div></div>'
+      +'<div class="egAppBody">'
+      +card("android","\u{1F916}","Android Phone","The real app file for Android. Install once, then it opens full-screen from your home screen.",'<a class="egAppBtn" href="/engrgroup23.apk">\u2B07 Download APK</a>',["Tap <b>Download APK</b>","Open the file \u2014 tap <b>Install</b>","Allow install if asked \u2014 done"])
+      +card("windows","\u{1F4BB}","Windows Laptop / PC","The setup file for Windows, just like other software.",'<a class="egAppBtn" href="/engrgroup23-windows.zip">\u2B07 Download Setup</a>',["Tap <b>Download Setup</b>","Open the ZIP \u2014 run <b>install.ps1</b>","Open the app from the <b>Start menu</b>"])
+      +card("iphone","\u{1F34E}","iPhone / iOS","iPhone does not allow setup files \u2014 Safari adds the app in 10 seconds, no file needed.",'<div class="egAppNote">No file needed \u2014 follow the steps below in Safari</div>',["Open this site in <b>Safari</b>","Tap <b>Share</b> \u2192 <b>Add to Home Screen</b>","Tap <b>Add</b> \u2014 done"])
+      +card("tablet","\u{1F4F1}","Tablet","Android tablets use the same APK file. iPad uses the Safari steps.",tabBtn,["Pick your tablet type above","<b>Android tablet:</b> APK steps","<b>iPad:</b> Safari steps"])
+      +"</div>";
+    page.querySelector(".egAppBack").addEventListener("click",function(){page.classList.remove("open")});
+    document.body.appendChild(page);
+    return page;
+  }
+  window.__openAppPage=function(){build().classList.add("open")};
+  window.__closeAppPage=function(){if(page)page.classList.remove("open")};
 })();
 </script>
 </body></html>
