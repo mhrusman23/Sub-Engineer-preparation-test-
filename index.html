@@ -13957,4 +13957,80 @@ setInterval(placeCard,1200);
   else go();
 })();
 </script>
+
+<style id="instSecCss">
+#instSec{max-width:760px;margin:30px auto 4px;padding:0 14px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+body:has(#start[hidden]) #instSec,body:has(#test:not([hidden])) #instSec,body:has(#result:not([hidden])) #instSec{display:none!important}
+#instSec .egIBar{background:linear-gradient(135deg,#E9C46A,#C9A227);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 24px rgba(185,126,16,.28)}
+#instSec .egIT{flex:1;min-width:0}
+#instSec .egIT b{display:block;font-size:15.5px;color:#241A00}
+#instSec .egIT span{font-size:12px;color:#5c4a12;line-height:1.45;display:block;margin-top:2px}
+#instSec .egIBtn{border:0;border-radius:999px;padding:11px 20px;background:#0A1730;color:#E9C46A;font:800 13.5px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+#instSec .egITabs{display:flex;gap:6px;margin:12px 0 8px}
+#instSec .egITab{flex:1;text-align:center;font-size:12px;font-weight:700;padding:7px 2px;border-radius:10px;background:#fff;border:1px solid #E7DFCE;color:#6B7280;cursor:pointer}
+#instSec .egITab.on{background:#0A1730;color:#E9C46A;border-color:#0A1730}
+#instSec .egISteps{background:#fff;border:1px solid #E7DFCE;border-radius:14px;padding:12px 10px;display:flex;align-items:center;gap:6px}
+#instSec .egIStep{flex:1;text-align:center;font-size:11.8px;color:#23262E;line-height:1.45}
+#instSec .egIStep .e{font-size:20px;display:block;margin-bottom:3px}
+#instSec .egIAr{color:#C9A227;font-weight:800}
+</style>
+<script type="text/plain" data-lz="1">
+/* ===== INSTALL SECTION (Design 3 - user pick, 2026-11-26): website ke aakhir me
+   slim gold bar + device tabs + short English steps. Har device par usi ke hisab
+   se: Android/Windows par Install button seedha install prompt kholta hai
+   (data-install -> module ka doInstall), iPhone/Tablet par Share wale steps. */
+(function(){
+  "use strict";
+  if(document.getElementById("instSec"))return;
+  var STEPS={
+    android:[["\u2B07\uFE0F","Tap <b>Install</b> above"],["\u2705","Confirm <b>Install</b>"],["\u{1F4F2}","Open from <b>home screen</b>"]],
+    iphone:[["\u2B06\uFE0F","Tap <b>Share</b> in Safari"],["\u2795","Tap <b>Add to Home Screen</b>"],["\u2705","Tap <b>Add</b> \u2014 done"]],
+    windows:[["\u2B07\uFE0F","Tap <b>Install</b> above"],["\u22EE","Or menu \u2192 <b>Install app</b>"],["\u{1F4BB}","Open it <b>like an app</b>"]],
+    tablet:[["\u2B06\uFE0F","Tap <b>Share</b> or <b>Install</b>"],["\u2795","Tap <b>Add to Home Screen</b>"],["\u2705","Open from <b>home screen</b>"]]
+  };
+  var TABS=[["android","\u{1F916} Android"],["iphone","\u{1F34E} iPhone"],["windows","\u{1F4BB} Windows"],["tablet","\u{1F4F1} Tablet"]];
+  function devKey(){
+    var ua=navigator.userAgent||"";
+    if(/ipad/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))return "tablet";
+    if(/iphone|ipod/i.test(ua))return "iphone";
+    if(/android/i.test(ua))return /mobile/i.test(ua)?"android":"tablet";
+    if(/windows/i.test(ua))return "windows";
+    if(/macintosh|mac os/i.test(ua))return "windows";
+    return "android";
+  }
+  function inApp(){try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}}
+  var sec=document.createElement("section");sec.id="instSec";
+  var bar=document.createElement("div");bar.className="egIBar";
+  var tt=document.createElement("div");tt.className="egIT";
+  var tb=document.createElement("b");tb.innerHTML="\u{1F4F2} <span data-sn>Engrgroup23</span> App";
+  var ts=document.createElement("span");ts.textContent="Install it like an app \u2014 one tap from your home screen, works offline too";
+  tt.appendChild(tb);tt.appendChild(ts);
+  var btn=document.createElement("button");btn.type="button";btn.className="egIBtn";btn.textContent="Install";btn.setAttribute("data-install","");
+  bar.appendChild(tt);bar.appendChild(btn);sec.appendChild(bar);
+  var tabs=document.createElement("div");tabs.className="egITabs";sec.appendChild(tabs);
+  var box=document.createElement("div");box.className="egISteps";sec.appendChild(box);
+  var cur=devKey();
+  function paint(){
+    tabs.textContent="";box.textContent="";
+    TABS.forEach(function(t){
+      var d=document.createElement("div");d.className="egITab"+(t[0]===cur?" on":"");d.textContent=t[1];
+      d.addEventListener("click",function(){cur=t[0];paint()});
+      tabs.appendChild(d);
+    });
+    STEPS[cur].forEach(function(st,i){
+      if(i>0){var ar=document.createElement("div");ar.className="egIAr";ar.textContent="\u203A";box.appendChild(ar)}
+      var d=document.createElement("div");d.className="egIStep";
+      var e=document.createElement("span");e.className="e";e.textContent=st[0];d.appendChild(e);
+      var tx=document.createElement("span");tx.innerHTML=st[1];d.appendChild(tx);
+      box.appendChild(d);
+    });
+  }
+  paint();
+  if(inApp())sec.style.display="none";
+  window.addEventListener("appinstalled",function(){sec.style.display="none"});
+  var foot=document.getElementById("siteFoot");
+  if(foot&&foot.parentNode)foot.parentNode.insertBefore(sec,foot);
+  else document.body.appendChild(sec);
+})();
+</script>
 </body></html>
