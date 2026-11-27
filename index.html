@@ -14363,7 +14363,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=15;
+  var BUILD=16;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14513,6 +14513,7 @@ body.egBarOn #webAssist{bottom:102px}
   function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
 
   function harvest(cb){
+    if(!document.getElementById("egMpHide")){var hs=document.createElement("style");hs.id="egMpHide";hs.textContent="#appmenu{visibility:hidden!important}";document.head.appendChild(hs)}
     if(!clickMenuBtn()){cb(null);return}
     var tries=0;
     (function wait(){
@@ -14531,7 +14532,8 @@ body.egBarOn #webAssist{bottom:102px}
       setTimeout(wait,70);
     })();
   }
-  function cleanup(h){if(h&&h.menu&&h.menu.parentNode)h.menu.remove()}
+  function cleanup(h){if(h&&h.menu&&h.menu.parentNode)h.menu.remove();var hs=document.getElementById("egMpHide");if(hs)hs.remove()}
+  setInterval(function(){if(!document.getElementById("appmenu")){var hs=document.getElementById("egMpHide");if(hs)hs.remove()}},1000);
 
   function makePage(id,title){
     var pg=document.createElement("div");pg.className="toolPage";pg.id=id;
@@ -14607,7 +14609,7 @@ body.egBarOn #webAssist{bottom:102px}
 
   function open(which){
     harvest(function(h){
-      if(!h){var m=document.getElementById("appmenu");if(m)m.style.visibility="";return}
+      if(!h){var m=document.getElementById("appmenu");if(m)m.style.visibility="";var hs=document.getElementById("egMpHide");if(hs)hs.remove();return}
       curH=h;
       var all=entries(h);
       var pg=which==="set"?setPage:menuPage;
