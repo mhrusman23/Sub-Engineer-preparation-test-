@@ -14474,7 +14474,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=33;window.__EG_BUILD=BUILD;
+  var BUILD=34;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14766,11 +14766,8 @@ body.egBarOn #webAssist{bottom:102px}
     if(av&&!av.textContent)av.textContent="Engrgroup23 \u00B7 Website version BUILD "+bv;
     var at=document.querySelector("#egAppPage .egAppVerTop");
     if(at&&!at.textContent)at.textContent=" \u00B7 Version BUILD "+bv;
-    if(!window.__egApkTried){window.__egApkTried=1;
-      try{fetch("/version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
-        if(j&&j.apk){var kv=document.querySelector("#egAppPage .egApkVer");if(kv)kv.textContent=" App version: "+j.apk}
-      }).catch(function(){})}catch(e){}
-    }
+    var kv=document.querySelector("#egAppPage .egApkVer");
+    if(kv&&!kv.textContent)kv.textContent=" \u00B7 Version BUILD "+bv;
   },1200);
 })();
 </script>
