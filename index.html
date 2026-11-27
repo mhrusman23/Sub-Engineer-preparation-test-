@@ -14474,7 +14474,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=30;window.__EG_BUILD=BUILD;
+  var BUILD=31;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14579,6 +14579,7 @@ body.egBarOn #webAssist{bottom:102px}
       +card("windows","\u{1F4BB}","Windows Laptop / PC","The setup file for Windows, just like other software.",'<a class="egAppBtn" href="/engrgroup23-setup.exe">\u2B07 Download Setup</a>',["Tap <b>Download Setup</b>","Open the file \u2014 if Windows asks, tap <b>More info \u2192 Run anyway</b>","Tick your options in the wizard and press <b>Install</b>"])
       +card("iphone","\u{1F34E}","iPhone / iOS","iPhone does not allow setup files \u2014 Safari adds the app in 10 seconds, no file needed.",'<div class="egAppNote">No file needed \u2014 follow the steps below in Safari</div>',["Open this site in <b>Safari</b>","Tap <b>Share</b> \u2192 <b>Add to Home Screen</b>","Tap <b>Add</b> \u2014 done"])
       +card("tablet","\u{1F4F1}","Tablet","Android tablets use the same APK file. iPad uses the Safari steps.",tabBtn,["Pick your tablet type above","<b>Android tablet:</b> APK steps","<b>iPad:</b> Safari steps"])
+      +'<div class="egAppVer" style="text-align:center;padding:12px 10px 2px;font-size:12.5px;color:#8A8FA3"></div>'
       +"</div>";
     page.querySelector(".egAppBack").addEventListener("click",function(){page.classList.remove("open")});
     document.body.appendChild(page);
@@ -14739,7 +14740,7 @@ body.egBarOn #webAssist{bottom:102px}
         rows.forEach(function(e){lst.appendChild(row(e,e.full.indexOf("Sign out")>=0))});
         body.appendChild(lst);
       }
-      if(which==="set"){
+      {
         var vf=document.createElement("div");vf.id="egVerFoot";
         vf.style.cssText="text-align:center;padding:16px 10px 6px;font-size:12.5px;color:#8A8FA3";
         var bv=window.__EG_BUILD||0;
@@ -14755,6 +14756,15 @@ body.egBarOn #webAssist{bottom:102px}
   }
   window.__openMenuPage=function(){open("menu")};
   window.__openSettingsPage=function(){open("set")};
+  setInterval(function(){
+    var bv=window.__EG_BUILD;if(!bv)return;
+    var mf=document.querySelector("#appmenu .mnfoot");
+    if(mf&&!mf.querySelector(".egVerTag")){var s=document.createElement("span");s.className="egVerTag";s.textContent=" \u00B7 Version BUILD "+bv;mf.appendChild(s)}
+    var gf=document.querySelector("#gate .gfoot");
+    if(gf&&!gf.querySelector(".egVerTag")){var s2=document.createElement("span");s2.className="egVerTag";s2.textContent=" \u00B7 Version BUILD "+bv;gf.appendChild(s2)}
+    var av=document.querySelector("#egAppPage .egAppVer");
+    if(av&&!av.textContent)av.textContent="Engrgroup23 \u00B7 Website version BUILD "+bv;
+  },1200);
 })();
 </script>
 </body></html>
