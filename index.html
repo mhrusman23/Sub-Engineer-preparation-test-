@@ -14236,8 +14236,10 @@ body.egBarOn #webAssist{bottom:102px}
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
     if(!vis(document.getElementById("start")))return true;
-    if(document.getElementById("appmenu"))return true;
+    var _am=document.getElementById("appmenu");if(_am&&getComputedStyle(_am).display!=="none"&&getComputedStyle(_am).visibility!=="hidden")return true;
     if(sheet.classList.contains("on"))return true;
+    var _yv=document.getElementById("yearView");if(_yv&&vis(_yv))return true;
+    var _hc=document.getElementById("homeCards");if(_hc&&/All courses/.test(_hc.textContent||""))return true;
     var ids=["test","result","editor","engLab","rexOverlay","quizBox","aip","vipw"];
     for(var i=0;i<ids.length;i++){if(vis(document.getElementById(ids[i])))return true}
     if(document.querySelector(".toolPage.open"))return true;
@@ -14361,11 +14363,11 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=14;
+  var BUILD=15;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
-    if(document.getElementById("appmenu"))return true;
+    var _am=document.getElementById("appmenu");if(_am&&getComputedStyle(_am).display!=="none"&&getComputedStyle(_am).visibility!=="hidden")return true;
     var ids=["test","result","editor","engLab","rexOverlay","quizBox","aip","vipw"];
     for(var i=0;i<ids.length;i++){if(vis(document.getElementById(ids[i])))return true}
     if(document.querySelector(".toolPage.open"))return true;
