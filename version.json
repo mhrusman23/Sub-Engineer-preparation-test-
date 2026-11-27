@@ -1,1 +1,1 @@
-{"web": 34, "apk": 1, "apkUrl": "/engrgroup23.apk", "note": "One single version number everywhere (BUILD 34): Settings, Menu, Download App page and login screen all show the same number."}
+{"web": 35, "apk": 1, "apkUrl": "/engrgroup23.apk", "note": "PC fix: on laptops the website now shows the PC layout (left sidebar, no mobile bar) in every look, even with Windows scaling or browser zoom (BUILD 35)."}

@@ -12128,6 +12128,26 @@ html[data-look="premium"][data-plt="web"] .ycards{grid-template-columns:repeat(4
 }
 </style>
 
+<style id="egPcLayoutCss">
+/* PC layout ab look se alag (BUILD 35): website (browser) par wide screen ho to sidebar + bari layout har look me — Classic ho ya Premium. Hadd 1024 se 900 kar di taake laptop ki scaling/zoom par bhi PC look aye. */
+@media (min-width:900px){
+ html[data-plt="web"] #egTab{display:none!important}
+ html[data-plt="web"] body.egBarOn{padding-bottom:20px!important}
+ html[data-plt="web"] .wrap{max-width:1240px}
+ html[data-plt="web"] .ycards{grid-template-columns:repeat(3,1fr)}
+ html[data-plt="web"] #egSide.on{display:flex;position:fixed;left:0;top:0;bottom:0;width:236px;z-index:1050;flex-direction:column;background:linear-gradient(180deg,#16295C,#0B1530);color:#DCE5F5;padding:20px 14px;box-shadow:8px 0 30px rgba(7,13,31,.25);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;box-sizing:border-box}
+ html[data-plt="web"] body.egSideOn{padding-left:236px}
+ html[data-plt="web"] body.egSideOn #egUpd{left:248px}
+ html[data-plt="web"] #egSide .egSLogo{display:flex;align-items:center;gap:10px;padding:2px 8px 16px;border-bottom:1px solid rgba(255,255,255,.10);margin-bottom:14px}
+ html[data-plt="web"] #egSide .egSLogo .lg{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E9C46A,#B97E10);display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+ html[data-plt="web"] #egSide .egSLogo b{font-size:17px;color:#fff}
+ html[data-plt="web"] #egSide .egSLogo b i{font-style:normal;color:#E9C46A}
+ html[data-plt="web"] #egSide button.egSIt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;color:#C9D5EE;font-size:14.5px;font-weight:600;padding:11px 12px;border-radius:12px;cursor:pointer;font-family:inherit}
+ html[data-plt="web"] #egSide button.egSIt:hover{background:rgba(255,255,255,.07);color:#fff}
+ html[data-plt="web"] #egSide button.egSIt .ic{font-size:17px;width:22px;text-align:center;flex:none}
+ html[data-plt="web"] #egSide .egSFoot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid rgba(255,255,255,.10);font-size:11.5px;color:#8FA3C8;line-height:1.5}
+}
+</style>
 <style id="premiumIvoryTestCss">
 /* ===== PREMIUM MCQ LOOK: SMOOTH 6 - IVORY MINIMAL (user pick, 2026-11-23) =====
    Sirf Premium look ke test screen par (html[data-look="premium"] #test).
@@ -14474,7 +14494,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=34;window.__EG_BUILD=BUILD;
+  var BUILD=35;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
