@@ -7234,7 +7234,7 @@ function courseCleanup(cur){
   const resolve=t=>{const names=Array.from(new Set(cur.CARDS.map(cname)));const alt={"it":"information technology","general knowledge":"gk"};
     return names.find(n=>lc(n)===lc(t))||names.find(n=>lc(n).replace(/\s+engineering$/,"")===lc(t))||names.find(n=>lc(n)===(alt[lc(t)]||"\u0000"))||t};
   let changes=0;
-  const TOPIC_COURSE={bricks:"Civil",brick:"Civil",stones:"Civil",stone:"Civil",timber:"Civil",paints:"Civil","building materials":"Civil"};
+  const TOPIC_COURSE={bricks:"Civil",brick:"Civil",stones:"Civil",stone:"Civil",timber:"Civil",paints:"Civil","building materials":"Civil","heat transfer":"Mechanical","heat transfer through air":"Mechanical"};
   const targetOf=cn=>{
     const d=map[lc(cn)]||map[strip(cn)];if(d)return d;
     if(TOPIC_COURSE[lc(cn)])return TOPIC_COURSE[lc(cn)];
@@ -12071,6 +12071,8 @@ html[data-look="premium"][data-thm="dark"] #egTab button.mid{background:linear-g
 html[data-look="premium"][data-thm="dark"] #start .ycard{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:0 10px 22px rgba(0,0,0,.35)!important}
 html[data-look="premium"][data-thm="dark"] #start .ycard .yt{color:var(--ink)!important}
 html[data-look="premium"][data-thm="dark"] #yearView .hcard{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:0 8px 18px rgba(0,0,0,.30)!important}
+html[data-look="premium"][data-thm="dark"] #yearView .hname{color:#EDF1FA!important}
+html[data-look="premium"][data-thm="dark"] #yearView .ytitle{color:#EDF1FA!important}
 /* --- COLOURFUL --- */
 html[data-look="premium"][data-thm="colourful"]{--bg:#FAF6EF;--panel:#FFFFFF;--ink:#23262E;--muted:#6B7280;--line:#E9E2D2;--gold:#B97E10}
 html[data-look="premium"][data-thm="colourful"] body{background-color:#FAF6EF!important;background-image:radial-gradient(900px 460px at 50% -100px,var(--accD),transparent 62%)!important;color:#23262E}
@@ -14467,7 +14469,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=24;
+  var BUILD=25;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
