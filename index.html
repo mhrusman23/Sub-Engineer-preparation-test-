@@ -3632,7 +3632,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     save();showResume();buildPick(pickedSubs());show("start");
   }
   window.__goHome=function(){try{
-    var cached={adm:1,qe:1,rp:1,lib:1,aip:1,ws:1,viewer:1,jobsp:1,chatp:1},keep={userbar:1,annc:1,gate:1,bktoast:1,grc:1,mtstatbar:1};
+    var cached={adm:1,qe:1,rp:1,lib:1,aip:1,ws:1,viewer:1,jobsp:1,chatp:1},keep={userbar:1,annc:1,gate:1,bktoast:1,grc:1,mtstatbar:1,egTab:1,egTSheet:1,egSide:1,egUpd:1,webAssist:1,egBackBtn:1,egMenuPage:1,egSetPage:1,egAppPage:1,egThemePage:1,lgWait:1,quizBox:1,engLab:1,rexOverlay:1,"page-mistakes":1,"page-daily":1,"page-grand":1,"page-board":1,"page-progress":1};
     Array.prototype.slice.call(document.body.children).forEach(function(n){
       if(!n.tagName||/^(SCRIPT|STYLE|LINK|SECTION|MAIN|HEADER)$/.test(n.tagName)||keep[n.id])return;
       if(cached[n.id]){n.hidden=true;return}
@@ -14271,7 +14271,7 @@ body.egBarOn #webAssist{bottom:102px}
     if(document.querySelector(".toolPage.open"))return true;
     return false;
   }
-  setInterval(function(){var on=!blocked();bar.classList.toggle("on",on);document.body.classList.toggle("egBarOn",on)},300);
+  setInterval(function(){if(!document.getElementById("egTab"))document.body.appendChild(bar);var on=!blocked();bar.classList.toggle("on",on);document.body.classList.toggle("egBarOn",on)},300);
 })();
 </script>
 </script>
@@ -14389,7 +14389,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=17;
+  var BUILD=18;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
