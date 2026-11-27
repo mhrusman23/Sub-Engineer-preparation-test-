@@ -2195,7 +2195,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function urduAllowed(id){
     try{
-      if(window.__vipLocked&&window.__vipLocked("aiUrdu"))return false;
+      
       var a=window.__URDU_ON;if(!Array.isArray(a))return true;
       var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
@@ -2204,7 +2204,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   /* Hint button: shown only in the courses ticked in Admin > Settings (default: all) */
   function hintAllowed(id){
     try{
-      if(window.__vipLocked&&window.__vipLocked("aiHint"))return false;
+      
       var a=window.__HINT_ON;if(!Array.isArray(a))return true;
       var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
@@ -2270,6 +2270,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function urClick(){
     if(finished&&!order.length)return;
+    if(window.__vipAiGuard&&!window.__vipAiGuard("aiUrdu","AI Urdu Translation"))return;
     var id=order[pos],b=$("#qUrBox"),bt=$("#qUr");
     if(urOpen[id]&&!b.hidden){urOpen[id]=false;urRefresh(id);return}
     urOpen[id]=true;urAuto=true;
@@ -2288,6 +2289,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var hintCache={},hintBusy=false;
   function hintClick(){
     var id=order[pos];if(id==null)return;
+    if(window.__vipAiGuard&&!window.__vipAiGuard("aiHint","AI Hint"))return;
     var bt=$("#qHint"),tools=bt&&bt.parentNode,box=$("#qHintBox");
     if(!box&&tools&&tools.parentNode){
       box=el("div");box.id="qHintBox";box.hidden=true;box.setAttribute("dir","auto");
@@ -2394,6 +2396,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   window.__aiOpenGeneral=aiOpenGeneral;
   function aiOpenQ(id){
     if(id==null||!Q[id])return;
+    if(window.__vipAiGuard&&!window.__vipAiGuard("aiTutor","Ask AI"))return;
     aiEnsure();aiGenUi(false);
     if(aiCur!==id){
       aiCur=id;aiSess=null;aiEl.msgs.textContent="";aiEl.cp.textContent="";
@@ -13075,7 +13078,7 @@ body{top:0!important}
     var on=false;
     try{on=!!(window.__AI_ON&&window.__aiOpenGeneral&&document.getElementById("userbar"))}catch(e){}
     if(on){
-      if(window.__vipLocked&&window.__vipLocked("aiTutor"))on=false;
+      
       if(vis(document.getElementById("aip")))on=false;
       if(vis(document.getElementById("rexOverlay")))on=false;
       if(vis(document.getElementById("quizBox")))on=false;
@@ -14469,7 +14472,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=26;
+  var BUILD=27;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
