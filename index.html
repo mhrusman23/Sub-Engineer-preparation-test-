@@ -4217,18 +4217,29 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
 try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);SEO_CFG=s.exists()?s.data():null;SHOW_INST=!(s.exists()&&s.data().showInstall===false);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
 /* ---------- VIP Premium lock: owner Menu se folders/subjects premium kare, sirf VIP Gmail walon ko khule ---------- */
-let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false,fullMcq:false,aiTutor:false,aiUrdu:false,aiHint:false};
-try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq,aiTutor:!!_vc.aiTutor,aiUrdu:!!_vc.aiUrdu,aiHint:!!_vc.aiHint}}catch(_){}
+function vipExpParse(x){
+  const out={};
+  if(x&&typeof x==="object")for(const k in x){const v=x[k];let ms=0;
+    if(typeof v==="number")ms=v;
+    else if(v&&typeof v.toMillis==="function"){try{ms=v.toMillis()}catch(_){}}
+    else if(v&&typeof v.seconds==="number")ms=v.seconds*1000;
+    if(ms>0)out[String(k).toLowerCase()]=ms;}
+  return out;
+}
+let VIP={on:false,courses:[],subjects:[],emails:[],exp:{},pdfMcq:false,fullMcq:false,aiTutor:false,aiUrdu:false,aiHint:false};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq,aiTutor:!!_vc.aiTutor,aiUrdu:!!_vc.aiUrdu,aiHint:!!_vc.aiHint,exp:vipExpParse(_vc.exp)}}catch(_){}
 function vipApply(x){
   if(!x||typeof x!=="object")return;
-  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq,aiTutor:!!x.aiTutor,aiUrdu:!!x.aiUrdu,aiHint:!!x.aiHint};
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq,aiTutor:!!x.aiTutor,aiUrdu:!!x.aiUrdu,aiHint:!!x.aiHint,exp:vipExpParse(x.exp)};
   try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
 }
 try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
 function vipMember(){
   if(IS_OWNER||IS_ADMIN)return true;
   const e=String(ME||"").toLowerCase();
-  return e.indexOf("@")>0&&VIP.emails.indexOf(e)>=0;
+  if(!(e.indexOf("@")>0&&VIP.emails.indexOf(e)>=0))return false;
+  const x=VIP.exp?VIP.exp[e]:0;   /* BUILD 37: time-limited membership — muddat khatam to member nahi */
+  return !x||x>Date.now();
 }
 function vipLocked(course,subject){
   if(!VIP.on||vipMember())return false;
@@ -4247,6 +4258,15 @@ function vipShow(what){
   const tx=el("p","","\u201C"+(what||"This")+"\u201D is Premium. It opens only for VIP members whose Gmail is added by the admin.");tx.style.cssText="font-size:13.5px;line-height:1.55;color:#D7E1F0;margin:10px 0 4px";bx.appendChild(tx);
   const me=String(ME||"");
   const ml=el("p","",me.indexOf("@")>0?("Your Gmail: "+me+" \u2014 is not in the VIP list yet. Contact the admin on WhatsApp to get added."):"You are browsing as a guest. First login with your Gmail, then ask the admin to add it to the VIP list.");ml.style.cssText="font-size:12.5px;line-height:1.5;color:#9FB2CC;margin:0 0 6px";bx.appendChild(ml);
+  const _me=String(ME||"").toLowerCase();
+  if(_me.indexOf("@")>0&&!vipMember()){
+    const rq=el("button","btn","\u{1F4E9} Request access from admin");rq.type="button";rq.style.cssText="margin-top:10px;background:#13294B;color:#E9C46A;font-weight:700;border:1px solid #C9A227;padding:10px 22px;border-radius:999px;cursor:pointer";
+    rq.onclick=async()=>{rq.disabled=true;rq.textContent="Sending\u2026";
+      try{await setDoc(doc(db,"vipreq",_me),{email:_me,name:String((window.__PROFILE&&window.__PROFILE.name)||""),ts:Date.now()});rq.textContent="\u2713 Request sent \u2014 waiting for admin approval";rq.style.background="#1E5B2E";rq.style.color="#D8F5DC"}
+      catch(_){rq.disabled=false;rq.textContent="\u{1F4E9} Request failed \u2014 please contact on WhatsApp"}};
+    bx.appendChild(rq);
+    try{getDoc(doc(db,"vipreq",_me)).then(s=>{if(s.exists()){rq.disabled=true;rq.textContent="\u2713 Request already sent \u2014 waiting for approval";rq.style.background="#1E5B2E";rq.style.color="#D8F5DC"}}).catch(()=>{})}catch(_){}
+  }
   const ch=el("div");ch.style.cssText="text-align:left;margin-top:8px";bx.appendChild(ch);
   try{renderContacts(ch)}catch(_){}
   const cl=el("button","btn","Close");cl.type="button";cl.style.cssText="margin-top:14px;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;font-weight:800;border:none;padding:10px 26px;border-radius:999px";cl.onclick=()=>dl.remove();bx.appendChild(cl);
@@ -4276,6 +4296,62 @@ window.__vipMarked=function(course,subject){
   return false;
 };
 window.__vipSigStr=function(){return (VIP.on?"1":"0")+"|"+VIP.courses.join(",")+"|"+VIP.subjects.join(",")+"|F"+((window.__FEAT&&window.__FEAT.fullpdf)?"1":"0")};
+/* ===== BUILD 37 · VIP HARD LOCK: premium subjects ke sawal alag mehfooz bank (vipbank) me
+   rehte hain — aam bank me wo hote hi nahi. Sirf owner/manager/approved-Gmail wala phone
+   unhe download karke memory me jorta hai; Firestore rules (vipbank) yehi taala server par
+   lagate hain. Rules publish na hon to vipFetch fail hota hai aur sab purane tareeqe se
+   (sirf app wala lock) chalta rehta hai — koi data zaya nahi hota. ===== */
+let _vipCache=null;
+function vipQKey(q){return (q&&q.sec)+"|"+String((q&&q.text)||"").slice(0,140)}
+function vipPremiumSet(bank){
+  const set=new Set();
+  if(!VIP||!VIP.on||!bank||!Array.isArray(bank.SUB))return set;
+  const st=new Set((VIP.subjects||[]).map(function(x){return String(x).toLowerCase()}));
+  const ct=new Set((VIP.courses||[]).map(function(x){return String(x).toLowerCase()}));
+  const cc={};
+  (bank.CARDS||[]).forEach(function(c){if(c&&c.k)cc[c.k]=String(c.course||"").trim()||"Civil"});
+  bank.SUB.forEach(function(sb){
+    if(!sb)return;const nm=String(sb.name||"");
+    if(st.has(nm.toLowerCase())||ct.has(String(cc[sb.cat]||"Civil").toLowerCase()))set.add(nm);
+  });
+  return set;
+}
+async function vipFetch(){
+  /* {version,qs,subjects} | null (abhi koi vipbank nahi). Meta mil jaye lekin chunk na
+     mile / permission na ho to throw — caller use "halat maloom nahi" samjhta hai. */
+  const m=await getDoc(doc(db,"meta","vipbank"));
+  if(!m.exists())return null;
+  const d=m.data(),ver=+d.version||0,parts=+d.parts||0;
+  if(_vipCache&&_vipCache.version===ver)return _vipCache;
+  if(!parts){_vipCache={version:ver,qs:[],subjects:d.subjects||[]};return _vipCache}
+  const snaps=await Promise.all(Array.from({length:parts},function(_,i){return getDoc(doc(db,"vipbank","p"+i))}));
+  let s="";for(const sn of snaps){if(!sn.exists())throw new Error("vipbank chunk missing");s+=String(sn.data().data||"")}
+  const obj=JSON.parse(s);
+  _vipCache={version:ver,qs:Array.isArray(obj.Q0)?obj.Q0:[],subjects:d.subjects||obj.subjects||[]};
+  return _vipCache;
+}
+async function vipTryMerge(json){
+  try{
+    if(!VIP.on||!vipMember()||typeof json!=="string"||!json)return null;
+    const v=await vipFetch();
+    if(!v||!v.qs.length)return null;
+    const bank=JSON.parse(json);
+    if(!bank||!Array.isArray(bank.Q0))return null;
+    const have=new Set(bank.Q0.map(vipQKey));
+    const add=v.qs.filter(function(q){return !have.has(vipQKey(q))});
+    if(!add.length)return null;
+    bank.Q0=bank.Q0.concat(add);
+    return JSON.stringify(bank);
+  }catch(_){return null}
+}
+async function vipLateMerge(){
+  try{
+    if(!started||!window.__bankLiveApply||!BANK_JSON)return;
+    const j=await vipTryMerge(BANK_JSON);
+    if(j){const r=window.__bankLiveApply(JSON.parse(j),window.__BANKV||0);if(r===true)BANK_JSON=j}
+  }catch(_){}
+}
+window.__vipTryMerge=vipTryMerge;
 /* ===== Verified students (ID tick) — sitedata/verified + localStorage eg23verified ===== */
 let VERIFIED=[];
 try{const _v=JSON.parse(localStorage.getItem("eg23verified")||"[]");if(Array.isArray(_v))VERIFIED=_v.map(function(e){return String(e).toLowerCase()})}catch(_){}
@@ -4660,14 +4736,81 @@ function openVip(){
   });
   box.appendChild(el("div","label","VIP members \u2014 Gmail list (aik line me aik Gmail):"));
   const emTx=el("textarea");emTx.id="vipEmails";emTx.rows=5;emTx.placeholder="student1@gmail.com\nstudent2@gmail.com";emTx.style.cssText="width:100%";box.appendChild(emTx);
+  box.appendChild(el("div","label","\u23F3 Time-limited membership \u2014 add a Gmail with a duration (Gmails with no time limit stay members forever):"));
+  const expState={};
+  const tRow=el("div");tRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px";
+  const tEm=el("input");tEm.placeholder="student@gmail.com";tEm.style.cssText="flex:1 1 180px";
+  const tSel=document.createElement("select");tSel.style.cssText="flex:0 1 190px;padding:8px";
+  [["7","7 days"],["30","1 month (30 days)"],["90","3 months (90 days)"],["180","6 months (180 days)"],["365","1 year (365 days)"],["0","Permanent"]].forEach(function(o){const op=document.createElement("option");op.value=o[0];op.textContent=o[1];tSel.appendChild(op)});
+  tSel.value="30";
+  const tDays=el("input");tDays.type="number";tDays.min="1";tDays.placeholder="Custom days";tDays.style.cssText="flex:0 1 110px";
+  const tAdd=el("button","btn","Add with time");tAdd.type="button";
+  tRow.appendChild(tEm);tRow.appendChild(tSel);tRow.appendChild(tDays);tRow.appendChild(tAdd);box.appendChild(tRow);
+  const tList=el("div");tList.style.cssText="margin-bottom:8px";box.appendChild(tList);
+  function renderExp(){
+    tList.textContent="";
+    const ks=Object.keys(expState).sort();
+    if(!ks.length){tList.appendChild(el("p","label","(no time-limited members)"));return}
+    ks.forEach(function(em){
+      const left=Math.max(0,Math.ceil((expState[em]-Date.now())/86400000));
+      const row=el("div");row.style.cssText="display:flex;gap:8px;align-items:center;padding:4px 2px;flex-wrap:wrap";
+      row.appendChild(el("span","",em+" \u2014 expires "+new Date(expState[em]).toLocaleDateString()+" ("+left+" days left)"));
+      const rm=el("button","btn","\u2715 Remove");rm.type="button";rm.style.cssText="padding:3px 10px";
+      rm.onclick=function(){delete expState[em];
+        const cur=emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e&&e!==em});
+        emTx.value=cur.join("\n");renderExp()};
+      row.appendChild(rm);tList.appendChild(row);
+    });
+  }
+  tAdd.onclick=function(){
+    const em=tEm.value.trim().toLowerCase();
+    if(em.indexOf("@")<0){tEm.focus();return}
+    const cur=emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(Boolean);
+    if(cur.indexOf(em)<0){cur.push(em);emTx.value=cur.join("\n")}
+    const cd=parseInt(tDays.value,10),days=(cd>0)?cd:parseInt(tSel.value,10);
+    if(days>0)expState[em]=Date.now()+days*86400000;else delete expState[em];
+    tEm.value="";tDays.value="";renderExp();
+  };
   const srow=el("div");srow.style.cssText="display:flex;gap:10px;align-items:center;margin-top:12px";
   const sv=el("button","btn primary","\u{1F4BE} Save VIP settings");sv.type="button";srow.appendChild(sv);
   const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
+  box.appendChild(el("div","label","\u{1F4E9} Access requests \u2014 tap Approve to add that Gmail to the VIP list:"));
+  const reqBox=el("div");reqBox.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;margin-bottom:6px;color:#2A2118";box.appendChild(reqBox);
+  async function loadReqs(){
+    reqBox.textContent="Loading\u2026";
+    try{
+      const qs=await getDocs(collection(db,"vipreq"));
+      reqBox.textContent="";
+      if(qs.empty){reqBox.appendChild(el("p","label","(no pending requests)"));return}
+      qs.forEach(function(d){
+        const r=d.data()||{},em=String(r.email||d.id);
+        const row=el("div");row.style.cssText="display:flex;gap:8px;align-items:center;padding:6px 2px;flex-wrap:wrap";
+        row.appendChild(el("span","",((r.name?r.name+" \u00b7 ":"")+em)));
+        const ap=el("button","btn","\u2713 Approve");ap.type="button";ap.style.cssText="padding:4px 12px";
+        ap.onclick=async()=>{ap.disabled=true;
+          try{
+            const cur=emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(Boolean);
+            if(cur.indexOf(em.toLowerCase())<0){cur.push(em.toLowerCase());emTx.value=cur.join("\n")}
+            await deleteDoc(doc(db,"vipreq",d.id));
+            sv.onclick();
+            loadReqs();
+          }catch(_){ap.disabled=false}
+        };
+        const rj=el("button","btn","\u2715 Reject");rj.type="button";rj.style.cssText="padding:4px 12px";
+        rj.onclick=async()=>{rj.disabled=true;try{await deleteDoc(doc(db,"vipreq",d.id));loadReqs()}catch(_){rj.disabled=false}};
+        row.appendChild(ap);row.appendChild(rj);reqBox.appendChild(row);
+      });
+    }catch(e){reqBox.textContent="Could not load requests \u2014 publish the new Firestore rules first, then reopen this panel. ("+((e&&e.code)||"error")+")"}
+  }
+  loadReqs();
   function fillForm(){
     onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;tutorCb.checked=!!VIP.aiTutor;urduCb.checked=!!VIP.aiUrdu;hintCb.checked=!!VIP.aiHint;
     box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
     box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
     emTx.value=(VIP.emails||[]).join("\n");
+    for(const k in expState)delete expState[k];
+    if(VIP.exp)for(const k in VIP.exp)expState[k]=VIP.exp[k];
+    renderExp();
   }
   fillForm();
   try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists()){vipApply(s.data());fillForm()}}).catch(()=>{})}catch(_){}
@@ -4680,10 +4823,20 @@ function openVip(){
       emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
       updatedAt:Date.now()
     };
+    data.exp={};
+    data.emails.forEach(function(e){if(expState[e])data.exp[e]=Timestamp.fromMillis(expState[e])});
     try{
       await setDoc(doc(db,"sitedata","vip"),data);
       vipApply(data);
       st.textContent="\u2713 Saved \u2014 the VIP settings will now apply on all phones.";
+      if(IS_OWNER&&BANK_JSON){
+        st.textContent="\u2713 Saved \u2014 applying the server lock\u2026";
+        try{
+          await publishBank(JSON.parse(BANK_JSON));
+          if(window.__VIP_SPLIT==="unknown")st.textContent="\u2713 Settings saved. The server lock is NOT active yet \u2014 first publish the new Firestore rules, then press Save again.";
+          else st.textContent="\u2713 Saved \u2014 server lock applied. Premium questions now live in the protected bank.";
+        }catch(e2){st.textContent="Settings saved, but the bank re-publish failed ("+((e2&&e2.code)||"error")+"). Press Save again."}
+      }
     }catch(e){st.textContent="Error: "+((e&&e.code)||e)}
     sv.disabled=false;
   };
@@ -5639,6 +5792,7 @@ async function check(user){
     }
     BANK_JSON=b.json;BANK_META=b.meta;
     try{window.__BANKV=+((BANK_META&&BANK_META.version)||0)}catch(_){window.__BANKV=0}
+    try{const _vm=await vipTryMerge(b.json);if(_vm)BANK_JSON=_vm}catch(_){}
     let UNAME="";
     try{UNAME=String(localStorage.getItem("eg23name")||"").trim()}catch(_){}
     if(user.uid){
@@ -5665,8 +5819,9 @@ async function check(user){
     try{window.__RAWNAME=user.isAnonymous?"Guest":(user.displayName||(email.indexOf("@")>0?email.split("@")[0]:email))}catch(_){window.__RAWNAME="Guest"}
     if(window.__VISITOR){window.__PROFILE.name="Visitor";window.__PROFILE.email="Guest \u00b7 Free access";window.__PROFILE.role="Visitor";window.__RAWNAME="Visitor"}
     else{try{localStorage.setItem("eg23in","1");localStorage.setItem("eg23ok",email)}catch(_){}}
-    if(!started)startApp(JSON.parse(b.json));
+    if(!started)startApp(JSON.parse(BANK_JSON));
     lgHide();
+    try{vipLateMerge()}catch(_){}
   }catch(e){
     const code=String((e&&(e.code||e.message))||e).trim();
     if(code==="permission-denied"||/Missing or insufficient permissions/i.test(code)){
@@ -6519,22 +6674,67 @@ async function hubSync(bank){
 
 async function publishBank(bank){
   const bad=validBank(bank);if(bad)throw new Error(bad);
-  const json=JSON.stringify(bank),CH=200000,version=Date.now(),pieces=[];
-  for(let i=0;i<json.length;){
-    let e=Math.min(i+CH,json.length);
-    if(e<json.length){const c=json.charCodeAt(e-1);if(c>=0xD800&&c<=0xDBFF)e--}
-    pieces.push(json.slice(i,e));i=e;
+  /* BUILD 37 · VIP HARD LOCK: pehle purana vipbank wapas jor kar FULL bank banao (jis
+     session se bhi publish ho, premium sawal kabhi zaya na hon), phir current VIP setting
+     ke hisab se dobara split karo. vipbank hamesha PEHLE likha jata hai — us ki write fail
+     ho to aam bank ko hath hi nahi lagta. vipbank ki halat maloom na ho (rules publish
+     baqi) to split nahi hota aur sab purane tareeqe se publish hota hai. */
+  let full=bank,vipKnown=true;
+  try{
+    const oldVip=await vipFetch();
+    if(oldVip&&oldVip.qs.length){
+      const have=new Set(full.Q0.map(vipQKey));
+      const add=oldVip.qs.filter(function(q){return !have.has(vipQKey(q))});
+      if(add.length)full=Object.assign({},bank,{Q0:bank.Q0.concat(add)});
+    }
+  }catch(_){vipKnown=false}
+  let free=full,vipQs=[],premNames=[];
+  window.__VIP_SPLIT="off";
+  if(!vipKnown&&(VIP.courses.length||VIP.subjects.length))window.__VIP_SPLIT="unknown";
+  if(vipKnown&&VIP.on){
+    const prem=vipPremiumSet(full);
+    if(prem.size){
+      const subOfSec=full.S.map(function(ch){const sb=full.SUB[ch&&ch.sub];return sb?String(sb.name||""):""});
+      const f=[],v=[];
+      full.Q0.forEach(function(q){(prem.has(subOfSec[q.sec]||"")?v:f).push(q)});
+      if(v.length){free=Object.assign({},full,{Q0:f});vipQs=v;premNames=Array.from(prem)}
+    }
   }
-  let old=0;
-  try{const m=await getDoc(doc(db,"meta","bank"));if(m.exists())old=m.data().parts||0}catch(e){}
+  const CH=200000,splitStr=function(str){const pieces=[];for(let i=0;i<str.length;){let e=Math.min(i+CH,str.length);if(e<str.length){const c=str.charCodeAt(e-1);if(c>=0xD800&&c<=0xDBFF)e--}pieces.push(str.slice(i,e));i=e}return pieces};
+  window.__VIPBANK_OK=true;
+  if(vipQs.length){
+    const vpieces=splitStr(JSON.stringify({Q0:vipQs,subjects:premNames})),vver=Date.now();
+    let voldParts=0;try{const vm=await getDoc(doc(db,"meta","vipbank"));if(vm.exists())voldParts=vm.data().parts||0}catch(_){}
+    const vb=writeBatch(db);
+    vpieces.forEach((p,i)=>vb.set(doc(db,"vipbank","p"+i),{i,v:vver,data:p}));
+    for(let i=vpieces.length;i<voldParts;i++)vb.delete(doc(db,"vipbank","p"+i));
+    vb.set(doc(db,"meta","vipbank"),{version:vver,parts:vpieces.length,count:vipQs.length,subjects:premNames,updatedAt:serverTimestamp()});
+    try{await vb.commit();_vipCache={version:vver,qs:vipQs,subjects:premNames};window.__VIP_SPLIT="on"}catch(e){window.__VIPBANK_OK=false;throw e}
+  }
+  const json=JSON.stringify(free),version=Date.now(),pieces=splitStr(json);
+  let oldParts=0;
+  try{const m=await getDoc(doc(db,"meta","bank"));if(m.exists())oldParts=m.data().parts||0}catch(e){}
   const b=writeBatch(db);
   pieces.forEach((p,i)=>b.set(doc(db,"bank","p"+i),{i,v:version,data:p}));
-  for(let i=pieces.length;i<old;i++)b.delete(doc(db,"bank","p"+i));
-  b.set(doc(db,"meta","bank"),{version,parts:pieces.length,count:bank.Q0.length,updatedAt:serverTimestamp()});
+  for(let i=pieces.length;i<oldParts;i++)b.delete(doc(db,"bank","p"+i));
+  b.set(doc(db,"meta","bank"),{version,parts:pieces.length,count:free.Q0.length,updatedAt:serverTimestamp()});
   window.__BANKV=version;
   await b.commit();
-  BANK_JSON=json;BANK_META={version,parts:pieces.length,count:bank.Q0.length,updatedAt:Timestamp.fromMillis(version)};
-  hubSync(bank); try{lgAutoSync(bank)}catch(_){}
+  if(vipKnown&&!vipQs.length){
+    /* kuch bhi premium nahi raha — purana vipbank saaf kar do (best effort, fail ho to
+       bhi nuqsan nahi: merge dedupe duplicate nahi banata) */
+    try{
+      const vm=await getDoc(doc(db,"meta","vipbank"));
+      if(vm.exists()&&(+vm.data().parts||0)>0){
+        const cb=writeBatch(db),n=+vm.data().parts||0;
+        for(let i=0;i<n;i++)cb.delete(doc(db,"vipbank","p"+i));
+        cb.set(doc(db,"meta","vipbank"),{version:Date.now(),parts:0,count:0,subjects:[],updatedAt:serverTimestamp()});
+        await cb.commit();_vipCache=null;
+      }
+    }catch(_){}
+  }
+  BANK_JSON=JSON.stringify(full);BANK_META={version,parts:pieces.length,count:free.Q0.length,updatedAt:Timestamp.fromMillis(version)};
+  hubSync(full); try{lgAutoSync(full)}catch(_){}
 }
 
 /* ---------------- live bank update: naye MCQs bina reload, peeche se live shamil ----------------
@@ -6553,6 +6753,7 @@ function bankWatch(){
       try{
         let json=await refreshBankCache();
         if(!json){const c=await idbGet("bank");if(c&&+c.version===v&&typeof c.json==="string")json=c.json}
+        if(json){const _m=await vipTryMerge(json);if(_m)json=_m}
         if(json&&window.__bankLiveApply){
           const r=window.__bankLiveApply(JSON.parse(json),v);
           if(r===true)window.__BANKV=v;
@@ -14495,7 +14696,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=36;window.__EG_BUILD=BUILD;
+  var BUILD=37;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
