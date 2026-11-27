@@ -14300,6 +14300,7 @@ body.egBarOn #webAssist{bottom:102px}
   var bar=document.createElement("nav");bar.id="egTab";
   function mk(icon,label,cls,fn){var b=document.createElement("button");b.type="button";if(cls)b.className=cls;b.innerHTML="<i>"+icon+"</i>"+(label||"");b.addEventListener("click",fn);bar.appendChild(b);return b}
   function clickMenuBtn(){var bs=document.querySelectorAll("#userbar button");for(var i=0;i<bs.length;i++){if(bs[i].textContent.indexOf("Menu")>=0){bs[i].click();return true}}return false}
+  function egHideMenu(){if(!document.getElementById("egMpHide")){var hs=document.createElement("style");hs.id="egMpHide";hs.textContent="#appmenu{visibility:hidden!important}";document.head.appendChild(hs)}}
   function afterMenu(fn){var n=0;var iv=setInterval(function(){n++;var m=document.getElementById("appmenu");if(m){clearInterval(iv);fn(m)}else if(n>25)clearInterval(iv)},60)}
   var APPM=false;try{APPM=document.documentElement.getAttribute("data-plt")==="app"}catch(e){}
   function goHome(){var br=document.querySelector('#userbar [title="Home / Dashboard"]');if(br){br.click();return}window.scrollTo({top:0,behavior:"smooth"})}
@@ -14313,7 +14314,7 @@ body.egBarOn #webAssist{bottom:102px}
     var d=document.querySelector("[data-install]");if(d)d.click();
   }
   if(APPM){mk("\u{1F3E0}","Home","",goHome)}else{mk("\u2B07\uFE0F","App","",goApp)}
-  if(APPM){mk("\u2B07\uFE0F","App","",goApp)}else{mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}
+  if(APPM){mk("\u2B07\uFE0F","App","",goApp)}else{mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{egHideMenu();clickMenuBtn()}})}
   var sheet=document.createElement("div");sheet.id="egTSheet";
   var TOOLS=[["mistakes","\u{1F4D5}","Mistake Book","mistake"],["daily","\u{1F525}","Daily Challenge","daily"],["grand","\u{1F4DD}","Grand Mock Test","grand"],["board","\u{1F3C6}","Leaderboard","board"],["progress","\u{1F4CA}","My Progress",null]];
   var rows="";
@@ -14324,8 +14325,8 @@ body.egBarOn #webAssist{bottom:102px}
   sheet.querySelector("#egTx").addEventListener("click",function(){sheet.classList.remove("on")});
   sheet.querySelectorAll(".trow").forEach(function(r){r.addEventListener("click",function(){sheet.classList.remove("on");if(window.__openToolPage)window.__openToolPage(r.getAttribute("data-k"))})});
   mk("\u26A1","","mid",function(){sheet.classList.add("on")});
-  if(APPM){mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}else{mk("\u{1F464}","Profile","",function(){
-    if(!document.getElementById("egMpHide")){var hs=document.createElement("style");hs.id="egMpHide";hs.textContent="#appmenu{visibility:hidden!important}";document.head.appendChild(hs)}
+  if(APPM){mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{egHideMenu();clickMenuBtn()}})}else{mk("\u{1F464}","Profile","",function(){
+    egHideMenu();
     if(!clickMenuBtn()){var h0=document.getElementById("egMpHide");if(h0)h0.remove();return;}
     afterMenu(function(m){
       var items=m.querySelectorAll(".mnit");
@@ -14335,7 +14336,7 @@ body.egBarOn #webAssist{bottom:102px}
   })}
   mk("\u2699\uFE0F","Settings","",function(){
     if(window.__openSettingsPage){window.__openSettingsPage();return}
-    if(!clickMenuBtn())return;
+    egHideMenu();if(!clickMenuBtn())return;
     afterMenu(function(m){
       var items=m.querySelectorAll(".mnit"),tgt=null;
       for(var i=0;i<items.length;i++){var tx=items[i].textContent;if(tx.indexOf("Website settings")>=0||tx.indexOf("Settings (important)")>=0){tgt=items[i];break}}
@@ -14473,7 +14474,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=28;
+  var BUILD=29;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
