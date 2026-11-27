@@ -14195,15 +14195,16 @@ body.egBarOn #webAssist{bottom:102px}
   var APPM=false;try{APPM=document.documentElement.getAttribute("data-plt")==="app"}catch(e){}
   function goHome(){var br=document.querySelector('#userbar [title="Home / Dashboard"]');if(br){br.click();return}window.scrollTo({top:0,behavior:"smooth"})}
   function goSearch(){var g=document.getElementById("gsrch");if(g&&g.hidden)goHome();setTimeout(function(){var g2=document.getElementById("gsrch"),inp=document.getElementById("gsIn");if(g2)g2.scrollIntoView({behavior:"smooth",block:"center"});if(inp)inp.focus({preventScroll:true})},380)}
-  if(APPM){mk("\u{1F3E0}","Home","",goHome)}else{mk("\u2B07\uFE0F","App","",function(){
+  function goApp(){
     if(window.__openAppPage){window.__openAppPage();return}
     var ua=navigator.userAgent||"";
     if(/android/i.test(ua)){location.href="/engrgroup23.apk";return}
     if(/windows/i.test(ua)){location.href="/engrgroup23-setup.exe";return}
     var s=document.getElementById("instSec");if(s){s.scrollIntoView({behavior:"smooth",block:"center"});return}
     var d=document.querySelector("[data-install]");if(d)d.click();
-  })}
-  if(APPM){mk("\u{1F50D}","Search","",goSearch)}else{mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}
+  }
+  if(APPM){mk("\u{1F3E0}","Home","",goHome)}else{mk("\u2B07\uFE0F","App","",goApp)}
+  if(APPM){mk("\u2B07\uFE0F","App","",goApp)}else{mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}
   var sheet=document.createElement("div");sheet.id="egTSheet";
   var TOOLS=[["mistakes","\u{1F4D5}","Mistake Book","mistake"],["daily","\u{1F525}","Daily Challenge","daily"],["grand","\u{1F4DD}","Grand Mock Test","grand"],["board","\u{1F3C6}","Leaderboard","board"],["progress","\u{1F4CA}","My Progress",null]];
   var rows="";
@@ -14360,7 +14361,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=11;
+  var BUILD=12;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
