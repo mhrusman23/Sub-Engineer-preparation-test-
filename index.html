@@ -4358,7 +4358,7 @@ function openDoctor(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
   box.appendChild(top);
   box.appendChild(el("p","label","Every glitch the website catches (auto-fixed ones too, and the ones it could not fix) is reported here \u2014 which page, what error, which student. Reports from students' phones will start arriving once the errlog line is added to the Firebase rules."));
-  const aRow=el("label");aRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 4px;cursor:pointer";
+  const aRow=el("label");aRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 4px;cursor:pointer;color:#2A2118";
   const aCb=document.createElement("input");aCb.type="checkbox";aCb.style.cssText="width:20px;height:20px;flex:none";
   aCb.checked=DOCCFG.autoFix&&!(function(){try{return localStorage.getItem("hcAuto")==="0"}catch(_){return false}})();
   aRow.appendChild(aCb);
@@ -4555,7 +4555,7 @@ function openWm(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
   box.appendChild(top);
   box.appendChild(el("p","label","Ye watermark har PDF (Test Record + Full MCQs) ke har page ke center me aata hai: bara halka logo, us par sunehre ribbon me website link. Yahan se logo, link aur name badal sakte hain \u2014 coding ki zaroorat nahi."));
-  const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer";
+  const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer;color:#2A2118";
   const onCb=document.createElement("input");onCb.type="checkbox";onCb.id="wmOn";onCb.style.cssText="width:20px;height:20px;flex:none";
   onRow.appendChild(onCb);
   const onTx=el("span","","");onTx.innerHTML="<b>Watermark ON</b><br><small>Turning it OFF removes the watermark from PDF pages.</small>";onRow.appendChild(onTx);
@@ -4605,32 +4605,32 @@ function openVip(){
   const cl=el("button","btn","Close");cl.type="button";cl.onclick=()=>wrap.remove();top.appendChild(cl);
   box.appendChild(top);
   box.appendChild(el("p","label","Premium folders / subjects will open only for students whose Gmail is in the VIP list below. The owner and managers always have full access. Until you turn it ON, the website stays free for everyone, just as it is now."));
-  const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer";
+  const onRow=el("label");onRow.style.cssText="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#FFF7DC,#FFE9A8);border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer;color:#2A2118";
   const onCb=document.createElement("input");onCb.type="checkbox";onCb.id="vipOn";onCb.style.cssText="width:20px;height:20px;flex:none";
   onRow.appendChild(onCb);
   const onTx=el("span","","");onTx.innerHTML="<b>Premium lock ON</b><br><small>Turning this ON locks the premium folders / subjects (they open only for VIP Gmail users).</small>";onRow.appendChild(onTx);
   box.appendChild(onRow);
-  const pdfRow=el("label");pdfRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const pdfRow=el("label");pdfRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
   const pdfCb=document.createElement("input");pdfCb.type="checkbox";pdfCb.id="vipPdf";pdfCb.style.cssText="width:20px;height:20px;flex:none";
   pdfRow.appendChild(pdfCb);
   const pdfTx=el("span","","");pdfTx.innerHTML="<b>\u{1F4C4} 'Record with MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download this PDF; other students will see the VIP sheet. The 'Only Record' PDF stays free for everyone.</small>";pdfRow.appendChild(pdfTx);
   box.appendChild(pdfRow);
-  const fullRow=el("label");fullRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const fullRow=el("label");fullRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
   const fullCb=document.createElement("input");fullCb.type="checkbox";fullCb.id="vipFullMcq";fullCb.style.cssText="width:20px;height:20px;flex:none";
   fullRow.appendChild(fullCb);
   const fullTx=el("span","","");fullTx.innerHTML="<b>\u{1F4E5} 'Full MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download the Full MCQs PDF of any subject; other students will see the VIP sheet.</small>";fullRow.appendChild(fullTx);
   box.appendChild(fullRow);
-  const tutorRow=el("label");tutorRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const tutorRow=el("label");tutorRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
   const tutorCb=document.createElement("input");tutorCb.type="checkbox";tutorCb.id="vipAiTutor";tutorCb.style.cssText="width:20px;height:20px;flex:none";
   tutorRow.appendChild(tutorCb);
   const tutorTx=el("span","","");tutorTx.innerHTML="<b>\u{1F916} Web.Assist (AI Tutor) \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can use Web.Assist; for other students the floating button stays hidden.</small>";tutorRow.appendChild(tutorTx);
   box.appendChild(tutorRow);
-  const urduRow=el("label");urduRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const urduRow=el("label");urduRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
   const urduCb=document.createElement("input");urduCb.type="checkbox";urduCb.id="vipAiUrdu";urduCb.style.cssText="width:20px;height:20px;flex:none";
   urduRow.appendChild(urduCb);
   const urduTx=el("span","","");urduTx.innerHTML="<b>\u{1F310} AI Urdu Translation \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members will see the Urdu translation button in tests; it stays hidden for other students.</small>";urduRow.appendChild(urduTx);
   box.appendChild(urduRow);
-  const hintRow=el("label");hintRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const hintRow=el("label");hintRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
   const hintCb=document.createElement("input");hintCb.type="checkbox";hintCb.id="vipAiHint";hintCb.style.cssText="width:20px;height:20px;flex:none";
   hintRow.appendChild(hintCb);
   const hintTx=el("span","","");hintTx.innerHTML="<b>\u{1F4A1} AI Hint \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members will see the Hint button in tests; it stays hidden for other students.</small>";hintRow.appendChild(hintTx);
@@ -5881,7 +5881,7 @@ function openWaSet(){
   const kIn=el("input");kIn.type="password";kIn.placeholder="Paste API key (Gemini / OpenAI-style)";kIn.autocomplete="off";kIn.spellcheck=false;kIn.style.flex="1";
   const sh=el("button","btn","Show");sh.type="button";sh.onclick=()=>{kIn.type=kIn.type==="password"?"text":"password";sh.textContent=kIn.type==="password"?"Show":"Hide"};
   w.appendChild(kIn);w.appendChild(sh);bx.appendChild(w);
-  const fr=el("label");fr.style.cssText="display:flex;gap:10px;align-items:flex-start;background:#FFF7DC;border:1px solid #E5C558;border-radius:14px;padding:12px;margin:12px 0;cursor:pointer";
+  const fr=el("label");fr.style.cssText="display:flex;gap:10px;align-items:flex-start;background:#FFF7DC;border:1px solid #E5C558;border-radius:14px;padding:12px;margin:12px 0;cursor:pointer;color:#2A2118";
   const fChk=el("input");fChk.type="checkbox";fChk.style.cssText="width:20px;height:20px;margin-top:2px;flex:none";
   const fTx=el("div");fTx.appendChild(el("b","","Free mode — run Web.Assist WITHOUT any API key"));
   fTx.appendChild(el("p","label","Uses a free AI service, no key needed. Replies can be a little slower. While Free mode is ON, the key above is not used."));
@@ -14467,7 +14467,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=22;
+  var BUILD=23;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
