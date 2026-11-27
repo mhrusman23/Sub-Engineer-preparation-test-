@@ -14325,7 +14325,8 @@ body.egBarOn #webAssist{bottom:102px}
   sheet.querySelectorAll(".trow").forEach(function(r){r.addEventListener("click",function(){sheet.classList.remove("on");if(window.__openToolPage)window.__openToolPage(r.getAttribute("data-k"))})});
   mk("\u26A1","","mid",function(){sheet.classList.add("on")});
   if(APPM){mk("\u2630","Menu","",function(){if(window.__openMenuPage){window.__openMenuPage()}else{clickMenuBtn()}})}else{mk("\u{1F464}","Profile","",function(){
-    if(!clickMenuBtn())return;
+    if(!document.getElementById("egMpHide")){var hs=document.createElement("style");hs.id="egMpHide";hs.textContent="#appmenu{visibility:hidden!important}";document.head.appendChild(hs)}
+    if(!clickMenuBtn()){var h0=document.getElementById("egMpHide");if(h0)h0.remove();return;}
     afterMenu(function(m){
       var items=m.querySelectorAll(".mnit");
       for(var i=0;i<items.length;i++){if(items[i].textContent.indexOf("Profile")>=0){items[i].click();return}}
@@ -14472,7 +14473,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=27;
+  var BUILD=28;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
