@@ -43,7 +43,7 @@ const UMCQ_SUBJECTS = ["Civil Engineering", "Electrical Engineering", "Mechanica
 const UMCQ_MAX_N = 10;
 
 function umcqContents(b) {
-  const subject = UMCQ_SUBJECTS.includes(b.subject) ? b.subject : UMCQ_SUBJECTS[0];
+  const subject = (typeof b.subject === "string" && b.subject.replace(/\s+/g, " ").trim()) ? b.subject.replace(/\s+/g, " ").trim().slice(0, 80) : UMCQ_SUBJECTS[0];
   const n = Math.min(UMCQ_MAX_N, Math.max(1, parseInt(b.n, 10) || 10));
   const avoid = (Array.isArray(b.avoid) ? b.avoid : [])
     .slice(-30)

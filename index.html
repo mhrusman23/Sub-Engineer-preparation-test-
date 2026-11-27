@@ -6948,6 +6948,7 @@ async function aiqFromColl(coll,field,n){
     return {out,cur:nc};
   }catch(_){return {out:[],cur:c}}
 }
+const AIQ_CIVIL_RX=/cement|theodolite|bitumen|formwork|shuttering|lintel|plinth|slump test|water[\s-]?cement|reinforced concrete|\brcc\b|brick masonry|soil bearing|chain survey|dumpy level/i;
 async function aiqLive(n,subject){
   const u=auth.currentUser;if(!u||n<=0)return [];
   let tok="";try{tok=await u.getIdToken()}catch(_){return []}
@@ -6959,7 +6960,7 @@ async function aiqLive(n,subject){
       for(let left=n;left>0;left-=10)
         got.push(...await aimcqGenerate(String(subject)+". STRICT RULE: every question must be only about "+String(subject)+" (its own syllabus and exam topics). Do NOT write civil engineering questions",Math.min(10,left),avoid.concat(got.map(m=>m.question)),false));
     }catch(_){}
-    const hh=aiqHave(),res=got.filter(m=>{const k=aiqKey(m);if(!k||hh.has(k))return false;hh.add(k);return true});
+    const hh=aiqHave(),res=got.filter(m=>{const k=aiqKey(m);if(!k||hh.has(k)||AIQ_CIVIL_RX.test(m.question))return false;hh.add(k);return true});
     if(res.length)return res;
   }
   const one=async k=>{
@@ -6977,7 +6978,7 @@ async function aiqLive(n,subject){
   };
   const jobs=[];for(let left=n;left>0;left-=10)jobs.push(one(Math.min(10,left)));
   const h=aiqHave();
-  return (await Promise.all(jobs)).flat().filter(m=>{const k=aiqKey(m);if(!k||h.has(k))return false;h.add(k);return true});
+  return (await Promise.all(jobs)).flat().filter(m=>{const k=aiqKey(m);if(!k||h.has(k)||(!/^civil/i.test(aiqCanon(subject||"Civil Engineering"))&&AIQ_CIVIL_RX.test(m.question)))return false;h.add(k);return true});
 }
 async function aiqPoolSave(list,subject){
   for(const m of list){
@@ -7900,9 +7901,9 @@ async function aiqSubjectQuick(subject){
   for(const coll of ["mcqs","ai_pool"])for(const nm of names){
     jobs.push(getDocs(query(collection(db,coll),where("subject",">=",nm),where("subject","<",nm+"\uf8ff"),limit(120))).then(sn=>{
       sn.docs.forEach(x=>{
-        const d=x.data();if(aiqCanon(d.subject)!==want)return;
+        const d=x.data();if(!(aiqCanon(d.subject)===want||String(d.subject||"")===want||String(d.subject||"").indexOf(want+":")===0))return;
         const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
-        if(m.options.length===4&&aiqOk(m)){const k=aiqKey(m);const ex=got.get(k);if(!ex||(ex.v===1&&coll==="mcqs"))got.set(k,{m:m,v:coll==="mcqs"?0:1})}
+        if(m.options.length===4&&aiqOk(m)&&(/^civil/i.test(want)||!AIQ_CIVIL_RX.test(m.question))){const k=aiqKey(m);const ex=got.get(k);if(!ex||(ex.v===1&&coll==="mcqs"))got.set(k,{m:m,v:coll==="mcqs"?0:1})}
       });
     }).catch(()=>{}));
   }
@@ -14494,7 +14495,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=35;window.__EG_BUILD=BUILD;
+  var BUILD=36;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){

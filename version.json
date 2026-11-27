@@ -1,1 +1,1 @@
-{"web": 35, "apk": 1, "apkUrl": "/engrgroup23.apk", "note": "PC fix: on laptops the website now shows the PC layout (left sidebar, no mobile bar) in every look, even with Windows scaling or browser zoom (BUILD 35)."}
+{"web": 36, "apk": 1, "apkUrl": "/engrgroup23.apk", "note": "Field security fix (BUILD 36): practice MCQs now stay strictly inside the opened field — the server no longer swaps other subjects for Civil, old mixed pool questions are blocked, and AI crawlers are told not to copy the site."}
