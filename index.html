@@ -7043,11 +7043,12 @@ function aiqInit(bank){
   window.__aiqChips=aiqSubjects(bank);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).forEach(([label,subj],i)=>{
     const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
-    b.onclick=()=>{
-      if(window.__openCourse&&window.__openCourse(label))return;
+    b.onclick=async()=>{
+      if(!i){aiqStart();return}
       if(b.disabled)return;
       const t=b.textContent;b.disabled=true;b.textContent=t+"\u2026";
-      Promise.resolve().then(()=>window.__aiPlaySubject?window.__aiPlaySubject(subj):null).catch(()=>{}).then(()=>{b.disabled=false;b.textContent=t});
+      try{await window.__aiPlaySubject(subj,label)}catch(e){}
+      b.disabled=false;b.textContent=t;
     };
     chips.appendChild(b);
   });
@@ -7886,9 +7887,23 @@ window.__aiPlaySubject=async function(subject,course){
   if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
   const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
   let q={fresh:[],old:[]};
-  try{q=await aiqSubjectQuick(subject)}catch(_){}
-  const buf=q.fresh.slice(),seenS=new Set(q.fresh.concat(q.old).map(aiqKey));
+  const buf=[],seenS=new Set();
+  /* Foran khulne ke liye pehle is subject ke apne bank MCQs (phone par pehle se mojood, koi intezar nahi); AI walay peeche se ate rehte hain */
+  try{
+    const bq=(window.__bankQsByName&&window.__bankQsByName(subject))||[];
+    const bm=bq.map(function(b){const o=(b.opts||[]).map(String);let ci=o.indexOf(String(b.correct||""));if(ci<0)ci=0;return{question:String(b.q||""),question_urdu:"",options:o,correct:ci,explanation:""}}).filter(function(m){return m.question&&m.options.length>=2});
+    for(let i=bm.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));const t2=bm[i];bm[i]=bm[r];bm[r]=t2}
+    bm.forEach(function(m){const k=aiqKey(m);if(!seenS.has(k)){seenS.add(k);buf.push(m)}});
+  }catch(_){}
   let first=buf.splice(0,10);
+  if(!first.length){
+    try{q=await aiqSubjectQuick(subject)}catch(_){}
+    q.fresh.concat(q.old).forEach(function(m){seenS.add(aiqKey(m))});
+    buf.push(...q.fresh);
+    first=buf.splice(0,10);
+  }else{
+    aiqSubjectQuick(subject).then(function(r){q=r;r.fresh.forEach(function(m){const k=aiqKey(m);if(!seenS.has(k)){seenS.add(k);buf.push(m)}})}).catch(function(){});
+  }
   if(!first.length){
     /* nothing ready for this field yet: ask the live AI once, and save the answer so the next student gets it instantly */
     const live=await aiqLive(10,subject);
@@ -14425,7 +14440,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=20;
+  var BUILD=21;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
