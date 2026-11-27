@@ -2185,6 +2185,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function urduAllowed(id){
     try{
+      if(window.__vipLocked&&window.__vipLocked("aiUrdu"))return false;
       var a=window.__URDU_ON;if(!Array.isArray(a))return true;
       var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
@@ -2193,6 +2194,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   /* Hint button: shown only in the courses ticked in Admin > Settings (default: all) */
   function hintAllowed(id){
     try{
+      if(window.__vipLocked&&window.__vipLocked("aiHint"))return false;
       var a=window.__HINT_ON;if(!Array.isArray(a))return true;
       var cn=qCrsName(id);if(!cn)return true;
       return a.some(function(x){return String(x).toLowerCase()===cn});
@@ -2368,6 +2370,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     if(t&&sm&&aiEl.o){t.firstChild.nodeValue=on?"AI Tutor":aiEl.o.t;sm.textContent=on?"Ask anything \u00b7 any subject \u00b7 \u06c1\u0631 \u0645\u0636\u0645\u0648\u0646 \u06a9\u0627 \u0633\u0648\u0627\u0644 \u067e\u0648\u0686\u06be\u06cc\u06ba":aiEl.o.s}
   }
   function aiOpenGeneral(){
+    if(window.__vipAiGuard&&!window.__vipAiGuard("aiTutor","Web.Assist (AI Tutor)"))return;
     aiEnsure();aiGenUi(true);
     if(aiCur!==-2){
       aiCur=-2;aiSess=null;aiEl.msgs.textContent="";aiEl.cp.textContent="";
@@ -4200,11 +4203,11 @@ window.__applyOpen=function(){try{const gg=document.getElementById("gguest");if(
 try{getDoc(doc(db,"sitedata","access")).then(s=>{OPEN_ACC=!!(s.exists()&&s.data().open===true);SHOW_HRS=!!(s.exists()&&s.data().showHours===true);SHOW_NOTE=!!(s.exists()&&s.data().showNote===true);SEO_CFG=s.exists()?s.data():null;SHOW_INST=!(s.exists()&&s.data().showInstall===false);window.__applyOpen()}).catch(()=>{})}catch(_){}
 try{getDoc(doc(db,"sitedata","style")).then(s=>{if(s.exists())try{applySite(s.data())}catch(_){}}).catch(()=>{})}catch(_){}
 /* ---------- VIP Premium lock: owner Menu se folders/subjects premium kare, sirf VIP Gmail walon ko khule ---------- */
-let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false,fullMcq:false};
-try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq}}catch(_){}
+let VIP={on:false,courses:[],subjects:[],emails:[],pdfMcq:false,fullMcq:false,aiTutor:false,aiUrdu:false,aiHint:false};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq,aiTutor:!!_vc.aiTutor,aiUrdu:!!_vc.aiUrdu,aiHint:!!_vc.aiHint}}catch(_){}
 function vipApply(x){
   if(!x||typeof x!=="object")return;
-  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq};
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq,aiTutor:!!x.aiTutor,aiUrdu:!!x.aiUrdu,aiHint:!!x.aiHint};
   try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
 }
 try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
@@ -4243,6 +4246,13 @@ window.__pdfMcqGuard=function(){
 };
 window.__fullMcqGuard=function(){
   if(VIP.on&&VIP.fullMcq&&!vipMember()){vipShow("Full MCQs (PDF)");return false}
+  return true;
+};
+window.__vipLocked=function(f){
+  try{return !!(VIP.on&&VIP[f]&&!vipMember())}catch(_){return false}
+};
+window.__vipAiGuard=function(f,label){
+  if(window.__vipLocked(f)){vipShow(label);return false}
   return true;
 };
 window.__vipMarked=function(course,subject){
@@ -4599,6 +4609,21 @@ function openVip(){
   fullRow.appendChild(fullCb);
   const fullTx=el("span","","");fullTx.innerHTML="<b>\u{1F4E5} 'Full MCQs' PDF \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can download the Full MCQs PDF of any subject; other students will see the VIP sheet.</small>";fullRow.appendChild(fullTx);
   box.appendChild(fullRow);
+  const tutorRow=el("label");tutorRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const tutorCb=document.createElement("input");tutorCb.type="checkbox";tutorCb.id="vipAiTutor";tutorCb.style.cssText="width:20px;height:20px;flex:none";
+  tutorRow.appendChild(tutorCb);
+  const tutorTx=el("span","","");tutorTx.innerHTML="<b>\u{1F916} Web.Assist (AI Tutor) \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can use Web.Assist; for other students the floating button stays hidden.</small>";tutorRow.appendChild(tutorTx);
+  box.appendChild(tutorRow);
+  const urduRow=el("label");urduRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const urduCb=document.createElement("input");urduCb.type="checkbox";urduCb.id="vipAiUrdu";urduCb.style.cssText="width:20px;height:20px;flex:none";
+  urduRow.appendChild(urduCb);
+  const urduTx=el("span","","");urduTx.innerHTML="<b>\u{1F310} AI Urdu Translation \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members will see the Urdu translation button in tests; it stays hidden for other students.</small>";urduRow.appendChild(urduTx);
+  box.appendChild(urduRow);
+  const hintRow=el("label");hintRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer";
+  const hintCb=document.createElement("input");hintCb.type="checkbox";hintCb.id="vipAiHint";hintCb.style.cssText="width:20px;height:20px;flex:none";
+  hintRow.appendChild(hintCb);
+  const hintTx=el("span","","");hintTx.innerHTML="<b>\u{1F4A1} AI Hint \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members will see the Hint button in tests; it stays hidden for other students.</small>";hintRow.appendChild(hintTx);
+  box.appendChild(hintRow);
   function checkList(title,items,cls){
     box.appendChild(el("div","label",title));
     const sc=el("div");sc.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;max-height:210px;overflow:auto;margin-bottom:6px";
@@ -4625,7 +4650,7 @@ function openVip(){
   const sv=el("button","btn primary","\u{1F4BE} Save VIP settings");sv.type="button";srow.appendChild(sv);
   const st=el("span","label st");srow.appendChild(st);box.appendChild(srow);
   function fillForm(){
-    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;
+    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;tutorCb.checked=!!VIP.aiTutor;urduCb.checked=!!VIP.aiUrdu;hintCb.checked=!!VIP.aiHint;
     box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
     box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
     emTx.value=(VIP.emails||[]).join("\n");
@@ -4635,7 +4660,7 @@ function openVip(){
   sv.onclick=async()=>{
     sv.disabled=true;st.textContent="Saving\u2026";
     const data={
-      on:onCb.checked,pdfMcq:pdfCb.checked,fullMcq:fullCb.checked,
+      on:onCb.checked,pdfMcq:pdfCb.checked,fullMcq:fullCb.checked,aiTutor:tutorCb.checked,aiUrdu:urduCb.checked,aiHint:hintCb.checked,
       courses:Array.from(box.querySelectorAll(".vipCourse:checked")).map(function(cb){return cb.value}),
       subjects:Array.from(box.querySelectorAll(".vipSubject:checked")).map(function(cb){return cb.value}),
       emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
@@ -12970,6 +12995,7 @@ body{top:0!important}
     var on=false;
     try{on=!!(window.__AI_ON&&window.__aiOpenGeneral&&document.getElementById("userbar"))}catch(e){}
     if(on){
+      if(window.__vipLocked&&window.__vipLocked("aiTutor"))on=false;
       if(vis(document.getElementById("aip")))on=false;
       if(vis(document.getElementById("rexOverlay")))on=false;
       if(vis(document.getElementById("quizBox")))on=false;
@@ -14363,7 +14389,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=16;
+  var BUILD=17;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
