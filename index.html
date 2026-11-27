@@ -3645,6 +3645,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }catch(e){try{goHome();window.scrollTo(0,0)}catch(_){}}};
   $("#btnBack").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");if(history.state&&history.state.t===1)history.back();else goHome()});
   window.addEventListener("popstate",function(){
+    if(window.__egLayerPop){window.__egLayerPop=false;return}
     if(!$("#test").hidden)goHome();
     else if(!$("#result").hidden){showResume();buildPick(sel.length?sel:null);show("start")}
     else if(curYear&&!$("#start").hidden)closeYear();
@@ -11023,6 +11024,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   }
   function atTop(){return vis($("start"))||vis($("gate"))}
   function track(){
+    window.__egLayerPop=false;
     var t=$("test"),yv=$("yearView");
     testWas=vis(t);
     yvWas=vis(yv);
@@ -11072,6 +11074,30 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
     document.body.appendChild(box);
     return box;
   }
+  /* Back coordinator: koi overlay/page khula ho to Back pehle usi ko band kare,
+     neeche wali screen (folder/test/dashboard) ko hath nahi lagata */
+  function closeTopLayer(){
+    var e,b,i,bs;
+    e=$("rexOverlay");
+    if(e&&vis(e)){var rc=e.querySelector("#rexClose");if(rc){rc.click();return true}var rq=e.querySelector("#rexQuit");if(rq){rq.click();return true}return true}
+    e=$("engLab");
+    if(e&&vis(e)){e.style.display="none";return true}
+    if(window.__quizBox&&$("quizBox")){try{window.__quizBox.close()}catch(_){}return true}
+    e=document.querySelector(".toolPage.open");
+    if(e){b=e.querySelector(".egMpBack,.tpX");if(b)b.click();else e.classList.remove("open");return true}
+    e=$("vipw");
+    if(e&&vis(e)){bs=e.querySelectorAll("button");for(i=0;i<bs.length;i++){if(/close/i.test(bs[i].textContent||"")){bs[i].click();return true}}e.remove();return true}
+    e=$("aip");
+    if(e&&vis(e)){var bg=e.querySelector(".aibg");if(bg)bg.click();else e.hidden=true;return true}
+    e=$("appmenu");
+    if(e){e.remove();return true}
+    e=$("egTSheet");
+    if(e&&e.classList.contains("on")){e.classList.remove("on");return true}
+    var ovs=document.querySelectorAll(".ov");
+    for(i=0;i<ovs.length;i++){if(ovs[i].id!=="gate"&&vis(ovs[i])){ovs[i].hidden=true;return true}}
+    return false;
+  }
+  window.__egCloseTopLayer=closeTopLayer;
   /* Header wala Back button: jo screen khuli hai wahan se aik step peeche */
   window.__egSmartBack=function(){
     var k=innerOpen();
@@ -11108,6 +11134,7 @@ body.acNewMode #homeCards .ycard:not(.add){display:none!important}
   },true);
   window.addEventListener("popstate",function(){
     if(allow)return;
+    if(closeTopLayer()){window.__egLayerPop=true;push();return}
     var wasTest=testWas,wasYv=yvWas,wasInner=!!innerOpen();
     setTimeout(function(){
       if(allow||shown)return;
@@ -14389,7 +14416,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=18;
+  var BUILD=19;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
