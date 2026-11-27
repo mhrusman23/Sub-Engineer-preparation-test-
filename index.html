@@ -5662,7 +5662,7 @@ function userbar(){
     fitBtn(md);r.appendChild(md);
   }
   if(IS_ADMIN||REAL_OWNER){const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"Premium"));lk.type="button";lk.title="Change look: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};lk.style.cssText="position:static!important;top:auto!important;right:auto!important;flex:1 1 0;min-width:0;justify-content:center;white-space:nowrap;padding:4px 8px";r.appendChild(lk)}
-  const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();fitBtn(mb);r.appendChild(mb);
+  const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();fitBtn(mb);if(!(IS_ADMIN||REAL_OWNER))mb.style.setProperty("display","none","important");r.appendChild(mb);
   u.appendChild(r);document.body.appendChild(u);
 }
 /* ---- ☰ menu drawer + account settings panel (v3.3.0) ---- */
@@ -14361,7 +14361,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=13;
+  var BUILD=14;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
