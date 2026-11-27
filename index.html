@@ -1771,6 +1771,16 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     });
   }
   window.__buildPick=function(){try{buildPick()}catch(e){}};
+  window.__openCourse=function(name){
+    try{
+      var c=String(name||"").trim();if(!c)return false;
+      if(curYear)closeYear();
+      if(curCourse){curCourse=null;buildPick()}
+      var cards=document.querySelectorAll("#homeCards .ycard");
+      for(var i=0;i<cards.length;i++){var yt=cards[i].querySelector(".yt");if(yt&&String(yt.textContent||"").trim()===c){cards[i].click();window.scrollTo(0,0);return true}}
+      return false;
+    }catch(e){return false}
+  };
   window.__vipLists=function(){var cs=[];YEARS.forEach(function(y){var c=courseOf(y);if(cs.indexOf(c)<0)cs.push(c)});return{courses:cs,subjects:SUB.map(function(s){return s.name})}};
   window.__startSubjectByName=function(name,course){
     try{
@@ -7030,15 +7040,14 @@ function aiqInit(bank){
   const tx=el("div");
   tx.append(el("b","","\uD83D\uDCDA Practice MCQs"));
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
-  window.__aiqChips=aiqSubjects(bank).slice(0,12);try{window.__buildPick&&window.__buildPick()}catch(e){}
-  aiqSubjects(bank).slice(0,8).forEach(([label,subj],i)=>{
+  window.__aiqChips=aiqSubjects(bank);try{window.__buildPick&&window.__buildPick()}catch(e){}
+  aiqSubjects(bank).forEach(([label,subj],i)=>{
     const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
-    b.onclick=async()=>{
-      if(!i){aiqStart();return}
+    b.onclick=()=>{
+      if(window.__openCourse&&window.__openCourse(label))return;
       if(b.disabled)return;
       const t=b.textContent;b.disabled=true;b.textContent=t+"\u2026";
-      try{await window.__aiPlaySubject(subj)}catch(e){}
-      b.disabled=false;b.textContent=t;
+      Promise.resolve().then(()=>window.__aiPlaySubject?window.__aiPlaySubject(subj):null).catch(()=>{}).then(()=>{b.disabled=false;b.textContent=t});
     };
     chips.appendChild(b);
   });
@@ -14416,7 +14425,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=19;
+  var BUILD=20;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
