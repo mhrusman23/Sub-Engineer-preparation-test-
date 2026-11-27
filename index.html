@@ -2212,7 +2212,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   }
   function urRefresh(id){
     var b=$("#qUrBox"),bt=$("#qUr");if(!b)return;
-    try{var hbt=$("#qHint");if(hbt){var hok=!!window.__AI_ON&&hintAllowed(id);hbt.hidden=!hok;if(!hok){var hb0=$("#qHintBox");if(hb0){hb0.hidden=true;hb0.dataset.shown=""}}}}catch(e){}
+    try{var hbt=$("#qHint");if(hbt){var hok=!!window.__AI_ON&&hintAllowed(id);hbt.hidden=!hok;if(!hok){var hb0=$("#qHintBox");if(hb0){hb0.hidden=true;hb0.dataset.shown=""}}};var qab=$("#qAI");if(qab)qab.hidden=!window.__AI_ON}catch(e){}
     var okU=urduAllowed(id);if(bt)bt.hidden=!okU;if(!okU){b.hidden=true;b.textContent="";return}
     var hb=$("#qHintBox");if(hb&&hb.dataset.q!==String(id))hb.hidden=true;
     if(urOpen[id]){var tr=urGet(id);if(tr){urShow(id,tr);if(bt)bt.textContent="\u274C \u0627\u0631\u062f\u0648 \u00b7 Hide Urdu";return}}
@@ -3627,7 +3627,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   var qbk=$("#qBkm");qbk.addEventListener("click",function(){cancelAuto();bkmToggle(order[pos]);renderQ();try{paintRev()}catch(e){}});
   $("#btnRev").addEventListener("click",function(){if(window.__sfx)window.__sfx("click");start("bkm")});
   $("#btnRevClear").addEventListener("click",function(){if(confirm("Remove all bookmarks from this device?")){saveBkm([]);paintRev()}});
-  if(window.__AI_ON){var qai=$("#qAI");qai.hidden=false;qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])});var qh=$("#qHint");if(qh){qh.hidden=false;qh.addEventListener("click",function(){cancelAuto();hintClick()})}}
+  var qai=$("#qAI");if(qai)qai.addEventListener("click",function(){cancelAuto();aiOpenQ(order[pos])});var qh=$("#qHint");if(qh)qh.addEventListener("click",function(){cancelAuto();hintClick()})
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&aiOpen)aiClose()});
   if(canReport()){var qrp=$("#qRep");qrp.hidden=false;qrp.addEventListener("click",function(){cancelAuto();reportQ(order[pos])})}
   if(ADM){var qeb=$("#qEdit");qeb.hidden=false;qeb.addEventListener("click",function(){cancelAuto();quickEdit(order[pos],function(){renderQ()})})}
@@ -14469,7 +14469,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=25;
+  var BUILD=26;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
