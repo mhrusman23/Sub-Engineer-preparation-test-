@@ -14474,7 +14474,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=29;
+  var BUILD=30;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
@@ -14738,6 +14738,17 @@ body.egBarOn #webAssist{bottom:102px}
         var lst=document.createElement("div");lst.className="egMpList";
         rows.forEach(function(e){lst.appendChild(row(e,e.full.indexOf("Sign out")>=0))});
         body.appendChild(lst);
+      }
+      if(which==="set"){
+        var vf=document.createElement("div");vf.id="egVerFoot";
+        vf.style.cssText="text-align:center;padding:16px 10px 6px;font-size:12.5px;color:#8A8FA3";
+        var bv=window.__EG_BUILD||0;
+        vf.textContent=bv?("Engrgroup23 \u00B7 Version BUILD "+bv):"Engrgroup23";
+        body.appendChild(vf);
+        try{fetch("/version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
+          if(!j||!j.web||!bv)return;
+          vf.textContent=(j.web>bv)?("Engrgroup23 \u00B7 Version BUILD "+bv+" \u00B7 \u2B06 New update BUILD "+j.web+" available"):("Engrgroup23 \u00B7 Version BUILD "+bv+" \u00B7 \u2713 Latest version");
+        }).catch(function(){})}catch(e){}
       }
       pg.classList.add("open");
     });
