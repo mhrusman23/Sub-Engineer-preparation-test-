@@ -5661,7 +5661,7 @@ function userbar(){
     md.onclick=()=>openModeChooser();
     fitBtn(md);r.appendChild(md);
   }
-  {const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"Premium"));lk.type="button";lk.title="Change look: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};lk.style.cssText="position:static!important;top:auto!important;right:auto!important;flex:1 1 0;min-width:0;justify-content:center;white-space:nowrap;padding:4px 8px";r.appendChild(lk)}
+  if(IS_ADMIN||REAL_OWNER){const lk=el("button","btn lookbtn",(window.__lookLabel?window.__lookLabel():"Premium"));lk.type="button";lk.title="Change look: Premium / Classic";lk.onclick=()=>{try{window.__lookToggle&&window.__lookToggle()}catch(_){}};lk.style.cssText="position:static!important;top:auto!important;right:auto!important;flex:1 1 0;min-width:0;justify-content:center;white-space:nowrap;padding:4px 8px";r.appendChild(lk)}
   const mb=el("button","btn primary","☰ Menu");mb.type="button";mb.onclick=()=>openMenu();fitBtn(mb);r.appendChild(mb);
   u.appendChild(r);document.body.appendChild(u);
 }
@@ -9631,7 +9631,7 @@ hide:function(){clearTimeout(timer);if(el)el.classList.remove("on")}};})();</scr
 /* Platform mode: installed app (standalone) = "app", browser website = "web". Premium look only. */
 try{var _pm=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;document.documentElement.setAttribute("data-plt",_pm?"app":"web");
 window.__EG_ACC={navy:["#2563EB","#1E40AF"],indigo:["#4F46E5","#3730A3"],purple:["#7C3AED","#5B21B6"],pink:["#DB2777","#9D174D"],red:["#DC2626","#991B1B"],crimson:["#BE123C","#881337"],orange:["#EA580C","#9A3412"],amber:["#D97706","#92400E"],gold:["#B97E10","#8A5E0B"],lime:["#65A30D","#3F6212"],green:["#059669","#065F46"],teal:["#0D9488","#115E59"],cyan:["#0284C7","#075985"],slate:["#475569","#1E293B"],brown:["#92400E","#5B2A0C"]};
-window.__egSetTheme=function(thm,acc){var d=document.documentElement;if(thm&&["light","dark","colourful"].indexOf(thm)>=0){d.setAttribute("data-thm",thm);try{localStorage.setItem("eg23thm",thm)}catch(e){}}if(acc&&window.__EG_ACC[acc]){var c=window.__EG_ACC[acc];d.style.setProperty("--accent",c[0]);d.style.setProperty("--accD",c[1]);try{localStorage.setItem("eg23acc",acc)}catch(e){}}};
+window.__egSetTheme=function(thm,acc){var d=document.documentElement;if(thm&&["light","dark","colourful"].indexOf(thm)>=0){d.setAttribute("data-thm",thm);try{localStorage.setItem("eg23thm",thm)}catch(e){}}if(acc&&window.__EG_ACC[acc]){var c=window.__EG_ACC[acc];d.style.setProperty("--accent",c[0]);d.style.setProperty("--accD",c[1]);try{localStorage.setItem("eg23acc",acc)}catch(e){}}try{if(localStorage.getItem("lookMode")==="classic"){localStorage.setItem("lookMode","premium");d.setAttribute("data-look","premium");}}catch(e){}};
 var _t=_pm?"dark":"light",_a=_pm?"gold":"indigo";try{_t=localStorage.getItem("eg23thm")||_t;_a=localStorage.getItem("eg23acc")||_a}catch(e){}
 if(["light","dark","colourful"].indexOf(_t)<0)_t=_pm?"dark":"light";if(!window.__EG_ACC[_a])_a=_pm?"gold":"indigo";
 document.documentElement.setAttribute("data-thm",_t);var _c=window.__EG_ACC[_a];document.documentElement.style.setProperty("--accent",_c[0]);document.documentElement.style.setProperty("--accD",_c[1]);
@@ -14361,7 +14361,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=12;
+  var BUILD=13;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
