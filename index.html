@@ -6916,10 +6916,16 @@ function aiqHave(){const h=new Set(aiqSeen());AIQ.lent.concat(AIQ.buf).forEach(m
 function aiqSave(){try{localStorage.setItem("eg23aiq",JSON.stringify({buf:AIQ.lent.concat(AIQ.buf).slice(0,300),cur:AIQ.cur}))}catch(_){}}
 function aiqLoad(){
   try{
+    if(localStorage.getItem("eg23aiqVer")!=="field1"){localStorage.setItem("eg23aiqVer","field1");AIQ.buf=[];AIQ.cur={};return}
     const s=JSON.parse(localStorage.getItem("eg23aiq")||"null");
     if(s&&Array.isArray(s.buf))AIQ.buf=s.buf.filter(aiqOk);
     if(s&&s.cur&&typeof s.cur==="object")AIQ.cur=s.cur;
   }catch(_){}
+}
+function aiqCivilDoc(subj){
+  if(aiqCanon(subj)==="Civil Engineering")return true;
+  if(AIQ.civilSubs&&AIQ.civilSubs.has(String(subj||"").trim().toLowerCase()))return true;
+  return false;
 }
 async function aiqFromColl(coll,field,n){
   const c=AIQ.cur[coll];
@@ -6931,6 +6937,7 @@ async function aiqFromColl(coll,field,n){
     s.docs.forEach(x=>{
       const d=x.data(),t=d[field];
       if(t&&typeof t.seconds==="number")nc={s:t.seconds,n:t.nanoseconds||0};
+      if(!aiqCivilDoc(d.subject))return;
       const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
       const k=aiqKey(m);
       if(m.options.length===4&&aiqOk(m)&&!h.has(k)){h.add(k);out.push(m)}
@@ -6981,7 +6988,9 @@ function aiqFromBank(n){
   const B=AIQ.bank,h=aiqHave(),out=[];
   if(!B.length)return out;
   for(let t=0;t<n*30&&out.length<n;t++){
-    const q=B[Math.floor(Math.random()*B.length)];
+    const qi=Math.floor(Math.random()*B.length);
+    if(AIQ.bankCourse&&AIQ.bankCourse[qi]!=="Civil")continue;
+    const q=B[qi];
     if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||!Number.isInteger(q.ans))continue;
     const m={question:q.text,question_urdu:"",options:q.opts.map(String),correct:q.ans,explanation:""},k=aiqKey(m);
     if(aiqOk(m)&&!h.has(k)){h.add(k);out.push(m)}
@@ -7034,11 +7043,28 @@ function aiqSubjects(bank){
 }
 function aiqInit(bank){
   AIQ.bank=Array.isArray(bank&&bank.Q0)?bank.Q0:[];
+  try{
+    const cards=(bank&&bank.CARDS)||[];
+    AIQ.bankCourse=AIQ.bank.map(function(q){
+      try{
+        const s=bank.S&&bank.S[q.sec];if(!s)return "";
+        const sub=bank.SUB&&bank.SUB[s.sub];if(!sub)return "";
+        const card=cards.find(function(c){return c.k===sub.cat});
+        return card?String(card.course||"").trim():"";
+      }catch(_){return ""}
+    });
+    AIQ.civilSubs=new Set();
+    (bank.SUB||[]).forEach(function(sub){
+      const card=cards.find(function(c){return c.k===sub.cat});
+      if(card&&String(card.course||"").trim()==="Civil")AIQ.civilSubs.add(String(sub.name||"").trim().toLowerCase());
+    });
+  }catch(_){AIQ.bankCourse=null;AIQ.civilSubs=null}
   if(!aiqAllowed())return;
   const card=el("div","card");card.id="aiqCard";
   card.style.cssText="margin:12px 0;padding:14px";
   const tx=el("div");
   tx.append(el("b","","\uD83D\uDCDA Practice MCQs"));
+  const fp=el("span","","Free Unlimited MCQs");fp.style.cssText="display:inline-block;margin-left:8px;background:linear-gradient(135deg,#FFE9A8,#F5C542);color:#7A5410;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;vertical-align:middle";tx.appendChild(fp);
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
   window.__aiqChips=aiqSubjects(bank);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).forEach(([label,subj],i)=>{
@@ -7873,14 +7899,15 @@ async function aiqSubjectQuick(subject){
       sn.docs.forEach(x=>{
         const d=x.data();if(aiqCanon(d.subject)!==want)return;
         const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
-        if(m.options.length===4&&aiqOk(m)){const k=aiqKey(m);if(!got.has(k))got.set(k,m)}
+        if(m.options.length===4&&aiqOk(m)){const k=aiqKey(m);const ex=got.get(k);if(!ex||(ex.v===1&&coll==="mcqs"))got.set(k,{m:m,v:coll==="mcqs"?0:1})}
       });
     }).catch(()=>{}));
   }
   await Promise.all(jobs);
   const all=Array.from(got.values());
-  for(let i=all.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));[all[i],all[r]]=[all[r],all[i]]}
-  return {fresh:all.filter(m=>!seen.has(aiqKey(m))),old:all.filter(m=>seen.has(aiqKey(m)))};
+  const shuf=function(a){for(let i=a.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[r];a[r]=t}return a};
+  const ordered=shuf(all.filter(function(x){return x.v===0}).map(function(x){return x.m})).concat(shuf(all.filter(function(x){return x.v===1}).map(function(x){return x.m})));
+  return {fresh:ordered.filter(m=>!seen.has(aiqKey(m))),old:ordered.filter(m=>seen.has(aiqKey(m)))};
 }
 window.__aiPlaySubject=async function(subject,course){
   if(!window.__playAi)return;
@@ -14440,7 +14467,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=21;
+  var BUILD=22;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
