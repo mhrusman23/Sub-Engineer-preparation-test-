@@ -1,6 +1,6 @@
 {
- "web": 45,
+ "web": 46,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI Practice (BUILD 45): only the MCQs you have read show on screen with your record — new MCQs keep arriving silently in the background and are never shown in advance. Total count stays hidden."
+ "note": "AI Practice (BUILD 46): the Premium Focus screen now actually switches on — a scope bug kept it off. In AI practice only: no question map, no total count, just one MCQ, your read-MCQ record, and a big Next button."
 }

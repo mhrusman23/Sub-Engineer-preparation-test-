@@ -2639,9 +2639,11 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
      test clutter (timer, stats bar, question map, search, Previous) hide — sirf aik MCQ, upar
      MCQ X/Y pill + stats chips, neeche dots record aur bara gold Next. Aam tests par koi asar nahi. */
   function aiFocusOn(){
+    /* NOTE: AIC yahan istemal NAHI ho sakta — wo __playAi wali andar ki function ka local
+       variable hai, is scope me us ka naam lene se error ata tha aur focus chalta hi nahi tha.
+       Sirf tmp-subject wala check rakha hai (TMP/Q/S/SUB sab is scope me hain). */
     if(!(TMP&&TMP.ai)||!order.length)return false;
     var q=Q[order[pos]];if(!q)return false;
-    if(q.sec===AIC)return true;
     var s=S[q.sec];return !!(s&&SUB[s.sub]&&SUB[s.sub].tmp);
   }
   function aiFocusSync(){
@@ -14882,7 +14884,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=45;window.__EG_BUILD=BUILD;
+  var BUILD=46;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
