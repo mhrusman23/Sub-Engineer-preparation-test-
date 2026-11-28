@@ -1,6 +1,6 @@
 {
- "web": 40,
+ "web": 41,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "Web.Assist fixed (BUILD 40): the AI tutor now switches models automatically if one is retired or busy, retries silently, and never shows raw errors — smooth, unlimited answers."
+ "note": "Every field opens instantly (BUILD 41): Practice chips now start from the field's full bank, Premium MCQs stay out of Search and AI Practice for non-members, and AI never shows an error — it retries quietly and answers, even if it takes a few extra seconds."
 }

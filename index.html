@@ -1960,7 +1960,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     if(n.length<2)return [];
     var toks=n.split(" "),out=[],seen={};
     function ok(name){var l=name.toLowerCase();return toks.every(function(t){return l.indexOf(t)>=0})}
-    SUB.forEach(function(s,i){if(s.tmp||s.cat==="__tmp"||!ok(s.name))return;var k=s.name.toLowerCase();if(seen[k])return;seen[k]=1;out.push({name:s.name,site:i})});
+    SUB.forEach(function(s,i){if(s.tmp||s.cat==="__tmp"||!ok(s.name))return;if(window.__vipHidden){var _cd=null;for(var j=0;j<CARDS.length;j++)if(CARDS[j].k===s.cat){_cd=CARDS[j];break}if(window.__vipHidden(_cd?_cd.course:"",s.name))return}var k=s.name.toLowerCase();if(seen[k])return;seen[k]=1;out.push({name:s.name,site:i})});
     DUNIA.forEach(function(d){var k=d.toLowerCase();if(seen[k]||!ok(d))return;seen[k]=1;out.push({name:d})});
     out=out.slice(0,6);
     if(n.length>=3&&!seen[n])out.push({name:subjTitle(n)});
@@ -2808,6 +2808,15 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     function norm(t){return String(t).toLowerCase().replace(/[^a-z0-9\u00b0\u00b2 ]+/g," ").replace(/\s+/g," ").trim()}
     function mkIdx(){return Q.map(function(q){return {t:norm(q.text),o:norm(q.opts.join(" "))}})}
     function esc(r){return r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+    function vipHideQ(qi){
+      try{
+        if(!window.__vipHidden)return false;
+        var sc=S[Q[qi].sec];if(!sc)return false;
+        var sb=SUB[sc.sub];if(!sb)return false;
+        var cd=null;for(var j=0;j<CARDS.length;j++)if(CARDS[j].k===sb.cat){cd=CARDS[j];break}
+        return !!window.__vipHidden(cd?cd.course:"",sb.name);
+      }catch(e){return false}
+    }
     function hl(node,text,toks){
       if(!toks.length){node.appendChild(document.createTextNode(text));return}
       var re=sqRe(toks,text),last=0,m;
@@ -2907,7 +2916,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
       var toks=n.split(" ").filter(Boolean),out=[],ph=false;
       for(var i=0;i<Q.length;i++){
         var t=norm(Q[i].text),m=sqScore(t,norm(opts(i).join(" ")),n,toks);
-        if(m){out.push({id:i,inT:m.inT,sc:m.sc+t.length/50,ph:m.ph});if(m.ph)ph=true}
+        if(m&&!vipHideQ(i)){out.push({id:i,inT:m.inT,sc:m.sc+t.length/50,ph:m.ph});if(m.ph)ph=true}
       }
       if(ph&&toks.length>1)out=out.filter(function(h){return h.ph});   /* exact phrase found: show only those */
       out.sort(function(a,b){return a.sc-b.sc});
@@ -4295,6 +4304,7 @@ window.__vipMarked=function(course,subject){
   if(s&&VIP.subjects.some(function(x){return String(x).toLowerCase()===s}))return true;
   return false;
 };
+window.__vipHidden=function(course,subject){return vipLocked(course,subject)};
 window.__vipSigStr=function(){return (VIP.on?"1":"0")+"|"+VIP.courses.join(",")+"|"+VIP.subjects.join(",")+"|F"+((window.__FEAT&&window.__FEAT.fullpdf)?"1":"0")};
 /* ===== BUILD 37 · VIP HARD LOCK: premium subjects ke sawal alag mehfooz bank (vipbank) me
    rehte hain — aam bank me wo hote hi nahi. Sirf owner/manager/approved-Gmail wala phone
@@ -5206,7 +5216,7 @@ function aiPiece(plan,j){
   return ((c&&c.content&&c.content.parts)||[]).map(p=>p.thought?"":(p.text||"")).join("");
 }
 /* send the whole chat, stream the reply; tries the right endpoint for the key automatically */
-async function aiCall(cfg,contents,on){
+async function aiCallTry(cfg,contents,on){
   const ex=Array.isArray(cfg&&cfg.extra)?cfg.extra.filter(e=>e&&e.key):[];
   if(!ex.length)return aiCallOne(cfg,contents,on);
   /* several keys: try the main key first; if it fails (limit over, busy, blocked) the next key takes over; the free backup is used last */
@@ -5214,6 +5224,17 @@ async function aiCall(cfg,contents,on){
   let lastErr;
   for(const c of list){try{return await aiCallOne(c,contents,on)}catch(e){lastErr=e}}
   throw lastErr;
+}
+/* BUILD 41: AI error student tak na pahunche — pehli poori koshish fail ho to thoda ruk kar
+   aik dafa phir saari chain chalti hai (slow chalega, error nahi ayega). Login/approval wala
+   jawab error nahi, account ki halat hai — us par retry nahi. */
+async function aiCall(cfg,contents,on){
+  try{return await aiCallTry(cfg,contents,on)}
+  catch(e){
+    if(e&&(e.http===401||e.http===403))throw e;
+    await new Promise(r=>setTimeout(r,2500));
+    return aiCallTry(cfg,contents,on);
+  }
 }
 async function aiCallOne(cfg,contents,on){
   let plans=aiPlans(cfg);
@@ -5227,7 +5248,7 @@ async function aiCallOne(cfg,contents,on){
       let r;
       const hd=Object.assign({"Content-Type":"application/json"},plan.h);
       if(plan.proxy){try{hd.Authorization="Bearer "+await auth.currentUser.getIdToken()}catch(e){tried.push("proxy: not signed in");break}}
-      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),plan.proxy?45000:(plan.free?30000:20000));
+      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),plan.proxy?60000:(plan.free?45000:30000));
       try{r=await fetch(plan.url,{method:"POST",headers:hd,body:JSON.stringify(aiBody(plan,contents,attempt===1)),signal:ac.signal});clearTimeout(tm)}
       catch(e){clearTimeout(tm);if(plan.m)badM.add(plan.m);netErr=netErr||e;tried.push(plan.id+" "+(e&&e.name==="AbortError"?"timeout":"network: "+String((e&&e.message)||e).slice(0,80)));break}
       if(!r.ok){
@@ -5287,10 +5308,10 @@ const aiErrBase=e=>{
   const m=String((e&&(e.message||e.code))||e);
   if(/permission-denied|Missing or insufficient permissions/i.test(m)&&!(e&&e.http))return "AI is only for active members. Please log in again.";
   if(e&&e.plan==="proxy"&&(e.http===401||e.http===403))return "AI is only for approved, active members. Please log in again. / \u0627\u06d2 \u0622\u0626\u06cc \u0635\u0631\u0641 \u0645\u0646\u0638\u0648\u0631 \u0634\u062f\u06c1 \u0641\u0639\u0627\u0644 \u0645\u0645\u0628\u0631\u0632 \u06a9\u06d2 \u0644\u06cc\u06d2 \u06c1\u06d2\u060c \u062f\u0648\u0628\u0627\u0631\u06c1 \u0644\u0627\u06af \u0627\u0646 \u06a9\u0631\u06cc\u06ba\u06d4";
-  if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "The assistant is very busy right now. Please try again in a few seconds.";
-  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The assistant is busy right now. Please try again in a few seconds.";
-  if(/network|fetch|Failed to load|AbortError|timeout/i.test(m))return "Connection problem. Please check your internet and tap Send again.";
-  return "The assistant could not answer right now. Please tap Send again in a few seconds.";
+  if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "The assistant is taking a little longer than usual. Please wait a few seconds and tap again.";
+  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The assistant is taking a little longer than usual. Please wait a few seconds and tap again.";
+  if(/network|fetch|Failed to load|AbortError|timeout/i.test(m))return "Connection is slow right now. Please tap Send again in a few seconds.";
+  return "The assistant is taking longer than usual. Please tap Send again in a few seconds.";
 };
 /* full technical message: ONLY for the owner's own Settings test buttons and admin tools, never in student chat */
 const aiErrAdminBase=e=>{
@@ -7157,6 +7178,7 @@ async function aiqFromColl(coll,field,n){
       const d=x.data(),t=d[field];
       if(t&&typeof t.seconds==="number")nc={s:t.seconds,n:t.nanoseconds||0};
       if(!aiqCivilDoc(d.subject))return;
+      const _cq=String(d.subject||""),_ci=_cq.indexOf(":");if(vipLocked("Civil",_ci>0?_cq.slice(_ci+1).trim():_cq))return;
       const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
       const k=aiqKey(m);
       if(m.options.length===4&&aiqOk(m)&&!h.has(k)){h.add(k);out.push(m)}
@@ -7239,6 +7261,7 @@ function aiqFromBank(n){
   for(let t=0;t<n*30&&out.length<n;t++){
     const qi=Math.floor(Math.random()*B.length);
     if(AIQ.bankCourse&&AIQ.bankCourse[qi]!=="Civil")continue;
+    if(AIQ.bankSub&&vipLocked("Civil",AIQ.bankSub[qi]))continue;
     const q=B[qi];
     if(!q||typeof q.text!=="string"||!Array.isArray(q.opts)||!Number.isInteger(q.ans))continue;
     const m={question:q.text,question_urdu:"",options:q.opts.map(String),correct:q.ans,explanation:""},k=aiqKey(m);
@@ -7301,6 +7324,9 @@ function aiqInit(bank){
         const card=cards.find(function(c){return c.k===sub.cat});
         return card?String(card.course||"").trim():"";
       }catch(_){return ""}
+    });
+    AIQ.bankSub=AIQ.bank.map(function(q){
+      try{const s=bank.S&&bank.S[q.sec];const sub=s&&bank.SUB&&bank.SUB[s.sub];return sub?String(sub.name||"").trim():""}catch(_){return ""}
     });
     AIQ.civilSubs=new Set();
     (bank.SUB||[]).forEach(function(sub){
@@ -8146,7 +8172,10 @@ async function aiqSubjectQuick(subject){
   for(const coll of ["mcqs","ai_pool"])for(const nm of names){
     jobs.push(getDocs(query(collection(db,coll),where("subject",">=",nm),where("subject","<",nm+"\uf8ff"),limit(120))).then(sn=>{
       sn.docs.forEach(x=>{
-        const d=x.data();if(!(aiqCanon(d.subject)===want||String(d.subject||"")===want||String(d.subject||"").indexOf(want+":")===0))return;
+        const d=x.data();
+        const _pq=String(d.subject||""),_pi=_pq.indexOf(":");const _pc=_pi>0?_pq.slice(0,_pi).trim():"",_pb=_pi>0?_pq.slice(_pi+1).trim():_pq;
+        if(vipLocked(_pc,_pb)||vipLocked("",_pb))return;   /* premium subject ka saved AI sawal ghair-member ko nahi */
+        if(!(aiqCanon(d.subject)===want||String(d.subject||"")===want||String(d.subject||"").indexOf(want+":")===0))return;
         const m={question:String(d.question||""),question_urdu:aiqUr(d.question_urdu),options:Array.isArray(d.options)?d.options.map(String):[],correct:d.correct,explanation:String(d.explanation||"")};
         if(m.options.length===4&&aiqOk(m)&&(/^civil/i.test(want)||!AIQ_CIVIL_RX.test(m.question))){const k=aiqKey(m);const ex=got.get(k);if(!ex||(ex.v===1&&coll==="mcqs"))got.set(k,{m:m,v:coll==="mcqs"?0:1})}
       });
@@ -8158,9 +8187,30 @@ async function aiqSubjectQuick(subject){
   const ordered=shuf(all.filter(function(x){return x.v===0}).map(function(x){return x.m})).concat(shuf(all.filter(function(x){return x.v===1}).map(function(x){return x.m})));
   return {fresh:ordered.filter(m=>!seen.has(aiqKey(m))),old:ordered.filter(m=>seen.has(aiqKey(m)))};
 }
+/* course ke SAARE subjects ke bank MCQs (premium ghair-member ke liye chhupa kar) — chip tap karte hi
+   practice foran khulne ke liye; pehle sirf wohi field khulta tha jis ka koi subject course ke naam ka ho */
+function aiqBankByCourse(course){
+  try{
+    const B=AIQ.bank||[];if(!B.length||!AIQ.bankCourse)return[];
+    const want=String(course||"").trim().toLowerCase();if(!want)return[];
+    const out=[];
+    for(let i=0;i<B.length;i++){
+      if(String(AIQ.bankCourse[i]||"").trim().toLowerCase()!==want)continue;
+      if(vipLocked(course,AIQ.bankSub?AIQ.bankSub[i]:""))continue;
+      const q=B[i];if(!q||typeof q.text!=="string"||!Array.isArray(q.opts))continue;
+      const o=q.opts.map(String),a=q.ans;
+      if(o.length<2||a==null||o[a]==null)continue;
+      out.push({question:q.text,question_urdu:"",options:o,correct:a,explanation:""});
+    }
+    return out;
+  }catch(_){return[]}
+}
 window.__aiPlaySubject=async function(subject,course){
   if(!window.__playAi)return;
   if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
+  const pair0=(window.__aiqChips||[]).filter(p=>p[1]===subject)[0];
+  const courseName0=course||(pair0?pair0[0]:"");
+  if(vipLocked(courseName0,subject)||vipLocked("",subject)){vipShow(subject);return}
   const toQ=m=>({text:m.question,opts:m.options,ans:m.correct,ur:m.question_urdu||"",exp:m.explanation||""});
   let q={fresh:[],old:[]};
   const buf=[],seenS=new Set();
@@ -8168,6 +8218,7 @@ window.__aiPlaySubject=async function(subject,course){
   try{
     const bq=(window.__bankQsByName&&window.__bankQsByName(subject))||[];
     const bm=bq.map(function(b){const o=(b.opts||[]).map(String);let ci=o.indexOf(String(b.correct||""));if(ci<0)ci=0;return{question:String(b.q||""),question_urdu:"",options:o,correct:ci,explanation:""}}).filter(function(m){return m.question&&m.options.length>=2});
+    aiqBankByCourse(courseName0).forEach(function(m){bm.push(m)});
     for(let i=bm.length-1;i>0;i--){const r=Math.floor(Math.random()*(i+1));const t2=bm[i];bm[i]=bm[r];bm[r]=t2}
     bm.forEach(function(m){const k=aiqKey(m);if(!seenS.has(k)){seenS.add(k);buf.push(m)}});
   }catch(_){}
@@ -8187,7 +8238,7 @@ window.__aiPlaySubject=async function(subject,course){
     if(live.length){first=live;aiqPoolSave(live,subject)}
     else first=q.old.splice(0,10);
   }
-  if(!first.length){alert("Could not prepare MCQs for this subject right now. Please try again in a minute.");return}
+  if(!first.length){alert("Preparing MCQs is taking longer than usual. Please tap the subject again in a few seconds.");return}
   aiqMarkS(first);
   let busy=false;
   const more=async()=>{
@@ -8211,6 +8262,7 @@ window.__aiPlaySubject=async function(subject,course){
 window.__aiPlayBankSub=async function(label,course,own){
   if(!window.__playAi)return;
   if(!aiqAllowed()){alert("These MCQs are not available for your account right now.");return}
+  if(vipLocked(course,label)){vipShow(label);return}
   const siri=window.__siri,wt=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),ms))]);
   const field=String(course||"Civil").trim()||"Civil";
   const lb0=String(label||"").trim();
@@ -14740,7 +14792,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=40;window.__EG_BUILD=BUILD;
+  var BUILD=41;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
