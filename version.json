@@ -1,6 +1,6 @@
 {
- "web": 48,
+ "web": 49,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "BUILD 48: Search fixed (MCQs were not appearing) + Practice MCQs chips upgraded to glossy 3D with colorful icons (same size)."
+ "note": "BUILD 49: AI Practice gets a Previous button beside Next; fixed raw code text in the practice chips and the unreadable Finish message; text sweep of the whole site."
 }

@@ -621,7 +621,7 @@ h1,h2,h3{font-family:var(--brand-font);font-weight:800;letter-spacing:-.01em}
 .cell:hover{transform:translateY(-1px)}
 .cell.cur{outline:2px solid var(--gold);outline-offset:1px}
 .log li{border-radius:10px}
-.confirm{border-radius:16px}
+.confirm{border-radius:16px;background:#FDEBD0!important;color:#402E0A!important;border-color:#B45309}
 .paused{border-radius:22px}
 .credit3d{border-radius:12px}
 .srch{border-radius:18px}
@@ -1325,11 +1325,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
 .aif-dots i.bad{background:#d9534f}
 .aif-dots i.cur{background:#C9A227;box-shadow:0 0 0 3px rgba(201,162,39,.35)}
 .aif-dots span{font-size:11.5px;color:var(--muted,#5a6a86);font-weight:700}
-#test.aipfocus .bar .stats,#test.aipfocus .bar .prog,#test.aipfocus #tmRow,#test.aipfocus #srch,#test.aipfocus .side,#test.aipfocus #prev,#test.aipfocus #nextUn,#test.aipfocus .timer{display:none!important}
+#test.aipfocus .bar .stats,#test.aipfocus .bar .prog,#test.aipfocus #tmRow,#test.aipfocus #srch,#test.aipfocus .side,#test.aipfocus #nextUn,#test.aipfocus .timer{display:none!important}
 #test.aipfocus .test{grid-template-columns:minmax(0,1fr)!important}
-#test.aipfocus .nav{margin-top:14px}
+#test.aipfocus .nav{margin-top:14px;gap:10px}
+#test.aipfocus #prev{flex:0 0 auto;min-height:52px;padding:0 20px;border-radius:13px;font-weight:700;font-size:15px;background:#fff!important;color:#13294B!important;border:1.5px solid #C9A227!important}
+#test.aipfocus #prev[disabled]{opacity:.45}
 #test.aipfocus .nav .sp{display:none}
-#test.aipfocus #next{flex:1;background:linear-gradient(135deg,#F5C542,#C9A227)!important;color:#231a04!important;border:none;font-weight:800;font-size:16.5px;min-height:52px;border-radius:13px}
+#test.aipfocus .nav #next{flex:1;background:linear-gradient(135deg,#F5C542,#C9A227)!important;color:#231a04!important;border:none;font-weight:800;font-size:16.5px;min-height:52px;border-radius:13px}
 </style>
   <section id="test" hidden="">
     <div class="bar">
@@ -1374,15 +1376,15 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
           <ul class="res" id="srchRes" hidden=""></ul>
         </div>
         <div id="aiFocusTop" hidden>
-          <div class="aif-head"><span class="aif-title" id="aiFTitle">\u26A1 AI Practice</span><span class="aif-pill" id="aiFPill">MCQ 1</span></div>
-          <div class="aif-stats"><span class="aif-chip"><b id="aiFRead">0</b>Read</span><span class="aif-chip"><b id="aiFOk">0</b>\u2713 Correct</span><span class="aif-chip"><b id="aiFBad">0</b>\u2717 Wrong</span><span class="aif-chip"><b id="aiFScore">\u2013</b>Score</span></div>
+          <div class="aif-head"><span class="aif-title" id="aiFTitle">⚡ AI Practice</span><span class="aif-pill" id="aiFPill">MCQ 1</span></div>
+          <div class="aif-stats"><span class="aif-chip"><b id="aiFRead">0</b>Read</span><span class="aif-chip"><b id="aiFOk">0</b>✓ Correct</span><span class="aif-chip"><b id="aiFBad">0</b>✗ Wrong</span><span class="aif-chip"><b id="aiFScore">–</b>Score</span></div>
         </div>
         <div class="card q">
           <div class="qmeta"><span class="label" id="qno"></span><span class="label" id="qmeta"></span></div>
           <p class="qtext" id="qtext"></p>
           <div class="opts" id="opts"></div>
           <div id="fb"></div>
-          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn ai" id="qHint" type="button" hidden style="margin-left:6px">💡 Hint</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">\u{1F310} اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
+          <div class="qtools"><button class="btn ai" id="qAI" type="button" hidden>✨ Ask AI</button><button class="btn ai" id="qHint" type="button" hidden style="margin-left:6px">💡 Hint</button><button class="btn qedit" id="qRep" type="button" hidden>⚠ Report</button><button class="btn qedit" id="qBkm" type="button">☆ Bookmark</button><button class="btn qedit" id="qAuto" type="button"></button><button class="btn" id="qUr" type="button">🌐 اردو · Urdu</button><button class="btn qedit" id="qEdit" type="button" hidden>✎ Edit MCQ / answer</button></div>
           <div id="qUrBox" hidden dir="rtl" lang="ur" style="margin-top:10px;padding:12px 14px;border-radius:14px;background:#EEF6EF;border:1px solid #9CC9A6;color:#13222D;font-size:17px;line-height:2;text-align:right"></div>
           <div class="nav">
             <button class="btn" id="prev" type="button">Previous</button>
@@ -14912,7 +14914,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=48;window.__EG_BUILD=BUILD;
+  var BUILD=49;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
