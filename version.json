@@ -1,6 +1,6 @@
 {
- "web": 44,
+ "web": 45,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI Practice (BUILD 44): the total MCQs count is hidden in AI practice — now only the current MCQ number shows (MCQ 3), because AI keeps adding new MCQs as you practice."
+ "note": "AI Practice (BUILD 45): only the MCQs you have read show on screen with your record — new MCQs keep arriving silently in the background and are never shown in advance. Total count stays hidden."
 }

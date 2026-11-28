@@ -2638,7 +2638,12 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   /* BUILD 43 · AI Practice — Premium Focus (user ka chuna hua design 3): AI practice me purana
      test clutter (timer, stats bar, question map, search, Previous) hide — sirf aik MCQ, upar
      MCQ X/Y pill + stats chips, neeche dots record aur bara gold Next. Aam tests par koi asar nahi. */
-  function aiFocusOn(){return !!(TMP&&TMP.ai&&AIC>=0&&order.length&&Q[order[pos]]&&Q[order[pos]].sec===AIC)}
+  function aiFocusOn(){
+    if(!(TMP&&TMP.ai)||!order.length)return false;
+    var q=Q[order[pos]];if(!q)return false;
+    if(q.sec===AIC)return true;
+    var s=S[q.sec];return !!(s&&SUB[s.sub]&&SUB[s.sub].tmp);
+  }
   function aiFocusSync(){
     var on=aiFocusOn(),sec=$("#test");if(!sec)return;
     sec.classList.toggle("aipfocus",on);
@@ -2657,11 +2662,10 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     $("#aiFBad").textContent=(c.att-c.ok);
     $("#aiFScore").textContent=c.att?Math.round(c.ok/c.att*100)+"%":"\u2013";
     var host=$("#aiFocusDots");if(!host)return;
-    var len=order.length,from=0,to=len;
-    if(len>80){from=Math.max(0,Math.min(pos-30,len-80));to=from+80}
+    /* sirf parhe hue MCQs ka record: jawab diye hue + jo ab chal raha hai.
+       Aane wale MCQs (background me AI deta rehta hai) bilkul show nahi hote. */
     var h="";
-    for(var k=from;k<to;k++){var a=ans[order[k]];h+='<i class="'+(a?(a.ok?"ok":"bad"):(k===pos?"cur":""))+'"></i>'}
-    if(to<len)h+="<span>+"+(len-to)+" more</span>";
+    for(var k=0;k<=pos;k++){var a=ans[order[k]];h+='<i class="'+(a?(a.ok?"ok":"bad"):"cur")+'"></i>'}
     host.innerHTML=h;
   }
 
@@ -14878,7 +14882,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=44;window.__EG_BUILD=BUILD;
+  var BUILD=45;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
