@@ -1303,6 +1303,26 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   </section>
 
   <!-- TEST -->
+  <style id="aiFocusCss">
+#aiFocusTop{margin:0 0 12px}
+.aif-head{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0A1730,#13294B);color:#fff;border-radius:14px;padding:11px 14px}
+.aif-title{font-weight:800;font-size:14.5px}
+.aif-pill{margin-left:auto;background:linear-gradient(135deg,#F5C542,#C9A227);color:#231a04;font-weight:800;font-size:12.5px;padding:4px 11px;border-radius:999px;white-space:nowrap}
+.aif-stats{display:flex;gap:8px;margin-top:10px}
+.aif-chip{flex:1;text-align:center;background:var(--bg,#fff);border:1px solid var(--line,#e3e8f2);border-radius:11px;padding:7px 2px;font-size:11.5px;color:var(--muted,#5a6a86);font-weight:700}
+.aif-chip b{display:block;font-size:15.5px;color:var(--ink,#13294B)}
+.aif-dots{display:flex;gap:5px;flex-wrap:wrap;margin:12px 2px 0;align-items:center}
+.aif-dots i{width:10px;height:10px;border-radius:50%;background:#ccd5e3}
+.aif-dots i.ok{background:#2E9E4F}
+.aif-dots i.bad{background:#d9534f}
+.aif-dots i.cur{background:#C9A227;box-shadow:0 0 0 3px rgba(201,162,39,.35)}
+.aif-dots span{font-size:11.5px;color:var(--muted,#5a6a86);font-weight:700}
+#test.aipfocus .bar .stats,#test.aipfocus .bar .prog,#test.aipfocus #tmRow,#test.aipfocus #srch,#test.aipfocus .side,#test.aipfocus #prev,#test.aipfocus #nextUn,#test.aipfocus .timer{display:none!important}
+#test.aipfocus .test{grid-template-columns:minmax(0,1fr)!important}
+#test.aipfocus .nav{margin-top:14px}
+#test.aipfocus .nav .sp{display:none}
+#test.aipfocus #next{flex:1;background:linear-gradient(135deg,#F5C542,#C9A227);color:#231a04;border:none;font-weight:800;font-size:16.5px;min-height:52px;border-radius:13px}
+</style>
   <section id="test" hidden="">
     <div class="bar">
       <div class="timer" id="timer">0:00<small id="timerNote">Starts when you answer Q1</small></div>
@@ -1345,6 +1365,10 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
           <div class="label cnt" id="srchCnt"></div>
           <ul class="res" id="srchRes" hidden=""></ul>
         </div>
+        <div id="aiFocusTop" hidden>
+          <div class="aif-head"><span class="aif-title" id="aiFTitle">\u26A1 AI Practice</span><span class="aif-pill" id="aiFPill">MCQ 1 / 10</span></div>
+          <div class="aif-stats"><span class="aif-chip"><b id="aiFRead">0</b>Read</span><span class="aif-chip"><b id="aiFOk">0</b>\u2713 Correct</span><span class="aif-chip"><b id="aiFBad">0</b>\u2717 Wrong</span><span class="aif-chip"><b id="aiFScore">\u2013</b>Score</span></div>
+        </div>
         <div class="card q">
           <div class="qmeta"><span class="label" id="qno"></span><span class="label" id="qmeta"></span></div>
           <p class="qtext" id="qtext"></p>
@@ -1359,6 +1383,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
             <button class="btn primary" id="next" type="button">Next</button>
           </div>
         </div>
+        <div class="aif-dots" id="aiFocusDots" hidden></div>
         <div id="confirm" class="confirm" hidden="">
           <div id="confirmText"></div>
           <div class="row">
@@ -2610,7 +2635,37 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function counts(){var ok=0,bad=0,att=0;for(var k in ans){att++;if(ans[k].ok)ok++;bad+=(ans[k].w?ans[k].w.length:0)}return {ok:ok,bad:bad,att:att}}
   function net(){var c=counts();return c.ok-NEG*c.bad}
 
+  /* BUILD 43 · AI Practice — Premium Focus (user ka chuna hua design 3): AI practice me purana
+     test clutter (timer, stats bar, question map, search, Previous) hide — sirf aik MCQ, upar
+     MCQ X/Y pill + stats chips, neeche dots record aur bara gold Next. Aam tests par koi asar nahi. */
+  function aiFocusOn(){return !!(TMP&&TMP.ai&&AIC>=0&&order.length&&Q[order[pos]]&&Q[order[pos]].sec===AIC)}
+  function aiFocusSync(){
+    var on=aiFocusOn(),sec=$("#test");if(!sec)return;
+    sec.classList.toggle("aipfocus",on);
+    var t=$("#aiFocusTop"),d=$("#aiFocusDots");
+    if(t)t.hidden=!on;if(d)d.hidden=!on;
+    if(on)aiFocusPaint();
+  }
+  function aiFocusPaint(){
+    if(!aiFocusOn())return;
+    var c=counts(),sb=SUB[TMP.sub];
+    $("#aiFPill").textContent="MCQ "+(pos+1)+" / "+order.length;
+    $("#aiFTitle").textContent="\u26A1 AI Practice"+(sb&&sb.name?" \u00B7 "+sb.name:"");
+    $("#aiFRead").textContent=c.att;
+    $("#aiFOk").textContent=c.ok;
+    $("#aiFBad").textContent=(c.att-c.ok);
+    $("#aiFScore").textContent=c.att?Math.round(c.ok/c.att*100)+"%":"\u2013";
+    var host=$("#aiFocusDots");if(!host)return;
+    var len=order.length,from=0,to=len;
+    if(len>80){from=Math.max(0,Math.min(pos-30,len-80));to=from+80}
+    var h="";
+    for(var k=from;k<to;k++){var a=ans[order[k]];h+='<i class="'+(a?(a.ok?"ok":"bad"):(k===pos?"cur":""))+'"></i>'}
+    if(to<len)h+="<span>+"+(len-to)+" more</span>";
+    host.innerHTML=h;
+  }
+
   function show(id){
+    if(id!=="test"){var _ts=$("#test");if(_ts)_ts.classList.remove("aipfocus")}
     if(id==="start")tmpClean();
     ["start","editor","test","result"].forEach(function(x){$("#"+x).hidden=(x!==id)});window.scrollTo(0,0);
     if(id==="test"){try{if(!(history.state&&history.state.t===1))history.pushState({t:1},"")}catch(e){}}
@@ -2680,6 +2735,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     $("#stOk").textContent=c.ok;$("#stBad").textContent=c.bad;
     $("#stAtt").textContent=c.att+"/"+order.length;
     var pf=$("#progFill");if(pf)pf.style.width=(order.length?Math.round(c.att/order.length*100):0)+"%";
+    try{aiFocusPaint()}catch(e){}
   }
 
   function onTick(){
@@ -2773,6 +2829,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     var qb=$("#qBkm");
     if(qb){var on=bkmHas(id);qb.textContent=on?"\u2605 Bookmarked":"\u2606 Bookmark";qb.classList.toggle("bkmon",on)}
     paintMap();
+    try{aiFocusSync()}catch(e){}
   }
 
   function buildMap(){
@@ -14820,7 +14877,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=42;window.__EG_BUILD=BUILD;
+  var BUILD=43;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
