@@ -1,6 +1,6 @@
 {
- "web": 46,
+ "web": 47,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI Practice (BUILD 46): the Premium Focus screen now actually switches on — a scope bug kept it off. In AI practice only: no question map, no total count, just one MCQ, your read-MCQ record, and a big Next button."
+ "note": "AI Practice (BUILD 47): the big Next button in AI Practice is now properly gold (a platform style was overriding it blue)."
 }
