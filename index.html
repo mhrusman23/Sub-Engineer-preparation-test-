@@ -689,6 +689,18 @@ h1,h2,h3{font-family:var(--brand-font);font-weight:800;letter-spacing:-.01em}
 #aip .aidots{display:inline-flex;gap:4px;padding:4px 0}
 #aip .aidots i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:dot 1.1s infinite}
 #aip .aidots i:nth-child(2){animation-delay:.15s}#aip .aidots i:nth-child(3){animation-delay:.3s}
+#aip .aim.b.aistwrap{padding:0;overflow:hidden}
+#aip .aisteps{padding:12px 14px;border-top:3px solid #C9A227;min-width:238px}
+#aip .aisth{font-size:11px;font-weight:800;letter-spacing:.7px;color:#B8860B;margin-bottom:8px}
+#aip .aistep{display:flex;align-items:center;gap:9px;font-size:13.5px;padding:4px 0;color:var(--ink)}
+#aip .aistep.dim{color:var(--muted)}
+#aip .aiic{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex:none;background:color-mix(in srgb,var(--muted) 18%,transparent);color:var(--muted)}
+#aip .aiic.ok{background:#1E5B2E;color:#fff}
+#aip .aiic.spin{background:transparent;border:2.5px solid color-mix(in srgb,#C9A227 30%,transparent);border-top-color:#C9A227;animation:aispin .8s linear infinite}
+#aip .aist{margin-left:auto;font-size:11px;font-weight:700}
+#aip .aist.done{color:#2E9E4F}
+#aip .aist.work{color:#B8860B}
+@keyframes aispin{to{transform:rotate(360deg)}}
 #aip .aichips{display:flex;gap:6px;overflow-x:auto;padding:2px 16px 10px;scrollbar-width:none}
 #aip .aichips::-webkit-scrollbar{display:none}
 #aip .aichips .chip{flex:none;white-space:nowrap;min-height:34px;font-size:13px;padding:4px 12px;font-weight:600}
@@ -2414,23 +2426,39 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     list.forEach(function(t){var b=el("button","chip",t);b.type="button";b.addEventListener("click",function(){aiSend(t)});w.appendChild(b)});
     aiEl.msgs.appendChild(w);aiScroll();
   }
+  /* BUILD 42 · Steps Card (user ka chuna hua design 3): sawal bhejte hi premium steps card,
+     har step bari bari tick hota hai — jawab aate hi card ki jagah jawab aa jata hai */
+  function aiStepsStart(b,label){
+    b.classList.add("aistwrap");
+    b.innerHTML='<div class="aisteps"><div class="aisth">\u2726 '+label+'</div>'
+      +'<div class="aistep" data-s="1"><span class="aiic spin"></span>Reading your question<span class="aist work">Working\u2026</span></div>'
+      +'<div class="aistep dim" data-s="2"><span class="aiic">2</span>Searching knowledge</div>'
+      +'<div class="aistep dim" data-s="3"><span class="aiic">3</span>Preparing your answer</div></div>';
+    function done(r){if(!r)return;var i=r.querySelector('.aiic');i.className='aiic ok';i.textContent='\u2713';var s=r.querySelector('.aist');if(s){s.className='aist done';s.textContent='Done'}}
+    function act(r,txt){if(!r)return;r.classList.remove('dim');var i=r.querySelector('.aiic');i.className='aiic spin';i.textContent='';if(!r.querySelector('.aist')){var s=document.createElement('span');s.className='aist work';s.textContent=txt;r.appendChild(s)}}
+    var t1=setTimeout(function(){done(b.querySelector('[data-s="1"]'));act(b.querySelector('[data-s="2"]'),'Working\u2026')},700);
+    return {
+      writing:function(){done(b.querySelector('[data-s="2"]'));act(b.querySelector('[data-s="3"]'),'Writing\u2026')},
+      clear:function(){clearTimeout(t1)}
+    };
+  }
   function aiSend(text){
     if(aiBusy||aiCur===-1)return;
     var id=aiCur;aiFuClear();
     aiEl.msgs.appendChild(el("div","aim u",text));
-    var b=el("div","aim b");b.innerHTML='<span class="aidots"><i></i><i></i><i></i></span>';aiEl.msgs.appendChild(b);aiScroll();
+    var b=el("div","aim b");aiEl.msgs.appendChild(b);var stp=aiStepsStart(b,id===-2?"WEB.ASSIST IS WORKING":"ASK AI IS WORKING");aiScroll();
     if(!window.__aiStart){b.className="aim b err";b.textContent="AI is not available right now. Use the Gemini link below. / اے آئی ابھی دستیاب نہیں، نیچے Gemini لنک استعمال کریں۔";return}
     aiBusy=true;aiEl.sb.disabled=true;
     /* repaint at most once per frame while the answer streams in (fast, no flicker) */
     var raf=0,last="";
-    function paint(){raf=0;b.innerHTML=aiMd(aiSplit(last).body);aiScroll()}
-    function stop(){if(raf){cancelAnimationFrame(raf);raf=0}}
+    function paint(){raf=0;b.classList.remove("aistwrap");b.innerHTML=aiMd(aiSplit(last).body);aiScroll()}
+    function stop(){stp.clear();b.classList.remove("aistwrap");if(raf){cancelAnimationFrame(raf);raf=0}}
     var p=aiSess?Promise.resolve(aiSess):window.__aiStart(aiCtx(id),id===-2?"tutor":"askai").then(function(s){if(aiCur===id)aiSess=s;return s});
     var HINDI=/[\u0900-\u097F]/;
-    p.then(function(s){return s.send(text+aiKeyNote(id)+aiLangNote(),function(full){last=full;if(!raf)raf=requestAnimationFrame(paint)}).then(function(full){
+    p.then(function(s){return s.send(text+aiKeyNote(id)+aiLangNote(),function(full){last=full;stp.writing();if(!raf)raf=requestAnimationFrame(paint)}).then(function(full){
         /* the model slipped into Hindi: ask once for the same answer in Urdu script / English only */
-        if(full&&HINDI.test(full)){last="";b.innerHTML='<span class="aidots"><i></i><i></i><i></i></span>';
-          return s.send("Your last answer used Hindi (Devanagari) letters. Rewrite the SAME answer again using only "+(aiLang==="en"?"English":"Urdu script (Arabic letters) with technical terms in English")+". No Hindi letters, no Roman Urdu. Keep the FOLLOWUPS line.",function(f2){last=f2;if(!raf)raf=requestAnimationFrame(paint)})}
+        if(full&&HINDI.test(full)){last="";stp.clear();stp=aiStepsStart(b,id===-2?"WEB.ASSIST IS WORKING":"ASK AI IS WORKING");
+          return s.send("Your last answer used Hindi (Devanagari) letters. Rewrite the SAME answer again using only "+(aiLang==="en"?"English":"Urdu script (Arabic letters) with technical terms in English")+". No Hindi letters, no Roman Urdu. Keep the FOLLOWUPS line.",function(f2){last=f2;stp.writing();if(!raf)raf=requestAnimationFrame(paint)})}
         return full})})
      .then(function(full){
        stop();
@@ -14792,7 +14820,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=41;window.__EG_BUILD=BUILD;
+  var BUILD=42;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){

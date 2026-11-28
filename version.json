@@ -1,6 +1,6 @@
 {
- "web": 41,
+ "web": 42,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "Every field opens instantly (BUILD 41): Practice chips now start from the field's full bank, Premium MCQs stay out of Search and AI Practice for non-members, and AI never shows an error — it retries quietly and answers, even if it takes a few extra seconds."
+ "note": "Premium Steps Card (BUILD 42): Web.Assist and Ask AI now show a working-steps card while answering — Reading your question, Searching knowledge, Preparing your answer — each step ticking done, just like premium AI apps."
 }
