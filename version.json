@@ -1,6 +1,6 @@
 {
- "web": 37,
+ "web": 38,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "VIP Hard Lock (BUILD 37): premium folders and subjects are now protected on the server too - their questions live in a separate protected bank that only admin-approved Gmails can download. VIP members can be added with a time limit (days or months), students can request access from the premium sheet, and the admin approves them from the VIP settings panel."
+ "note": "AI practice field fix (BUILD 38): the old AI pool held Civil questions saved under other subjects by a retired server bug. A much wider safety net now blocks wrong-field questions in AI practice, and the app automatically deletes the old wrong-field pool questions so every subject practices only its own MCQs."
 }

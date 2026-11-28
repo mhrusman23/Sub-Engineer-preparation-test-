@@ -5822,6 +5822,7 @@ async function check(user){
     if(!started)startApp(JSON.parse(BANK_JSON));
     lgHide();
     try{vipLateMerge()}catch(_){}
+    try{if(IS_OWNER)setTimeout(function(){poolAutoClean()},5000)}catch(_){}
   }catch(e){
     const code=String((e&&(e.code||e.message))||e).trim();
     if(code==="permission-denied"||/Missing or insufficient permissions/i.test(code)){
@@ -7149,7 +7150,7 @@ async function aiqFromColl(coll,field,n){
     return {out,cur:nc};
   }catch(_){return {out:[],cur:c}}
 }
-const AIQ_CIVIL_RX=/cement|theodolite|bitumen|formwork|shuttering|lintel|plinth|slump test|water[\s-]?cement|reinforced concrete|\brcc\b|brick masonry|soil bearing|chain survey|dumpy level/i;
+const AIQ_CIVIL_RX=/cement|concrete|theodolite|total station|bitumen|bituminous|asphalt|formwork|shuttering|centring|lintel|plinth|slump|water[\s-]?cement|reinforced concrete|\brcc\b|brick|mortar|masonry|plastering|grouting|soil|plasticity|atterberg|proctor|compaction|excavat|aggregate|contour|survey|levelling|leveling|bench ?mark|plumb bob|dumpy level|topograph|subgrade|pavement|footing|retaining wall|bearing capacity|vicat|fineness of cement|workability|curing of concrete|concrete curing|compressive strength|darcy|froude|dewatering|sedimentation|scum board|dissolved solids|abrasion|argillaceous|turbidity|potable water|water supply|water treatment|structural analysis|effective length|sloping roof|lane road|hydraulic radius|prismatic channel|rectangular channel|mud pump|geodetic|washbasin|sanitary/i;
 async function aiqLive(n,subject){
   const u=auth.currentUser;if(!u||n<=0)return [];
   let tok="";try{tok=await u.getIdToken()}catch(_){return []}
@@ -7188,6 +7189,35 @@ async function aiqPoolSave(list,subject){
       await setDoc(doc(db,"ai_pool",id),{question:m.question,question_urdu:m.question_urdu||"",options:m.options,correct:m.correct,explanation:m.explanation||"",subject:String(subject||"Civil Engineering").slice(0,60),by:(auth.currentUser&&auth.currentUser.uid)||"",createdAt:serverTimestamp()});
     }catch(_){}
   }
+}
+/* BUILD 38: purana ghaleez pool saaf — owner ka app khulne par (6 ghante me aik dafa)
+   wo ai_pool sawal delete ho jate hain jo ghair-Civil subject ke naam par save hue lekin
+   asal me Civil ke hain (purane server bug ki paidawar, jis ne har subject ko Civil bana
+   diya tha). Pool delete ki ijazat sirf admin ko hai, is liye ye sirf owner session me
+   chalta hai; students ke liye wasee AIQ_CIVIL_RX jaali har sawal ko pehle hi rok deti hai. */
+async function poolAutoClean(){
+  try{
+    if(!IS_OWNER)return;
+    let last=0;try{last=(JSON.parse(localStorage.getItem("eg23poolclean")||"{}").ts)||0}catch(_){}
+    if(Date.now()-last<6*3600*1000)return;
+    const qs=await getDocs(collection(db,"ai_pool"));
+    const jobs=[];
+    const FIXTS=Date.UTC(2026,10,28,3,30,0); /* BUILD 36 server fix live hone ka waqt (08:30 PKT) */
+    qs.forEach(function(d){
+      const x=d.data()||{},subj=String(x.subject||"");
+      if(/^civil/i.test(subj))return;
+      let ts=0;try{const c=x.createdAt;if(c&&typeof c.toMillis==="function")ts=c.toMillis();else if(c&&typeof c.seconds==="number")ts=c.seconds*1000}catch(_){}
+      if(ts<FIXTS||AIQ_CIVIL_RX.test(String(x.question||"")))jobs.push(deleteDoc(doc(db,"ai_pool",d.id)).catch(function(){}));
+    });
+    if(jobs.length)await Promise.all(jobs);
+    try{localStorage.setItem("eg23poolclean",JSON.stringify({ts:Date.now(),deleted:jobs.length}))}catch(_){}
+    if(jobs.length){
+      const dv=document.createElement("div");
+      dv.style.cssText="position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:100005;background:linear-gradient(135deg,#E9C46A,#C9A227);color:#241A00;font-weight:700;font-size:13.5px;padding:11px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:92vw;text-align:center";
+      dv.textContent="\u{1F9F9} AI pool cleaned: "+jobs.length+" wrong-field (Civil) questions deleted from other subjects.";
+      document.body.appendChild(dv);setTimeout(function(){try{dv.remove()}catch(_){}},6000);
+    }
+  }catch(_){}
 }
 function aiqFromBank(n){
   const B=AIQ.bank,h=aiqHave(),out=[];
@@ -14696,7 +14726,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=37;window.__EG_BUILD=BUILD;
+  var BUILD=38;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
