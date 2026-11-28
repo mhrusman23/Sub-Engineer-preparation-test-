@@ -1303,6 +1303,14 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   </section>
 
   <!-- TEST -->
+  <style id="aiqChipCss">
+#aiqCard .aiqchip{display:inline-flex!important;align-items:center;gap:6px;border-radius:999px!important;font-weight:600;background:linear-gradient(180deg,#ffffff,#d9e2f2)!important;color:#1c2740!important;border:1px solid #c3cfe2!important;box-shadow:inset 0 1px 0 #fff,inset 0 -3px 0 rgba(20,40,80,.12),0 4px 0 #7e93bd,0 8px 14px rgba(0,0,0,.28)!important;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#aiqCard .aiqchip:active{transform:translateY(3px);box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 rgba(20,40,80,.12),0 1px 0 #7e93bd,0 4px 8px rgba(0,0,0,.25)!important}
+#aiqCard .aiqchip.primary{background:linear-gradient(180deg,#FFE89A,#F5C542 55%,#C9A227)!important;color:#3B2A00!important;border-color:#a97f14!important;font-weight:700;box-shadow:inset 0 1px 0 #FFF6D8,inset 0 -3px 0 rgba(90,60,0,.25),0 4px 0 #7A5A06,0 8px 14px rgba(0,0,0,.3)!important}
+#aiqCard .aiqchip.primary:active{box-shadow:inset 0 1px 0 #FFF6D8,inset 0 -2px 0 rgba(90,60,0,.25),0 1px 0 #7A5A06,0 4px 8px rgba(0,0,0,.28)!important}
+#aiqCard .aiqchip[disabled]{opacity:.65}
+#aiqCard .aiqic{width:21px;height:21px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;line-height:1;flex:none;box-shadow:inset 0 -2px 3px rgba(0,0,0,.15)}
+  </style>
   <style id="aiFocusCss">
 #aiFocusTop{margin:0 0 12px}
 .aif-head{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0A1730,#13294B);color:#fff;border-radius:14px;padding:11px 14px}
@@ -3003,12 +3011,13 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
     }
     function opts(i){return (QO[i]&&QO[i].length)?QO[i]:Q[i].opts}
     function key(i){return (QO[i]&&QO[i].length)?QA[i]:Q[i].ans}
+    function vipHideQe(qi){try{if(!window.__vipHidden)return false;var sc=S[Q[qi].sec];if(!sc)return false;var sb=SUB[sc.sub];if(!sb)return false;var cd=null;for(var j=0;j<CARDS.length;j++)if(CARDS[j].k===sb.cat){cd=CARDS[j];break}return !!window.__vipHidden(cd?cd.course:"",sb.name)}catch(e){return false}}
     function find(qr){
       var n=norm(qr);if(!n)return {list:[],toks:[]};
       var toks=n.split(" ").filter(Boolean),out=[],ph=false;
       for(var i=0;i<Q.length;i++){
         var t=norm(Q[i].text),m=sqScore(t,norm(opts(i).join(" ")),n,toks);
-        if(m&&!vipHideQ(i)){out.push({id:i,inT:m.inT,sc:m.sc+t.length/50,ph:m.ph});if(m.ph)ph=true}
+        if(m&&!vipHideQe(i)){out.push({id:i,inT:m.inT,sc:m.sc+t.length/50,ph:m.ph});if(m.ph)ph=true}
       }
       if(ph&&toks.length>1)out=out.filter(function(h){return h.ph});   /* exact phrase found: show only those */
       out.sort(function(a,b){return a.sc-b.sc});
@@ -7398,10 +7407,27 @@ function aiqStart(){
   window.__playAi("Civil Engineering",aiqTake(10),"Civil");
 }
 /* subject names shown on the home card (Civil first, then the site's courses, then a few common ones) */
+function aiqIcon(label){const l=String(label||"").toLowerCase();
+  if(l.indexOf("civil")>=0)return["\u{1F3D7}\uFE0F","#FFE1A8"];
+  if(l.indexOf("general")>=0)return["\u{1F30D}","#CDEED3"];
+  if(l.indexOf("electrical")>=0)return["\u26A1","#FFF0B3"];
+  if(l.indexOf("mechanical")>=0)return["\u2699\uFE0F","#E4DCF7"];
+  if(l.indexOf("ielts")>=0||l.indexOf("english")>=0)return["\u{1F5E3}\uFE0F","#D9F0FD"];
+  if(l.indexOf("nebosh")>=0||l.indexOf("hse")>=0)return["\u{1F9BA}","#FFE9A8"];
+  if(l.indexOf("medical")>=0)return["\u{1FA7A}","#FBD9EC"];
+  if(l.indexOf("pmp")>=0)return["\u{1F3AF}","#DFF3DF"];
+  if(l.indexOf("cpa")>=0||l.indexOf("cma")>=0)return["\u{1F4BC}","#FDEBD0"];
+  if(l.indexOf("gre")>=0||l.indexOf("sat")>=0)return["\u{1F393}","#E3F2E6"];
+  if(l.indexOf("css")>=0||l.indexOf("pms")>=0)return["\u{1F3DB}\uFE0F","#FDF0E2"];
+  if(l.indexOf("acca")>=0)return["\u{1F4CA}","#D7E3FC"];
+  if(l==="ca"||l.indexOf("chartered")>=0)return["\u{1F4D1}","#FBD9D9"];
+  if(l==="it"||l.indexOf("information")>=0)return["\u{1F4BB}","#D3F0EA"];
+  return["\u{1F4D8}","#E3E8F2"]}
 function aiqSubjects(bank){
   const out=[["Civil","Civil Engineering"]],seen=new Set(["civil"]);
   const add=(label,subj)=>{const k=label.toLowerCase();if(seen.has(k))return;seen.add(k);out.push([label,subj])};
-  (Array.isArray(bank&&bank.CARDS)?bank.CARDS:[]).forEach(c=>{const n=String((c&&c.course)||"").trim();if(n)add(n,n)});
+  const _subCnt={};if(bank&&Array.isArray(bank.SUB)&&Array.isArray(bank.CARDS))bank.SUB.forEach(s=>{const cd=bank.CARDS.find(c=>c.k===s.cat);if(cd){const cn=String(cd.course||"").trim();if(cn)_subCnt[cn]=(_subCnt[cn]||0)+1}});
+  (Array.isArray(bank&&bank.CARDS)?bank.CARDS:[]).forEach(c=>{const n=String((c&&c.course)||"").trim();if(!n)return;if(bank&&Array.isArray(bank.SUB)&&bank.SUB.length&&(_subCnt[n]||0)<2)return;add(n,n)});
   [["Electrical","Electrical Engineering"],["Mechanical","Mechanical Engineering"],["General Knowledge","General Knowledge"],["IT","Information Technology"],["ACCA","ACCA"],["CA","Chartered Accountancy (CA)"]].forEach(x=>add(x[0],x[1]));
   return out;
 }
@@ -7435,13 +7461,15 @@ function aiqInit(bank){
   const chips=el("div");chips.style.cssText="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
   window.__aiqChips=aiqSubjects(bank);try{window.__buildPick&&window.__buildPick()}catch(e){}
   aiqSubjects(bank).forEach(([label,subj],i)=>{
-    const b=el("button","btn"+(i?"":" primary"),label);b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
+    const b=el("button","btn aiqchip"+(i?"":" primary"));b.type="button";b.style.cssText="padding:8px 14px;font-size:14px";
+    const ic=aiqIcon(label),is=el("span","aiqic",ic[0]);is.style.background=ic[1];b.appendChild(is);
+    const lab=el("span","",label);b.appendChild(lab);
     b.onclick=async()=>{
       if(!i){aiqStart();return}
       if(b.disabled)return;
-      const t=b.textContent;b.disabled=true;b.textContent=t+"\u2026";
+      const t=lab.textContent;b.disabled=true;lab.textContent=t+"\u2026";
       try{await window.__aiPlaySubject(subj,label)}catch(e){}
-      b.disabled=false;b.textContent=t;
+      b.disabled=false;lab.textContent=t;
     };
     chips.appendChild(b);
   });
@@ -14884,7 +14912,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=47;window.__EG_BUILD=BUILD;
+  var BUILD=48;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){

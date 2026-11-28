@@ -1,6 +1,6 @@
 {
- "web": 47,
+ "web": 48,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI Practice (BUILD 47): the big Next button in AI Practice is now properly gold (a platform style was overriding it blue)."
+ "note": "BUILD 48: Search fixed (MCQs were not appearing) + Practice MCQs chips upgraded to glossy 3D with colorful icons (same size)."
 }
