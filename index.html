@@ -2396,7 +2396,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   window.__aiOpenGeneral=aiOpenGeneral;
   function aiOpenQ(id){
     if(id==null||!Q[id])return;
-    if(window.__vipAiGuard&&!window.__vipAiGuard("aiTutor","Ask AI"))return;
+    if(window.__vipAiGuard&&!window.__vipAiGuard("aiAsk","Ask AI"))return;
     aiEnsure();aiGenUi(false);
     if(aiCur!==id){
       aiCur=id;aiSess=null;aiEl.msgs.textContent="";aiEl.cp.textContent="";
@@ -4226,11 +4226,11 @@ function vipExpParse(x){
     if(ms>0)out[String(k).toLowerCase()]=ms;}
   return out;
 }
-let VIP={on:false,courses:[],subjects:[],emails:[],exp:{},pdfMcq:false,fullMcq:false,aiTutor:false,aiUrdu:false,aiHint:false};
-try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq,aiTutor:!!_vc.aiTutor,aiUrdu:!!_vc.aiUrdu,aiHint:!!_vc.aiHint,exp:vipExpParse(_vc.exp)}}catch(_){}
+let VIP={on:false,courses:[],subjects:[],emails:[],exp:{},pdfMcq:false,fullMcq:false,aiTutor:false,aiUrdu:false,aiHint:false,aiAsk:false};
+try{const _vc=JSON.parse(localStorage.getItem("eg23vip")||"null");if(_vc&&typeof _vc==="object")VIP={on:!!_vc.on,courses:Array.isArray(_vc.courses)?_vc.courses:[],subjects:Array.isArray(_vc.subjects)?_vc.subjects:[],emails:Array.isArray(_vc.emails)?_vc.emails:[],pdfMcq:!!_vc.pdfMcq,fullMcq:!!_vc.fullMcq,aiTutor:!!_vc.aiTutor,aiUrdu:!!_vc.aiUrdu,aiHint:!!_vc.aiHint,aiAsk:("aiAsk" in _vc)?!!_vc.aiAsk:!!_vc.aiTutor,exp:vipExpParse(_vc.exp)}}catch(_){}
 function vipApply(x){
   if(!x||typeof x!=="object")return;
-  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq,aiTutor:!!x.aiTutor,aiUrdu:!!x.aiUrdu,aiHint:!!x.aiHint,exp:vipExpParse(x.exp)};
+  VIP={on:!!x.on,courses:Array.isArray(x.courses)?x.courses:[],subjects:Array.isArray(x.subjects)?x.subjects:[],emails:(Array.isArray(x.emails)?x.emails:[]).map(function(e){return String(e).toLowerCase()}),pdfMcq:!!x.pdfMcq,fullMcq:!!x.fullMcq,aiTutor:!!x.aiTutor,aiUrdu:!!x.aiUrdu,aiHint:!!x.aiHint,aiAsk:("aiAsk" in x)?!!x.aiAsk:!!x.aiTutor,exp:vipExpParse(x.exp)};
   try{localStorage.setItem("eg23vip",JSON.stringify(VIP))}catch(_){}
 }
 try{getDoc(doc(db,"sitedata","vip")).then(s=>{if(s.exists())vipApply(s.data())}).catch(()=>{})}catch(_){}
@@ -4714,6 +4714,11 @@ function openVip(){
   hintRow.appendChild(hintCb);
   const hintTx=el("span","","");hintTx.innerHTML="<b>\u{1F4A1} AI Hint \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members will see the Hint button in tests; it stays hidden for other students.</small>";hintRow.appendChild(hintTx);
   box.appendChild(hintRow);
+  const askRow=el("label");askRow.style.cssText="display:flex;gap:10px;align-items:center;background:#FFF7E0;border:1px solid #D9B34A;border-radius:12px;padding:12px 14px;margin:0 0 10px;cursor:pointer;color:#2A2118";
+  const askCb=document.createElement("input");askCb.type="checkbox";askCb.id="vipAiAsk";askCb.style.cssText="width:20px;height:20px;flex:none";
+  askRow.appendChild(askCb);
+  const askTx=el("span","","");askTx.innerHTML="<b>\u{1F4AC} Ask AI (MCQs) \u2014 Premium only</b><br><small>When ON (and the Premium lock is also ON), only VIP members can use the Ask AI button inside tests; other students will see the VIP sheet when they tap it.</small>";askRow.appendChild(askTx);
+  box.appendChild(askRow);
   function checkList(title,items,cls){
     box.appendChild(el("div","label",title));
     const sc=el("div");sc.style.cssText="border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;max-height:210px;overflow:auto;margin-bottom:6px";
@@ -4804,7 +4809,7 @@ function openVip(){
   }
   loadReqs();
   function fillForm(){
-    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;tutorCb.checked=!!VIP.aiTutor;urduCb.checked=!!VIP.aiUrdu;hintCb.checked=!!VIP.aiHint;
+    onCb.checked=!!VIP.on;pdfCb.checked=!!VIP.pdfMcq;fullCb.checked=!!VIP.fullMcq;tutorCb.checked=!!VIP.aiTutor;urduCb.checked=!!VIP.aiUrdu;hintCb.checked=!!VIP.aiHint;askCb.checked=!!VIP.aiAsk;
     box.querySelectorAll(".vipCourse").forEach(function(cb){cb.checked=VIP.courses.indexOf(cb.value)>=0});
     box.querySelectorAll(".vipSubject").forEach(function(cb){cb.checked=VIP.subjects.indexOf(cb.value)>=0});
     emTx.value=(VIP.emails||[]).join("\n");
@@ -4817,7 +4822,7 @@ function openVip(){
   sv.onclick=async()=>{
     sv.disabled=true;st.textContent="Saving\u2026";
     const data={
-      on:onCb.checked,pdfMcq:pdfCb.checked,fullMcq:fullCb.checked,aiTutor:tutorCb.checked,aiUrdu:urduCb.checked,aiHint:hintCb.checked,
+      on:onCb.checked,pdfMcq:pdfCb.checked,fullMcq:fullCb.checked,aiTutor:tutorCb.checked,aiUrdu:urduCb.checked,aiHint:hintCb.checked,aiAsk:askCb.checked,
       courses:Array.from(box.querySelectorAll(".vipCourse:checked")).map(function(cb){return cb.value}),
       subjects:Array.from(box.querySelectorAll(".vipSubject:checked")).map(function(cb){return cb.value}),
       emails:emTx.value.split(/[\s,;]+/).map(function(e){return e.trim().toLowerCase()}).filter(function(e){return e.indexOf("@")>0}),
@@ -14726,7 +14731,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=38;window.__EG_BUILD=BUILD;
+  var BUILD=39;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){

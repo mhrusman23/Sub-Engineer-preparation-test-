@@ -1,6 +1,6 @@
 {
- "web": 38,
+ "web": 39,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI practice field fix (BUILD 38): the old AI pool held Civil questions saved under other subjects by a retired server bug. A much wider safety net now blocks wrong-field questions in AI practice, and the app automatically deletes the old wrong-field pool questions so every subject practices only its own MCQs."
+ "note": "Ask AI gets its own VIP switch (BUILD 39): the Ask AI button inside tests now has a separate tick in VIP Premium settings, independent of Web.Assist. Tick it (with the Premium lock ON) and only VIP members can use Ask AI; everyone else sees the VIP sheet."
 }
