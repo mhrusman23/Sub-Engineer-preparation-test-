@@ -20,11 +20,11 @@ const crypto = require("crypto");
 const PROJECT = process.env.FIREBASE_PROJECT_ID || "engrgroup23";
 const MODEL = (process.env.GEMINI_MODEL || "gemini-flash-latest").replace(/[^\w.\-]/g, "");
 // if the main model is busy (503), retired (404) or over quota (429) the next one is tried
-const MODELS = [MODEL, "gemini-flash-lite-latest", "gemini-2.0-flash"].filter((m, i, arr) => arr.indexOf(m) === i);
+const MODELS = [MODEL, "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"].filter((m, i, arr) => arr.indexOf(m) === i);
 const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
-const PER_MINUTE = 12;
-const PER_DAY = 300;
+const PER_MINUTE = 30;
+const PER_DAY = 3000;
 const MAX_BODY = 60000;
 const MAX_TEXT = 6000;
 const MAX_TOTAL = 24000;
@@ -284,11 +284,11 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-// waits at most 6 s for Google to start answering, then the next model is tried
+// waits at most 10 s for Google to start answering, then the next model is tried
 // key defaults to the main GEMINI_API_KEY; vertex = Google Cloud Vertex AI Express key
 async function gemini(model, body, key, vertex) {
   const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 6000);
+  const tm = setTimeout(() => ac.abort(), 10000);
   const k = key || process.env.GEMINI_API_KEY;
   const url = vertex
     ? "https://aiplatform.googleapis.com/v1/publishers/google/models/" + model + ":streamGenerateContent?alt=sse&key=" + encodeURIComponent(k)
@@ -308,22 +308,17 @@ async function gemini(model, body, key, vertex) {
 }
 
 // OpenAI-compatible key (OpenAI, Groq, OpenRouter, DeepSeek...): the reply is converted to the Gemini stream shape the site already reads
-async function openaiStyle(fc, body, system, contents, maxOut) {
-  const base = (fc.baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
-  if (!/^https:\/\//i.test(base)) return new Response("bad base url", { status: 400 });
-  const msgs = [{ role: "system", content: system }].concat(
-    contents.map((c) => ({ role: c.role === "model" ? "assistant" : "user", content: c.parts.map((p) => p.text || "").join("") }))
-  );
+async function oaFetch(base, key, model, msgs, maxOut) {
   const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 12000);
+  const tm = setTimeout(() => ac.abort(), 15000);
   try {
     const r = await fetch(base + "/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + fc.key },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
       body: JSON.stringify(
         Object.assign(
-          { model: fc.model || "gpt-4o-mini", messages: msgs, stream: true, temperature: 0.4, max_tokens: maxOut },
-          /gpt-oss/i.test(fc.model || "") ? { reasoning_effort: "low" } : {}
+          { model, messages: msgs, stream: true, temperature: 0.4, max_tokens: maxOut },
+          /gpt-oss/i.test(model || "") ? { reasoning_effort: "low" } : {}
         )
       ),
       signal: ac.signal,
@@ -337,6 +332,48 @@ async function openaiStyle(fc, body, system, contents, maxOut) {
   }
 }
 
+// if the saved model was retired by the provider, ask the provider which models this key CAN use
+async function oaDiscover(base, key) {
+  try {
+    const ac = new AbortController();
+    const tm = setTimeout(() => ac.abort(), 6000);
+    const r = await fetch(base + "/models", { headers: { Authorization: "Bearer " + key }, signal: ac.signal });
+    clearTimeout(tm);
+    if (!r.ok) return [];
+    const j = await r.json().catch(() => ({}));
+    const ids = (Array.isArray(j.data) ? j.data : []).map((x) => String((x && x.id) || "")).filter(Boolean);
+    const bad = /(embed|whisper|tts|audio|image|dall|moderation|guard|search|rerank)/i;
+    const good = /(llama|gpt|qwen|gemma|deepseek|mistral|mixtral|phi|gemini|claude)/i;
+    return ids.filter((id) => !bad.test(id) && good.test(id)).slice(0, 3);
+  } catch (e) {
+    return [];
+  }
+}
+
+async function openaiStyle(fc, body, system, contents, maxOut) {
+  const base = (fc.baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
+  if (!/^https:\/\//i.test(base)) return new Response("bad base url", { status: 400 });
+  const msgs = [{ role: "system", content: system }].concat(
+    contents.map((c) => ({ role: c.role === "model" ? "assistant" : "user", content: c.parts.map((p) => p.text || "").join("") }))
+  );
+  const queue = [fc.model || "gpt-4o-mini"];
+  if (/groq\.com/i.test(base)) queue.push("openai/gpt-oss-120b", "llama-3.1-8b-instant", "openai/gpt-oss-20b");
+  const models = [...new Set(queue)];
+  let r = null;
+  let discovered = false;
+  for (let i = 0; i < models.length; i++) {
+    r = await oaFetch(base, fc.key, models[i], msgs, maxOut);
+    if (r.ok) return r;
+    if (r.status === 401 || r.status === 403) return r; // wrong key: no model change will fix it
+    if (r.status === 404 && !discovered) {
+      discovered = true;
+      for (const dm of await oaDiscover(base, fc.key)) if (!models.includes(dm)) models.push(dm);
+    }
+    if (![404, 429, 500, 503].includes(r.status)) return r;
+  }
+  return r;
+}
+
 // the feature's own key; any failure returns a not-ok response and the main key takes over
 async function withFeatureKey(fc, body, system, contents, maxOut) {
   const p = fc.provider || "auto";
@@ -345,7 +382,7 @@ async function withFeatureKey(fc, body, system, contents, maxOut) {
   let up;
   const t0 = Date.now();
   for (const m of models) {
-    if (up && Date.now() - t0 > 14000) break;
+    if (up && Date.now() - t0 > 20000) break;
     const nb = JSON.parse(JSON.stringify(body));
     up = await gemini(m, nb, fc.key, p === "vertex");
     if (up.status === 400 && nb.generationConfig.thinkingConfig) {
@@ -422,7 +459,7 @@ module.exports = async function handler(req, res) {
       if (process.env.GEMINI_API_KEY) {
         const t0 = Date.now();
         for (const m of MODELS) {
-          if (up && Date.now() - t0 > 14000) break;
+          if (up && Date.now() - t0 > 20000) break;
           up = await gemini(m, body);
           if (up.status === 400 && body.generationConfig.thinkingConfig) {
             // some models do not accept thinkingBudget: retry once without it

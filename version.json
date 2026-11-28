@@ -1,5 +1,5 @@
 {
- "web": 39,
+ "web": 40,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
  "note": "Ask AI gets its own VIP switch (BUILD 39): the Ask AI button inside tests now has a separate tick in VIP Premium settings, independent of Web.Assist. Tick it (with the Premium lock ON) and only VIP members can use Ask AI; everyone else sees the VIP sheet."

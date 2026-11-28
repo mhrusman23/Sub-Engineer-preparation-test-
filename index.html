@@ -5162,12 +5162,14 @@ function aiErrMsg(st,j){
 function aiPlans(cfg){
   const key=cfg.key,p=cfg.provider||"auto",model=cfg.model||CFG.aiModel||"gemini-flash-latest",em=encodeURIComponent(model),ek=encodeURIComponent(key);
   /* if Google says the model is busy (503) / retired (404) / over quota (429), the next model is tried automatically */
-  const fbm=cfg.model?[]:["gemini-flash-lite-latest","gemini-2.0-flash","gemini-flash-latest"].filter(x=>x!==model);
+  const fbm=cfg.model?[]:["gemini-2.5-flash","gemini-flash-lite-latest","gemini-2.5-flash-lite","gemini-flash-latest"].filter(x=>x!==model);
   const more=()=>fbm.map(m=>({id:"gemini:"+m,m:m,kind:"g",url:AI_BASE+encodeURIComponent(m)+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}}));
   const gem=()=>({id:"gemini",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse",h:{"x-goog-api-key":key}});
   const gemq=()=>({id:"gemini-q",m:model,kind:"g",url:AI_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const vtx=()=>({id:"vertex",kind:"g",url:VTX_BASE+em+":streamGenerateContent?alt=sse&key="+ek,h:{}});
   const oai=()=>({id:"openai",kind:"o",model:model,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}});
+  /* if the provider retired the saved model, these known-good models are tried automatically */
+  const oaiFb=()=>{const u=cfg.baseUrl||"";let ms=[];if(/groq\.com/i.test(u))ms=["openai/gpt-oss-120b","llama-3.1-8b-instant","openai/gpt-oss-20b"];else if(/openrouter/i.test(u))ms=["openai/gpt-oss-120b:free","meta-llama/llama-3.3-70b-instruct:free"];return ms.filter(m=>m!==model).map(m=>({id:"openai:"+m,kind:"o",model:m,url:(cfg.baseUrl||"https://api.openai.com/v1").replace(/\/+$/,"")+"/chat/completions",h:{"Authorization":"Bearer "+key}}))};
   /* server proxy: the key stays on the server (Vercel env GEMINI_API_KEY), users never see it */
   const prx=()=>({id:"proxy",kind:"g",proxy:true,feature:cfg.feature||"",url:"/api/ai",h:{}});
   /* keyless free fallback (no API key needed) */
@@ -5178,10 +5180,10 @@ function aiPlans(cfg){
   let pl;
   if(p==="gemini")pl=[gem(),gemq()].concat(more());
   else if(p==="vertex")pl=[vtx()];
-  else if(p==="openai"||cfg.baseUrl)pl=[oai()];
+  else if(p==="openai"||cfg.baseUrl)pl=[oai()].concat(oaiFb());
   /* NEW Google AI Studio keys start with AQ. and work on the normal Gemini endpoint (same as old AIza keys) */
   else if(/^(AQ\.|AIza)/.test(key))pl=[gem(),gemq()].concat(more(),[vtx()]);
-  else if(/^sk-/.test(key))pl=[oai()];
+  else if(/^sk-/.test(key))pl=[oai()].concat(oaiFb());
   else pl=[gem(),gemq(),vtx(),oai()];
   pl.push(prx());
   if(cfg.backup)pl.push(free());
@@ -5225,7 +5227,7 @@ async function aiCallOne(cfg,contents,on){
       let r;
       const hd=Object.assign({"Content-Type":"application/json"},plan.h);
       if(plan.proxy){try{hd.Authorization="Bearer "+await auth.currentUser.getIdToken()}catch(e){tried.push("proxy: not signed in");break}}
-      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),plan.proxy?30000:12000);
+      const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),plan.proxy?45000:(plan.free?30000:20000));
       try{r=await fetch(plan.url,{method:"POST",headers:hd,body:JSON.stringify(aiBody(plan,contents,attempt===1)),signal:ac.signal});clearTimeout(tm)}
       catch(e){clearTimeout(tm);if(plan.m)badM.add(plan.m);netErr=netErr||e;tried.push(plan.id+" "+(e&&e.name==="AbortError"?"timeout":"network: "+String((e&&e.message)||e).slice(0,80)));break}
       if(!r.ok){
@@ -5275,7 +5277,8 @@ window.__aiStart=async (ctx,feat)=>{
   const hist=[{role:"user",parts:[{text:ctx}]},{role:"model",parts:[{text:"Sure. Ask me anything about this MCQ and I will explain."}]}];
   return {send:async(msg,on)=>{
     const turn=hist.concat([{role:"user",parts:[{text:msg}]}]);
-    const full=await aiCall(cfg,turn,on);
+    let got=false;const onW=on?function(t){got=true;on(t)}:null;
+    let full;try{full=await aiCall(cfg,turn,onW)}catch(e1){if(got)throw e1;await new Promise(r=>setTimeout(r,1500));full=await aiCall(cfg,turn,onW)}
     if(full){hist.push({role:"user",parts:[{text:msg}]},{role:"model",parts:[{text:full.replace(/\n[ \t]*[*_]*FOLLOW-?UPS?[*_]*[ \t]*:[\s\S]*$/i,"")}]})}
     return full;
   }};
@@ -5283,21 +5286,27 @@ window.__aiStart=async (ctx,feat)=>{
 const aiErrBase=e=>{
   const m=String((e&&(e.message||e.code))||e);
   if(/permission-denied|Missing or insufficient permissions/i.test(m)&&!(e&&e.http))return "AI is only for active members. Please log in again.";
-  if(e&&e.plan==="proxy"&&(e.http===401||e.http===403))return "AI is only for approved, active members. Please log in again. / اے آئی صرف منظور شدہ فعال ممبرز کے لیے ہے، دوبارہ لاگ ان کریں۔";
+  if(e&&e.plan==="proxy"&&(e.http===401||e.http===403))return "AI is only for approved, active members. Please log in again. / \u0627\u06d2 \u0622\u0626\u06cc \u0635\u0631\u0641 \u0645\u0646\u0638\u0648\u0631 \u0634\u062f\u06c1 \u0641\u0639\u0627\u0644 \u0645\u0645\u0628\u0631\u0632 \u06a9\u06d2 \u0644\u06cc\u06d2 \u06c1\u06d2\u060c \u062f\u0648\u0628\u0627\u0631\u06c1 \u0644\u0627\u06af \u0627\u0646 \u06a9\u0631\u06cc\u06ba\u06d4";
+  if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "The assistant is very busy right now. Please try again in a few seconds.";
+  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The assistant is busy right now. Please try again in a few seconds.";
+  if(/network|fetch|Failed to load|AbortError|timeout/i.test(m))return "Connection problem. Please check your internet and tap Send again.";
+  return "The assistant could not answer right now. Please tap Send again in a few seconds.";
+};
+/* full technical message: ONLY for the owner's own Settings test buttons and admin tools, never in student chat */
+const aiErrAdminBase=e=>{
+  const m=String((e&&(e.message||e.code))||e);
   if(/API_KEY_INVALID|API key not valid|API key expired|UNAUTHENTICATED|invalid_api_key|Incorrect API key/i.test(m)||e&&e.http===401)return "The API key is wrong or expired. Admin: paste a correct key in Admin panel \u2192 Settings, or change the Provider there. Create a new key at aistudio.google.com/apikey (new keys start with AQ.), paste it in Settings and Save.";
   if(/referer|referrer|blocked|API_KEY_HTTP_REFERRER|SERVICE_DISABLED|has not been used|PERMISSION_DENIED/i.test(m)||e&&e.http===403)return "The key is blocked or the API is not enabled for it. Admin: in Settings try another Provider (Gemini / Vertex AI Express / OpenAI-compatible), allow this website for the key, or enable the API in Google Cloud. Create a new key at aistudio.google.com/apikey (new keys start with AQ.), paste it in Settings and Save.";
-  if(/quota|RESOURCE_EXHAUSTED/i.test(m)||e&&e.http===429)return "AI limit reached, please try again in a while. / تھوڑی دیر بعد دوبارہ کوشش کریں۔";
   if(/not found|NOT_FOUND|is not supported/i.test(m)||e&&e.http===404)return "This model is not available for the key. Admin: clear the Model box or choose another model in Settings.";
-  if(/overloaded|UNAVAILABLE/i.test(m)||e&&e.http===503)return "The AI service is busy right now, please try again in a minute.";
-  if(/network|fetch|Failed to load/i.test(m))return "AI could not be reached (internet, or the browser blocked it). Admin: try another Provider in Settings.";
-  return "AI error: "+m;
+  return aiErrBase(e);
 };
 /* students report a wrong answer: one report per student per question (rules enforce this) */
 window.__sendReport=async p=>{
   const by=idOf(auth.currentUser),qid="q"+p.qid,cut=(x,n)=>String(x||"").slice(0,n);
   await setDoc(doc(db,"reports",qid+"__"+by),{qid,qt:cut(p.qt,500),key:cut(p.key,300),sug:cut(p.sug,300),note:cut(p.note,300),sub:cut(p.sub,120),by,at:serverTimestamp(),status:"open"});
 };
-window.__aiErr=e=>{const t=aiErrBase(e),d=e&&e.detail;return (IS_ADMIN&&d)?t+" [Details: "+d+"]":t};
+window.__aiErr=e=>{try{console.warn("AI error (details hidden from chat):",e&&e.detail||e)}catch(_){}return aiErrBase(e)};
+window.__aiErrAdmin=e=>{const t=aiErrAdminBase(e),d=e&&e.detail;return d?t+" [Details: "+d+"]":t};
 window.__aiTest=async cfg=>aiCall(cfg,[{role:"user",parts:[{text:"Reply with only the word OK."}]}],null);
 
 
@@ -5995,7 +6004,7 @@ function openAiBackup(){
       const kk=k.value.trim();if(!kk){s2.textContent="Paste a key first.";return}
       tt.disabled=true;s2.textContent="Testing...";
       try{const r=await window.__aiTest({key:kk,provider:p.value,model:m.value.trim(),baseUrl:b.value.trim()});s2.textContent=r?"Key works \u2714 AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
-      catch(er){s2.textContent=window.__aiErr(er)}
+      catch(er){s2.textContent=window.__aiErrAdmin?window.__aiErrAdmin(er):window.__aiErr(er)}
       tt.disabled=false;
     };
     cx.onclick=()=>{k.value="";m.value="";b.value="";p.value="auto";sync();s2.textContent="Cleared. Tap Save keys to apply."};
@@ -6235,7 +6244,7 @@ async function openJokes(){
   bAi.onclick=async()=>{
     bAi.disabled=true;st.textContent="AI is creating jokes...";
     try{const add=await jkGenerate(5,D.list||[]);D.list=((D.list||[]).concat(add)).slice(-60);D.autoAt=Date.now();await save(add.length+" new jokes added.")}
-    catch(e){st.textContent=(window.__aiErr?window.__aiErr(e):String(e.message||e))}
+    catch(e){st.textContent=(window.__aiErrAdmin?window.__aiErrAdmin(e):(window.__aiErr?window.__aiErr(e):String(e.message||e)))}
     bAi.disabled=false;
   };
   bSave.onclick=async()=>{
@@ -8585,7 +8594,7 @@ function buildSettings(host){
       const kk=k.value.trim();if(!kk){s2.textContent="Paste a key first.";return}
       tt.disabled=true;s2.textContent="Testing...";
       try{const r=await window.__aiTest({key:kk,provider:p.value,model:m.value.trim(),baseUrl:b.value.trim()});s2.textContent=r?"Key works \u2714 AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
-      catch(e){s2.textContent=window.__aiErr(e)}
+      catch(e){s2.textContent=window.__aiErrAdmin?window.__aiErrAdmin(e):window.__aiErr(e)}
       tt.disabled=false;
     };
     box.append(lab,w,p,m,b,s2);fkWrap.appendChild(box);
@@ -8608,7 +8617,7 @@ function buildSettings(host){
       const kk=k.value.trim();if(!kk){s2.textContent="Paste a key first.";return}
       tt.disabled=true;s2.textContent="Testing...";
       try{const r=await window.__aiTest({key:kk,provider:p.value,model:m.value.trim(),baseUrl:b.value.trim()});s2.textContent=r?"Key works \u2714 AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
-      catch(e){s2.textContent=window.__aiErr(e)}
+      catch(e){s2.textContent=window.__aiErrAdmin?window.__aiErrAdmin(e):window.__aiErr(e)}
       tt.disabled=false;
     };
     return {lab,w,p,m,b,s2,k,sync};
@@ -8617,7 +8626,7 @@ function buildSettings(host){
     const k=ki.value.trim();
     kt.disabled=true;kst.textContent="Testing...";
     try{const r=await window.__aiTest({key:k,provider:ps.value,model:mi.value.trim(),baseUrl:bi.value.trim()});kst.textContent=r?(k?"Key works":"Free AI works")+" \u2714 ("+(aiGood?aiGood.id:"")+") AI replied: "+r.trim().slice(0,40):"Key works but the reply was empty."}
-    catch(e){kst.textContent=window.__aiErr(e)}
+    catch(e){kst.textContent=window.__aiErrAdmin?window.__aiErrAdmin(e):window.__aiErr(e)}
     kt.disabled=false;
   };
   const sv=el("button","btn primary","Save");sv.type="button";
@@ -14731,7 +14740,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=39;window.__EG_BUILD=BUILD;
+  var BUILD=40;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){
