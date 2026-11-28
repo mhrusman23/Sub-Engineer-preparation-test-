@@ -1366,7 +1366,7 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
           <ul class="res" id="srchRes" hidden=""></ul>
         </div>
         <div id="aiFocusTop" hidden>
-          <div class="aif-head"><span class="aif-title" id="aiFTitle">\u26A1 AI Practice</span><span class="aif-pill" id="aiFPill">MCQ 1 / 10</span></div>
+          <div class="aif-head"><span class="aif-title" id="aiFTitle">\u26A1 AI Practice</span><span class="aif-pill" id="aiFPill">MCQ 1</span></div>
           <div class="aif-stats"><span class="aif-chip"><b id="aiFRead">0</b>Read</span><span class="aif-chip"><b id="aiFOk">0</b>\u2713 Correct</span><span class="aif-chip"><b id="aiFBad">0</b>\u2717 Wrong</span><span class="aif-chip"><b id="aiFScore">\u2013</b>Score</span></div>
         </div>
         <div class="card q">
@@ -2649,7 +2649,8 @@ try{fetch("https://firestore.googleapis.com/v1/projects/engrgroup23/databases/(d
   function aiFocusPaint(){
     if(!aiFocusOn())return;
     var c=counts(),sb=SUB[TMP.sub];
-    $("#aiFPill").textContent="MCQ "+(pos+1)+" / "+order.length;
+    $("#aiFPill").textContent="MCQ "+(pos+1);
+    var qn=$("#qno");if(qn)qn.textContent="Question "+(pos+1);
     $("#aiFTitle").textContent="\u26A1 AI Practice"+(sb&&sb.name?" \u00B7 "+sb.name:"");
     $("#aiFRead").textContent=c.att;
     $("#aiFOk").textContent=c.ok;
@@ -14877,7 +14878,7 @@ body.egBarOn #webAssist{bottom:102px}
    DONO aik sath barhane hain. */
 (function(){
   "use strict";
-  var BUILD=43;window.__EG_BUILD=BUILD;
+  var BUILD=44;window.__EG_BUILD=BUILD;
   var latest={web:0,apk:0,apkUrl:"/engrgroup23.apk",note:""};
   function vis(e){return !!e&&!e.hidden&&getComputedStyle(e).display!=="none"&&e.getClientRects().length>0}
   function blocked(){

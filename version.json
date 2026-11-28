@@ -1,6 +1,6 @@
 {
- "web": 43,
+ "web": 44,
  "apk": 1,
  "apkUrl": "/engrgroup23.apk",
- "note": "AI Practice — Premium Focus (BUILD 43): practice now opens one clean MCQ at a time — no question list or map, just the question, a gold MCQ count pill (MCQ 3 / 25), your live record (Read, Correct, Wrong, Score with dots for every MCQ), and one big Next button."
+ "note": "AI Practice (BUILD 44): the total MCQs count is hidden in AI practice — now only the current MCQ number shows (MCQ 3), because AI keeps adding new MCQs as you practice."
 }
